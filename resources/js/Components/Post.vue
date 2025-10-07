@@ -37,7 +37,7 @@ const toggleLike = (likeableId, likeableType) => {
     <div class="p-6 bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 dark:bg-gray-800">
         <div class="flex justify-between">
             <div class="flex items-center">
-                <div class="font-bold text-gray-800 dark:text-gray-200">{{ post.user.name }}</div>
+                <div class="font-bold text-gray-800 dark:text-gray-200">{{ post.user.username }}</div>
                 <div class="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ new Date(post.created_at).toLocaleString() }}
                 </div>
@@ -85,7 +85,7 @@ const toggleLike = (likeableId, likeableType) => {
             <div v-for="comment in post.comments" :key="comment.id" class="mt-2 bg-gray-100 p-2 rounded-lg dark:bg-gray-700">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p><strong class="text-gray-800 dark:text-gray-200">{{ comment.user.name }}</strong>: <span class="text-gray-700 dark:text-gray-300">{{ comment.content }}</span></p>
+                        <p><strong class="text-gray-800 dark:text-gray-200">{{ comment.user.username }}</strong>: <span class="text-gray-700 dark:text-gray-300">{{ comment.content }}</span></p>
                         <div class="flex items-center space-x-2">
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ new Date(comment.created_at).toLocaleString() }}</p>
                             <button @click="toggleLike(comment.id, 'App\\Models\\Comment')" class="flex items-center text-xs text-gray-500 dark:text-gray-400 hover:text-red-500">

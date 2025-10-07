@@ -39,7 +39,7 @@ class DashboardController extends Controller
 
                 return [
                     'id' => $u->id,
-                    'name' => $u->name,
+                    'name' => $u->username,
                     'score' => round($score),
                 ];
             })

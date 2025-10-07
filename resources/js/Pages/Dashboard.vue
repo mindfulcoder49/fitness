@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, useForm, usePage, Link } from '@inertiajs/vue3';
 import Post from '@/Components/Post.vue';
 import UserMetrics from '@/Components/UserMetrics.vue';
 import Leaderboard from '@/Components/Leaderboard.vue';
@@ -45,7 +45,7 @@ const submit = () => {
     <AuthenticatedLayout>
         <template #header>
             <h2
-                class="text-xl font-semibold leading-tight text-gray-800"
+                class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200"
             >
                 Dashboard
             </h2>
@@ -75,8 +75,13 @@ const submit = () => {
 
                         <!-- Display Fitness Goal -->
                         <div v-if="user.daily_fitness_goal" class="bg-gray-800 p-6 shadow-sm sm:rounded-lg">
-                            <h3 class="text-lg font-semibold text-indigo-400">Your Daily Fitness Goal</h3>
-                            <p class="mt-2 text-xl text-white">{{ user.daily_fitness_goal }}</p>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="text-lg font-semibold text-indigo-400">Your Daily Fitness Goal</h3>
+                                    <p class="mt-2 text-xl text-white">{{ user.daily_fitness_goal }}</p>
+                                </div>
+                                <Link :href="route('profile.edit')" class="text-sm text-gray-400 hover:text-white">Edit Goal</Link>
+                            </div>
                         </div>
 
                         <!-- Post Creation Form -->
