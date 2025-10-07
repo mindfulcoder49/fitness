@@ -176,7 +176,7 @@ console.log('User object in AuthenticatedLayout:', user);
                             >
                                 {{ $page.props.auth.user.name }}
                             </div>
-                            <div class="text-sm font-medium text-gray-500">
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-400">
                                 {{ $page.props.auth.user.email }}
                             </div>
                         </div>

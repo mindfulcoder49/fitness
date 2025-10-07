@@ -15,6 +15,7 @@ class PostController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
+        $content = $request->input('content');
 
         if ($user->role === 'prospective') {
             $hasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
@@ -22,6 +23,9 @@ class PostController extends Controller
                 throw ValidationException::withMessages([
                     'daily_limit' => 'You have already posted your update for today.',
                 ]);
+            }
+            if ($user->daily_fitness_goal) {
+                $content = "I completed my daily fitness goal: " . $user->daily_fitness_goal . " and... " . $request->input('content');
             }
         }
 
@@ -48,7 +52,7 @@ class PostController extends Controller
         }
 
         $user->posts()->create([
-            'content' => $request->content,
+            'content' => $content,
             'image_path' => $imagePath,
             'video_path' => $videoPath,
         ]);

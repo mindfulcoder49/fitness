@@ -17,7 +17,9 @@ const props = defineProps({
 const user = computed(() => usePage().props.auth.user || {});
 
 const form = useForm({
-    // ...existing code...
+    content: '',
+    image: null,
+    video: null,
 });
 
 const goalForm = useForm({
@@ -27,6 +29,12 @@ const goalForm = useForm({
 const submitGoal = () => {
     goalForm.patch(route('profile.update-fitness-goal'), {
         onSuccess: () => goalForm.reset(),
+    });
+};
+
+const submit = () => {
+    form.post(route('posts.store'), {
+        onSuccess: () => form.reset('content', 'image', 'video'),
     });
 };
 </script>
@@ -78,9 +86,14 @@ const submitGoal = () => {
                                     You have posted your update for today. Come back tomorrow!
                                 </div>
                                 <form v-else @submit.prevent="submit">
+                                    <div v-if="user.role === 'prospective' && user.daily_fitness_goal">
+                                        <p class="text-gray-900 dark:text-gray-100">
+                                            I completed my daily fitness goal: {{ user.daily_fitness_goal }} and...
+                                        </p>
+                                    </div>
                                     <textarea
                                         v-model="form.content"
-                                        placeholder="Post an update on your fitness activity..."
+                                        :placeholder="user.role === 'prospective' && user.daily_fitness_goal ? '...add more details about your activity.' : 'Post an update on your fitness activity...'"
                                         class="w-full border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100 dark:focus:border-indigo-600 dark:focus:ring-indigo-600"
                                         :disabled="user.role === 'prospective' && prospectiveHasPostedToday"
                                     ></textarea>
