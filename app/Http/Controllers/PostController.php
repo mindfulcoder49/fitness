@@ -16,6 +16,7 @@ class PostController extends Controller
     {
         $user = Auth::user();
         $content = $request->input('content');
+        $isBlogPost = $request->boolean('is_blog_post');
 
         if ($user->role === 'prospective') {
             $hasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
@@ -55,6 +56,7 @@ class PostController extends Controller
             'content' => $content,
             'image_path' => $imagePath,
             'video_path' => $videoPath,
+            'is_blog_post' => $isBlogPost,
         ]);
 
         return redirect()->route('dashboard');

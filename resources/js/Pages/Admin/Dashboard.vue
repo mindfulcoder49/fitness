@@ -7,6 +7,7 @@ const props = defineProps({
     users: Array,
     posts: Array,
     likes: Array,
+    comments: Array,
 });
 
 const activeTab = ref('users');
@@ -20,6 +21,14 @@ const updateRole = (user, newRole) => {
             preserveScroll: true,
         });
     }
+};
+
+const updateFitnessGoal = (user) => {
+    router.patch(route('admin.users.update-fitness-goal', { user: user.id }), {
+        daily_fitness_goal: user.daily_fitness_goal,
+    }, {
+        preserveScroll: true,
+    });
 };
 
 const updateMediaPermissions = (user) => {
@@ -52,12 +61,23 @@ const deleteItem = (type, id) => {
         } else if (type === 'like') {
             routeName = 'admin.likes.destroy';
             param = { like: id };
+        } else if (type === 'comment') {
+            routeName = 'admin.comments.destroy';
+            param = { comment: id };
         }
         
         router.delete(route(routeName, param), {
             preserveScroll: true,
         });
     }
+};
+
+const updateBlogPostStatus = (post) => {
+    router.patch(route('admin.posts.toggle-blog', { post: post.id }), {
+        is_blog_post: post.is_blog_post,
+    }, {
+        preserveScroll: true,
+    });
 };
 </script>
 
@@ -78,6 +98,7 @@ const deleteItem = (type, id) => {
                         <button @click="activeTab = 'users'" :class="[activeTab === 'users' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Users</button>
                         <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Posts</button>
                         <button @click="activeTab = 'likes'" :class="[activeTab === 'likes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Likes</button>
+                        <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Comments</button>
                     </nav>
                 </div>
 
@@ -92,6 +113,7 @@ const deleteItem = (type, id) => {
                                         <tr>
                                             <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Name</th>
                                             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Role</th>
+                                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Daily Fitness Goal</th>
                                             <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Image Perms</th>
                                             <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Video Perms</th>
                                             <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Posts</th>
@@ -102,11 +124,14 @@ const deleteItem = (type, id) => {
                                     </thead>
                                     <tbody class="divide-y divide-gray-800 bg-gray-900">
                                         <tr v-for="user in users" :key="user.id">
-                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ user.name }}</td>
+                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ user.name }} ({{ user.username }})</td>
                                             <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
                                                 <select :value="user.role" @change="updateRole(user, $event.target.value)" class="block w-full rounded-md border-gray-600 bg-gray-800 py-1.5 pl-3 pr-10 text-white focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
                                                     <option v-for="role in roles" :key="role" :value="role">{{ role }}</option>
                                                 </select>
+                                            </td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
+                                                <input type="text" v-model="user.daily_fitness_goal" @change="updateFitnessGoal(user)" class="block w-full rounded-md border-gray-600 bg-gray-800 py-1.5 pl-3 pr-2 text-white focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm" placeholder="Not set">
                                             </td>
                                             <td class="whitespace-nowrap px-3 py-4 text-center text-sm text-gray-300">
                                                 <input type="checkbox" v-model="user.can_post_images" @change="updateMediaPermissions(user)" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600" />
@@ -139,15 +164,19 @@ const deleteItem = (type, id) => {
                                             <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Content</th>
                                             <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Likes</th>
                                             <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Comments</th>
+                                            <th scope="col" class="px-3 py-3.5 text-center text-sm font-semibold">Is Blog</th>
                                             <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-800 bg-gray-900">
                                         <tr v-for="post in posts" :key="post.id">
-                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ post.user.name }}</td>
+                                            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ post.user.name }} ({{ post.user.username }})</td>
                                             <td class="px-3 py-4 text-sm text-gray-300 max-w-md truncate">{{ post.content }}</td>
                                             <td class="whitespace-nowrap px-3 py-4 text-center text-sm text-gray-300">{{ post.likes_count }}</td>
                                             <td class="whitespace-nowrap px-3 py-4 text-center text-sm text-gray-300">{{ post.comments_count }}</td>
+                                            <td class="whitespace-nowrap px-3 py-4 text-center text-sm text-gray-300">
+                                                <input type="checkbox" v-model="post.is_blog_post" @change="updateBlogPostStatus(post)" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600" />
+                                            </td>
                                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                 <button @click="deleteItem('post', post.id)" class="text-red-500 hover:text-red-700">Delete</button>
                                             </td>
@@ -173,7 +202,7 @@ const deleteItem = (type, id) => {
                                     <tbody class="divide-y divide-gray-800 bg-gray-900">
                                         <template v-for="like in likes" :key="like.id">
                                             <tr v-if="like.likeable && like.user">
-                                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ like.user.name }}</td>
+                                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ like.user.name }} ({{ like.user.username }})</td>
                                                 <td class="px-3 py-4 text-sm text-gray-300 max-w-md truncate">
                                                     <span class="font-bold">{{ like.likeable_type.split('\\').pop() }}:</span>
                                                     {{ like.likeable.content }}
@@ -181,6 +210,37 @@ const deleteItem = (type, id) => {
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-300">{{ new Date(like.created_at).toLocaleString() }}</td>
                                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <button @click="deleteItem('like', like.id)" class="text-red-500 hover:text-red-700">Delete</button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Comments Table -->
+                        <div v-if="activeTab === 'comments'">
+                             <h3 class="text-2xl font-bold">Comment Management</h3>
+                             <div class="mt-6 overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-700">
+                                    <thead class="bg-gray-700">
+                                        <tr>
+                                            <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Author</th>
+                                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Comment</th>
+                                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">In Post</th>
+                                            <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Date</th>
+                                            <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-800 bg-gray-900">
+                                        <template v-for="comment in comments" :key="comment.id">
+                                            <tr v-if="comment.user && comment.post">
+                                                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ comment.user.name }} ({{ comment.user.username }})</td>
+                                                <td class="px-3 py-4 text-sm text-gray-300 max-w-sm truncate">{{ comment.content }}</td>
+                                                <td class="px-3 py-4 text-sm text-gray-300 max-w-sm truncate">{{ comment.post.content }}</td>
+                                                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-300">{{ new Date(comment.created_at).toLocaleString() }}</td>
+                                                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                                                    <button @click="deleteItem('comment', comment.id)" class="text-red-500 hover:text-red-700">Delete</button>
                                                 </td>
                                             </tr>
                                         </template>

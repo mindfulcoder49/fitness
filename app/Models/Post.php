@@ -19,9 +19,14 @@ class Post extends Model
         'content',
         'image_path',
         'video_path',
+        'is_blog_post',
     ];
 
     protected $appends = ['image_url', 'video_url'];
+
+    protected $casts = [
+        'is_blog_post' => 'boolean',
+    ];
 
     protected static function booted(): void
     {

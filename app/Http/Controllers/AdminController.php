@@ -5,54 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\Like;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ApplicationInvitation;
 use Inertia\Inertia;
 
 class AdminController extends Controller
 {
     public function index()
     {
-        $likes = Like::with('user', 'likeable')->latest()->get()->filter(function ($like) {
-            return $like->user && $like->likeable;
-        });
-
         return Inertia::render('Admin/Dashboard', [
-            'users' => User::withCount(['posts', 'likes', 'comments'])
-                ->orderBy('created_at', 'desc')
-                ->get(),
-            'posts' => Post::with('user')->withCount('likes', 'comments')->latest()->get(),
-            'likes' => $likes->values(), // ->values() re-indexes the collection after filtering
+            'users' => User::withCount(['posts', 'likes', 'comments'])->get(),
+            'posts' => Post::with('user')->withCount(['likes', 'comments'])->latest()->get(),
+            'likes' => Like::with('user', 'likeable')->latest()->get(),
+            'comments' => Comment::with('user', 'post')->latest()->get(),
         ]);
     }
 
     public function updateUserRole(Request $request, User $user)
     {
-        $request->validate([
-            'role' => ['required', Rule::in(['prospective', 'initiate', 'full_member', 'admin'])],
-        ]);
-
+        $request->validate(['role' => 'required|in:prospective,initiate,full_member,admin']);
         $user->update(['role' => $request->role]);
-
         return back();
     }
 
     public function updateUserMediaPermissions(Request $request, User $user)
     {
-        $request->validate([
-            'can_post_images' => 'required|boolean',
-            'can_post_videos' => 'required|boolean',
+        $user->update([
+            'can_post_images' => $request->boolean('can_post_images'),
+            'can_post_videos' => $request->boolean('can_post_videos'),
         ]);
+        return back();
+    }
 
-        $user->update($request->only(['can_post_images', 'can_post_videos']));
-
+    public function updateUserFitnessGoal(Request $request, User $user)
+    {
+        $request->validate(['daily_fitness_goal' => 'nullable|string|max:255']);
+        $user->update(['daily_fitness_goal' => $request->daily_fitness_goal]);
         return back();
     }
 
     public function sendInvitation(User $user)
     {
-        $user->update(['invitation_sent_at' => now()]);
-
+        if (!$user->invitation_sent_at) {
+            // Logic to send invitation email
+            // Mail::to($user->email)->send(new ApplicationInvitation($user));
+            $user->forceFill(['invitation_sent_at' => now()])->save();
+        }
         return back();
     }
 
@@ -72,9 +73,22 @@ class AdminController extends Controller
         return back();
     }
 
+    public function toggleBlogPost(Request $request, Post $post)
+    {
+        $request->validate(['is_blog_post' => 'required|boolean']);
+        $post->update(['is_blog_post' => $request->is_blog_post]);
+        return back();
+    }
+
     public function destroyLike(Like $like)
     {
         $like->delete();
+        return back();
+    }
+
+    public function destroyComment(Comment $comment)
+    {
+        $comment->delete();
         return back();
     }
 }

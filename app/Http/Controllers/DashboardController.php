@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Comment;
+use App\Models\Like;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +16,65 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $user = Auth::user();
+        $weekAgo = now()->subWeek();
+
+        // Notifications
+        $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->get();
+        
+        $userPostIds = $user->posts()->pluck('id');
+        $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content')->whereIn('post_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+
+        $userCommentIds = $user->comments()->pluck('id');
+        $likesOnUserPosts = Like::with('user:id,username')->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserComments = Like::with('user:id,username')->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserContent = $likesOnUserPosts->merge($likesOnUserComments);
+
+        $notifications = [
+            'posts' => $postsForNotifications,
+            'commentsOnUserPosts' => $commentsOnUserPosts,
+            'likesOnUserContent' => $likesOnUserContent,
+        ];
+
+        // To-Do List Data
+        $todos = [];
+        // 1. Set daily fitness goal
+        if (!$user->daily_fitness_goal) {
+            $todos[] = [
+                'id' => 'set_goal',
+                'type' => 'Set Your Goal',
+                'description' => 'Set your daily fitness goal to get started.',
+            ];
+        }
+
+        // 2. Post daily update
+        $hasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
+        if (!$hasPostedToday) {
+            $todos[] = [
+                'id' => 'post_today',
+                'type' => 'Daily Update',
+                'description' => 'Post your daily fitness update.',
+            ];
+        }
+
+        // 3. Posts not liked
+        $likedPostIds = $user->likes()->where('likeable_type', Post::class)->pluck('likeable_id');
+        $postsToLike = Post::with('user:id,username')
+            ->where('user_id', '!=', $user->id)
+            ->whereNotIn('id', $likedPostIds)
+            ->where('created_at', '>=', $weekAgo)
+            ->latest()
+            ->take(5) // Limit to a reasonable number
+            ->get()
+            ->map(function ($post) {
+                return [
+                    'id' => 'like_post_' . $post->id,
+                    'type' => 'Like a Post',
+                    'description' => "Like " . $post->user->username . "'s post.",
+                    'post_id' => $post->id,
+                ];
+            });
+
+        $todos = array_merge($todos, $postsToLike->all());
 
         // User-specific metrics
         $userMetrics = [
@@ -52,7 +113,8 @@ class DashboardController extends Controller
             $prospectiveHasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
         }
 
-        $posts = Post::with(['user', 'comments.user', 'comments.likes', 'likes'])
+        $posts = Post::where('is_blog_post', false)
+            ->with(['user', 'comments.user', 'comments.likes', 'likes'])
             ->withCount('likes', 'comments')
             ->latest()
             ->get()
@@ -83,6 +145,9 @@ class DashboardController extends Controller
             'leaderboard' => $leaderboard,
             'prospectiveHasPostedToday' => $prospectiveHasPostedToday,
             'posts' => $posts->values(), // Re-index the posts collection.
+            'notifications' => $notifications,
+            'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
+            'todos' => $todos,
         ]);
     }
 }

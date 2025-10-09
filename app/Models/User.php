@@ -28,6 +28,7 @@ class User extends Authenticatable
         'can_post_images',
         'can_post_videos',
         'invitation_sent_at',
+        'notifications_last_checked_at',
     ];
 
     /**
@@ -53,6 +54,7 @@ class User extends Authenticatable
             'can_post_images' => 'boolean',
             'can_post_videos' => 'boolean',
             'invitation_sent_at' => 'datetime',
+            'notifications_last_checked_at' => 'datetime',
         ];
     }
 

@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('username')->after('name');
+        Schema::table('posts', function (Blueprint $table) {
+            $table->boolean('is_blog_post')->default(false)->after('video_path');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('username');
+        Schema::table('posts', function (Blueprint $table) {
+            $table->dropColumn('is_blog_post');
         });
     }
 };
