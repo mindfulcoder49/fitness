@@ -50,6 +50,12 @@ console.log('User object in AuthenticatedLayout:', user);
                                     Blog
                                 </NavLink>
                                 <NavLink
+                                    :href="route('changelog.index')"
+                                    :active="route().current('changelog.index')"
+                                >
+                                    Changelog
+                                </NavLink>
+                                <NavLink
                                     v-if="user.role === 'admin'"
                                     :href="route('admin.dashboard')"
                                     :active="route().current('admin.dashboard')"
@@ -168,6 +174,12 @@ console.log('User object in AuthenticatedLayout:', user);
                             :active="route().current('blog.index')"
                         >
                             Blog
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('changelog.index')"
+                            :active="route().current('changelog.index')"
+                        >
+                            Changelog
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             v-if="user.role === 'admin'"

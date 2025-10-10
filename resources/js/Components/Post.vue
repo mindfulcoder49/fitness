@@ -1,14 +1,19 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Link, useForm, usePage, router } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
+import marked from 'marked';
 
 const props = defineProps({
     post: Object,
 });
 
 const user = usePage().props.auth.user;
+
+const parsedContent = computed(() => {
+    return props.post.content ? marked(props.post.content) : '';
+});
 
 const commentForm = useForm({
     content: '',
@@ -37,7 +42,7 @@ const toggleLike = (likeableId, likeableType) => {
     <div class="p-6 bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 dark:bg-gray-800">
         <div class="flex justify-between">
             <div class="flex items-center">
-                <div class="font-bold text-gray-800 dark:text-gray-200">{{ post.user.username }}</div>
+                <Link :href="route('users.show', { user: post.user.username })" class="font-bold text-gray-800 dark:text-gray-200 hover:underline">{{ post.user.username }}</Link>
                 <div class="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ new Date(post.created_at).toLocaleString() }}
                 </div>
@@ -57,7 +62,7 @@ const toggleLike = (likeableId, likeableType) => {
                 </template>
             </Dropdown>
         </div>
-        <p v-if="post.content" class="mt-4 text-lg text-gray-900 dark:text-gray-100">{{ post.content }}</p>
+        <div v-if="post.content" class="mt-4 text-lg text-gray-900 dark:text-gray-100 prose dark:prose-invert max-w-none" v-html="parsedContent"></div>
 
         <div v-if="post.image_url" class="mt-4">
             <img :src="post.image_url" alt="Post image" class="max-w-full rounded-lg" />
@@ -85,7 +90,7 @@ const toggleLike = (likeableId, likeableType) => {
             <div v-for="comment in post.comments" :key="comment.id" class="mt-2 bg-gray-100 p-2 rounded-lg dark:bg-gray-700">
                 <div class="flex justify-between items-start">
                     <div>
-                        <p><strong class="text-gray-800 dark:text-gray-200">{{ comment.user.username }}</strong>: <span class="text-gray-700 dark:text-gray-300">{{ comment.content }}</span></p>
+                        <p><Link :href="route('users.show', { user: comment.user.username })" class="font-bold text-gray-800 dark:text-gray-200 hover:underline">{{ comment.user.username }}</Link>: <span class="text-gray-700 dark:text-gray-300">{{ comment.content }}</span></p>
                         <div class="flex items-center space-x-2">
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ new Date(comment.created_at).toLocaleString() }}</p>
                             <button @click="toggleLike(comment.id, 'App\\Models\\Comment')" class="flex items-center text-xs text-gray-500 dark:text-gray-400 hover:text-red-500">

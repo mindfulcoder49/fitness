@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     notifications: Object,
@@ -9,18 +10,20 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const isNew = (item) => {
+    if (item.type === 'App Update') return true; // Changelog notifications are always new until read
     if (!props.lastChecked) return true;
     return new Date(item.created_at) > new Date(props.lastChecked);
 };
 
 const allNotifications = computed(() => {
-    const { posts, commentsOnUserPosts, likesOnUserContent } = props.notifications;
+    const { posts, commentsOnUserPosts, likesOnUserContent, changelogs } = props.notifications;
 
-    const formattedPosts = posts.map(item => ({ ...item, type: 'New Post' }));
-    const formattedComments = commentsOnUserPosts.map(item => ({ ...item, type: 'New Comment' }));
-    const formattedLikes = likesOnUserContent.map(item => ({ ...item, type: 'New Like' }));
+    const formattedPosts = (posts || []).map(item => ({ ...item, type: 'New Post' }));
+    const formattedComments = (commentsOnUserPosts || []).map(item => ({ ...item, type: 'New Comment' }));
+    const formattedLikes = (likesOnUserContent || []).map(item => ({ ...item, type: 'New Like' }));
+    const formattedChangelogs = (changelogs || []).map(item => ({ ...item, type: 'App Update' }));
 
-    return [...formattedPosts, ...formattedComments, ...formattedLikes]
+    return [...formattedPosts, ...formattedComments, ...formattedLikes, ...formattedChangelogs]
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
 </script>
@@ -36,7 +39,7 @@ const allNotifications = computed(() => {
             </button>
         </div>
         <div v-if="allNotifications.length > 0" class="space-y-3">
-            <div v-for="item in allNotifications" :key="`${item.type}-${item.id}`" class="p-3 bg-gray-700 rounded-md text-sm">
+            <div v-for="item in allNotifications" :key="item.id" class="p-3 bg-gray-700 rounded-md text-sm">
                 <div class="flex justify-between items-center">
                     <p class="font-bold text-indigo-400">{{ item.type }}</p>
                     <span v-if="isNew(item)" class="px-2 py-0.5 text-xs font-semibold text-white bg-green-500 rounded-full">New</span>
@@ -50,6 +53,11 @@ const allNotifications = computed(() => {
                     </template>
                     <template v-if="item.type === 'New Like'">
                         <p><span class="font-semibold">{{ item.user.username }}</span> liked your {{ item.likeable_type.split('\\').pop().toLowerCase() }}.</p>
+                    </template>
+                    <template v-if="item.type === 'App Update'">
+                        <Link :href="route('changelog.index')" @click="emit('close')" class="hover:underline">
+                            {{ item.description }}
+                        </Link>
                     </template>
                 </div>
                 <p class="text-xs text-gray-500 mt-2 text-right">{{ new Date(item.created_at).toLocaleString() }}</p>

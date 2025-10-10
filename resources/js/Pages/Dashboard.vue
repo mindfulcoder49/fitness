@@ -30,11 +30,12 @@ const newNotificationCount = computed(() => {
 
     const lastChecked = props.notificationsLastCheckedAt;
 
-    const newPosts = props.notifications.posts.filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
-    const newComments = props.notifications.commentsOnUserPosts.filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
-    const newLikes = props.notifications.likesOnUserContent.filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
+    const newPosts = (props.notifications.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
+    const newComments = (props.notifications.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
+    const newLikes = (props.notifications.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
+    const newChangelogs = (props.notifications.changelogs || []).length; // Changelogs are always "new" until read
 
-    return newPosts + newComments + newLikes;
+    return newPosts + newComments + newLikes + newChangelogs;
 });
 
 const todoCount = computed(() => props.todos?.length || 0);
@@ -47,7 +48,7 @@ const toggleNotifications = () => {
             preserveScroll: true,
             onSuccess: () => {
                 // Manually update prop to avoid full page reload
-                usePage().props.auth.user.notifications_last_checked_at = new Date().toISOString();
+                usePage().props.notificationsLastCheckedAt = new Date().toISOString();
             }
         });
     }
@@ -147,7 +148,7 @@ const submit = () => {
                     </div>
 
                     <!-- Post Creation Form -->
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
+                    <div id="post-form" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
                         <div class="p-6">
                             <div v-if="user.role === 'prospective' && prospectiveHasPostedToday" class="text-center text-gray-500 dark:text-gray-400">
                                 You have posted your update for today. Come back tomorrow!

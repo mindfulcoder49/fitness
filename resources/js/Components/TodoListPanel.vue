@@ -17,7 +17,14 @@ const getActionLink = (todo) => {
     if (todo.post_id) {
         return `#post-${todo.post_id}`;
     }
+    if (todo.changelog_id) {
+        return route('changelog.index');
+    }
     return '#';
+};
+
+const isInertiaLink = (todo) => {
+    return todo.id === 'set_goal' || !!todo.changelog_id;
 };
 </script>
 
@@ -40,7 +47,10 @@ const getActionLink = (todo) => {
                     <p>{{ todo.description }}</p>
                 </div>
                  <div class="text-right mt-2">
-                    <a :href="getActionLink(todo)" @click="emit('close')" class="text-sm text-indigo-400 hover:text-indigo-300">
+                    <Link v-if="isInertiaLink(todo)" :href="getActionLink(todo)" @click="emit('close')" class="text-sm text-indigo-400 hover:text-indigo-300">
+                        Go &rarr;
+                    </Link>
+                    <a v-else :href="getActionLink(todo)" @click="emit('close')" class="text-sm text-indigo-400 hover:text-indigo-300">
                         Go &rarr;
                     </a>
                 </div>

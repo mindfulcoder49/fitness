@@ -6,6 +6,7 @@ use App\Models\Post;
 use App\Models\User;
 use App\Models\Comment;
 use App\Models\Like;
+use App\Models\Changelog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -29,10 +30,23 @@ class DashboardController extends Controller
         $likesOnUserComments = Like::with('user:id,username')->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
         $likesOnUserContent = $likesOnUserPosts->merge($likesOnUserComments);
 
+        $readChangelogIds = $user->readChangelogs()->pluck('changelog_id');
+        $unreadChangelogs = Changelog::whereNotIn('id', $readChangelogIds)->get();
+
+        $changelogNotifications = $unreadChangelogs->map(function ($changelog) {
+            return [
+                'id' => 'changelog_' . $changelog->id,
+                'type' => 'App Update',
+                'description' => 'A new update was released on ' . $changelog->release_date->format('F j, Y'),
+                'created_at' => $changelog->release_date,
+            ];
+        });
+
         $notifications = [
             'posts' => $postsForNotifications,
             'commentsOnUserPosts' => $commentsOnUserPosts,
             'likesOnUserContent' => $likesOnUserContent,
+            'changelogs' => $changelogNotifications,
         ];
 
         // To-Do List Data
@@ -56,7 +70,17 @@ class DashboardController extends Controller
             ];
         }
 
-        // 3. Posts not liked
+        // 3. Unread changelogs
+        foreach ($unreadChangelogs as $changelog) {
+            $todos[] = [
+                'id' => 'read_changelog_' . $changelog->id,
+                'type' => 'Read Update',
+                'description' => 'Read the update from ' . $changelog->release_date->format('F j, Y'),
+                'changelog_id' => $changelog->id,
+            ];
+        }
+
+        // 4. Posts not liked
         $likedPostIds = $user->likes()->where('likeable_type', Post::class)->pluck('likeable_id');
         $postsToLike = Post::with('user:id,username')
             ->where('user_id', '!=', $user->id)
@@ -81,32 +105,40 @@ class DashboardController extends Controller
             'total_comments' => $user->comments()->count(),
             'likes_on_comments' => $user->comments()->withCount('likes')->get()->sum('likes_count'),
             'days_posted' => $user->posts()->reorder()->select(DB::raw('DATE(created_at)'))->distinct()->count(),
+            'changelogs_read' => $user->readChangelogs()->count(),
         ];
         $userMetrics['avg_likes_per_comment'] = $userMetrics['total_comments'] > 0 ? round($userMetrics['likes_on_comments'] / $userMetrics['total_comments'], 2) : 0;
 
         // Leaderboard data
-        $leaderboard = User::withCount(['posts', 'comments', 'likes'])
+        $leaderboard = User::withCount(['posts', 'comments', 'likes', 'readChangelogs'])
             ->get()
             ->map(function ($u) {
-                $likesOnPosts = $u->posts()->withCount('likes')->get()->sum('likes_count');
-                $likesOnComments = $u->comments()->withCount('likes')->get()->sum('likes_count');
-                
-                // Simple scoring: posts=3, comments=1, likes given=0.5, likes received=1
-                $score = ($u->posts_count * 3) +
-                         ($u->comments_count * 1) +
-                         ($u->likes_count * 0.5) +
-                         ($likesOnPosts * 1) +
-                         ($likesOnComments * 1);
+            $likesOnPosts = $u->posts()->withCount('likes')->get()->sum('likes_count');
+            $likesOnComments = $u->comments()->withCount('likes')->get()->sum('likes_count');
 
-                return [
-                    'id' => $u->id,
-                    'name' => $u->username,
-                    'score' => round($score),
-                ];
+            // Count distinct days the user has posted
+            $distinctPostDays = $u->posts()
+                ->select(DB::raw('DATE(created_at) as post_date'))
+                ->distinct()
+                ->count();
+
+            // Simple scoring: distinct post days=3, comments=1, likes given=0.5, likes received=1, changelog read=1
+            $score = ($distinctPostDays * 3) +
+                 ($u->comments_count * 1) +
+                 ($u->likes_count * 0.5) +
+                 ($likesOnPosts * 1) +
+                 ($likesOnComments * 1) +
+                 ($u->read_changelogs_count * 0.5);
+
+            return [
+                'id' => $u->id,
+                'name' => $u->username,
+                'score' => round($score),
+            ];
             })
             ->sortByDesc('score')
             ->values()
-            ->take(10);
+            ->take(20);
 
         $prospectiveHasPostedToday = false;
         if ($user->role === 'prospective') {

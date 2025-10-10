@@ -14,10 +14,11 @@
                 <h4 class="font-bold text-white">Leaderboard & Points</h4>
                 <p>Your activity earns you points and a spot on the leaderboard. Points are awarded for posting, commenting, and receiving likes on your content. The more you engage, the more points you earn!</p>
                 <ul class="list-disc list-inside mt-2 pl-2 text-gray-400">
-                    <li><span class="font-semibold">Post:</span> 3 points</li>
+                    <li><span class="font-semibold">Daily Post:</span> 3 points (awarded once per day)</li>
                     <li><span class="font-semibold">Comment:</span> 1 point</li>
                     <li><span class="font-semibold">Like Given:</span> 0.5 points</li>
                     <li><span class="font-semibold">Like Received:</span> 1 point</li>
+                    <li><span class="font-semibold">Read an Update:</span> 0.5 point</li>
                 </ul>
             </div>
             <div>
