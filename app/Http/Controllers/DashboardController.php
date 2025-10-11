@@ -102,12 +102,12 @@ class DashboardController extends Controller
 
         // User-specific metrics
         $userMetrics = [
-            'total_comments' => $user->comments()->count(),
-            'likes_on_comments' => $user->comments()->withCount('likes')->get()->sum('likes_count'),
             'days_posted' => $user->posts()->reorder()->select(DB::raw('DATE(created_at)'))->distinct()->count(),
+            'likes_on_posts' => $user->posts()->withCount('likes')->get()->sum('likes_count'),
+            'likes_given' => $user->likes()->count(),
+            'total_comments' => $user->comments()->count(),
             'changelogs_read' => $user->readChangelogs()->count(),
         ];
-        $userMetrics['avg_likes_per_comment'] = $userMetrics['total_comments'] > 0 ? round($userMetrics['likes_on_comments'] / $userMetrics['total_comments'], 2) : 0;
 
         // Leaderboard data
         $leaderboard = User::withCount(['posts', 'comments', 'likes', 'readChangelogs'])

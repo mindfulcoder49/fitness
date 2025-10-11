@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller
 {
@@ -29,10 +30,12 @@ class PostController extends Controller
                 $content = "I completed my daily fitness goal: " . $user->daily_fitness_goal . " and... " . $request->input('content');
             }
         }
+        //log the content for debugging
+        Log::info('Post content: ' . $content);
 
         $request->validate([
-            'content' => 'required_without_all:image,video|nullable|string|max:1000',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'content' => 'required_without_all:image,video|nullable|string|max:50000',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10000',
             'video' => 'nullable|mimetypes:video/mp4,video/webm,video/ogg|max:20480',
         ]);
 

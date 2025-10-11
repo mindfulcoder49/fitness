@@ -12,7 +12,8 @@ const props = defineProps({
 const user = usePage().props.auth.user;
 
 const parsedContent = computed(() => {
-    return props.post.content ? marked(props.post.content) : '';
+    if (!props.post.content) return '';
+    return marked(props.post.content, { breaks: true });
 });
 
 const commentForm = useForm({
@@ -124,3 +125,21 @@ const toggleLike = (likeableId, likeableType) => {
         </div>
     </div>
 </template>
+
+<style scoped>
+.prose img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+.prose video {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+}
+/* style paragraph margins */
+.prose :deep(*) {
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+</style>

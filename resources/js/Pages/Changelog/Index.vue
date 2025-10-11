@@ -50,7 +50,7 @@ const markAsRead = (changelogId) => {
                                 </span>
                             </div>
                             <ul class="list-disc list-inside mt-2 pl-2 space-y-1 prose dark:prose-invert max-w-none">
-                                <li v-for="(change, index) in changelog.changes" :key="index" v-html="marked.parse(change, { breaks: true })"></li>
+                                <p v-for="(change, index) in changelog.changes" :key="index" v-html="marked.parse(change, { breaks: true })"></p>
                             </ul>
                         </div>
                          <div v-if="changelogs.length === 0" class="text-center">
