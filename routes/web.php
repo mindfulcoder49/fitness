@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/likes', [LikeController::class, 'store'])->name('likes.store');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
-    Route::post('/changelog/{changelog}/read', [ChangelogController::class, 'markAsRead'])->name('changelog.read');
+    Route::post('/changelog/{changelog:id}/read', [ChangelogController::class, 'markAsRead'])->name('changelog.read');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

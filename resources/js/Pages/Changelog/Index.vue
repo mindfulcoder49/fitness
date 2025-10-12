@@ -12,8 +12,8 @@ const isRead = (changelogId) => {
     return props.readChangelogIds.includes(changelogId);
 };
 
-const markAsRead = (changelogId) => {
-    router.post(route('changelog.read', changelogId), {}, {
+const markAsRead = (changelog) => {
+    router.post(route('changelog.read', { changelog: changelog.id }), {}, {
         preserveScroll: true,
     });
 };
@@ -36,7 +36,7 @@ const markAsRead = (changelogId) => {
                         <div v-for="changelog in changelogs" :key="changelog.id">
                             <div class="flex justify-between items-center">
                                 <h3 class="text-lg font-bold text-white">{{ new Date(Date.parse(changelog.release_date)).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
-                                <button v-if="!isRead(changelog.id)" @click="markAsRead(changelog.id)" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
+                                <button v-if="!isRead(changelog.id)" @click="markAsRead(changelog)" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
                                     <span>Mark as Read</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
