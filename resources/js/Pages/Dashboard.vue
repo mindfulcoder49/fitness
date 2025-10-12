@@ -13,6 +13,7 @@ import { ref, computed } from 'vue';
 const user = computed(() => usePage().props.auth.user);
 
 const props = defineProps({
+    featuredPost: Object,
     posts: Array,
     userMetrics: Object,
     leaderboard: Array,
@@ -24,6 +25,7 @@ const props = defineProps({
 
 const showNotifications = ref(false);
 const showTodos = ref(false);
+const showMobileSidebar = ref(false);
 
 const newNotificationCount = computed(() => {
     if (!props.notifications) return 0;
@@ -89,9 +91,9 @@ const submit = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Dashboard
+                    Update Feed
                 </h2>
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <button @click="toggleTodos" class="relative p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
@@ -108,6 +110,12 @@ const submit = () => {
                             {{ newNotificationCount }}
                         </span>
                     </button>
+                    <!-- Hamburger menu for mobile sidebar -->
+                    <button @click="showMobileSidebar = !showMobileSidebar" class="lg:hidden p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </template>
@@ -119,6 +127,11 @@ const submit = () => {
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main content -->
                 <div class="lg:col-span-2 space-y-6">
+                    <!-- Featured Post -->
+                    <div v-if="featuredPost" class="bg-gray-900/50 sm:rounded-lg">
+                         <Post :post="featuredPost" />
+                    </div>
+
                     <!-- User Metrics -->
                     <UserMetrics :metrics="userMetrics" />
 
@@ -194,15 +207,29 @@ const submit = () => {
 
                     <!-- Posts Feed -->
                     <div class="space-y-6">
+                        <h3 v-if="posts.length > 0" class="text-lg font-semibold text-gray-300">Recent Activity</h3>
                         <Post v-for="post in posts" :key="post.id" :post="post" />
                     </div>
                 </div>
 
                 <!-- Sidebar -->
-                <div class="lg:col-span-1 order-first lg:order-none space-y-6">
-                    <Leaderboard :users="leaderboard" />
-                    <ApplicationInvitation />
-                    <InfoPanel />
+                <div :class="[
+                    'lg:col-span-1 lg:order-none',
+                    'fixed top-0 right-0 h-full w-80 bg-gray-900 z-40 transform transition-transform lg:relative lg:translate-x-0 lg:bg-transparent lg:p-0 lg:z-auto',
+                    showMobileSidebar ? 'translate-x-0' : 'translate-x-full'
+                ]">
+                    <div class="h-full overflow-y-auto ">
+                        <button @click="showMobileSidebar = false" class="lg:hidden absolute top-4 right-4 text-gray-300 hover:text-white z-50">
+                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        <div class="px-6 lg:p-0 lg:mt-0 space-y-6">
+                            <Leaderboard :users="leaderboard" />
+                            <ApplicationInvitation />
+                            <InfoPanel />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

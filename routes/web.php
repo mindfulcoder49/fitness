@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::patch('/profile/fitness-goal', [ProfileController::class, 'updateFitnessGoal'])->name('profile.update-fitness-goal');
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+    Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
     Route::post('/likes', [LikeController::class, 'store'])->name('likes.store');

@@ -1,5 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import Post from '@/Components/Post.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({
@@ -41,37 +42,41 @@ const formatDate = (dateString) => {
                 <!-- Activity Feed -->
                 <div class="space-y-4">
                     <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">Activity Feed</h3>
-                    <div v-for="activity in activityFeed" :key="`${activity.activity_type}-${activity.id}`" class="bg-gray-800 shadow-sm sm:rounded-lg p-4">
-                        <div class="text-sm text-gray-400 mb-2">{{ formatDate(activity.created_at) }}</div>
-                        <div class="text-gray-300">
-                            <!-- Post Activity -->
-                            <div v-if="activity.activity_type === 'post'">
-                                <Link :href="route('users.show', { user: profileUser.username })" class="font-bold text-white hover:underline">{{ profileUser.username }}</Link>
-                                posted:
-                                <div class="mt-2 p-3 bg-gray-700 rounded-md">
-                                    <p class="italic">"{{ activity.content }}"</p>
-                                </div>
-                            </div>
+                    <div v-for="activity in activityFeed" :key="`${activity.activity_type}-${activity.id}`">
+                        <!-- Post Activity -->
+                        <Post v-if="activity.activity_type === 'post'" :post="activity" />
 
-                            <!-- Comment Activity -->
-                            <div v-if="activity.activity_type === 'comment' && activity.post">
-                                <Link :href="route('users.show', { user: profileUser.username })" class="font-bold text-white hover:underline">{{ profileUser.username }}</Link>
-                                commented on
-                                <Link :href="route('users.show', { user: activity.post.user.username })" class="font-bold text-white hover:underline">{{ activity.post.user.username }}'s</Link>
-                                post:
-                                <div class="mt-2 p-3 bg-gray-700 rounded-md">
-                                    <p class="italic">"{{ activity.content }}"</p>
+                        <!-- Other Activities -->
+                        <div v-else class="bg-gray-800 shadow-sm sm:rounded-lg p-4">
+                            <div class="text-sm text-gray-400 mb-2">{{ formatDate(activity.created_at) }}</div>
+                            <div class="text-gray-300">
+                                <!-- Comment Activity -->
+                                <div v-if="activity.activity_type === 'comment' && activity.post">
+                                    <Link :href="route('users.show', { user: profileUser.username })" class="font-bold text-white hover:underline">{{ profileUser.username }}</Link>
+                                    commented on
+                                    <Link :href="route('users.show', { user: activity.post.user.username })" class="font-bold text-white hover:underline">{{ activity.post.user.username }}'s</Link>
+                                    post.
+                                    <Link :href="route('dashboard', { post: activity.post.id })">
+                                        <div class="mt-2 p-3 bg-gray-700 rounded-md hover:bg-gray-600">
+                                            <p class="italic">"{{ activity.content }}"</p>
+                                        </div>
+                                    </Link>
                                 </div>
-                            </div>
 
-                            <!-- Like Activity -->
-                            <div v-if="activity.activity_type === 'like' && activity.likeable">
-                                <Link :href="route('users.show', { user: profileUser.username })" class="font-bold text-white hover:underline">{{ profileUser.username }}</Link>
-                                liked
-                                <Link v-if="activity.likeable.user" :href="route('users.show', { user: activity.likeable.user.username })" class="font-bold text-white hover:underline">{{ activity.likeable.user.username }}'s</Link>
-                                {{ activity.likeable_type.split('\\').pop().toLowerCase() }}:
-                                <div class="mt-2 p-3 bg-gray-700 rounded-md">
-                                    <p class="italic truncate">"{{ activity.likeable.content }}"</p>
+                                <!-- Like Activity -->
+                                <div v-if="activity.activity_type === 'like' && activity.likeable">
+                                    <Link :href="route('users.show', { user: profileUser.username })" class="font-bold text-white hover:underline">{{ profileUser.username }}</Link>
+                                    liked
+                                    <Link v-if="activity.likeable.user" :href="route('users.show', { user: activity.likeable.user.username })" class="font-bold text-white hover:underline">{{ activity.likeable.user.username }}'s</Link>
+                                    {{ activity.likeable_type.split('\\').pop().toLowerCase() }}.
+                                    <Link v-if="activity.likeable_type.endsWith('Post')" :href="route('dashboard', { post: activity.likeable.id })">
+                                        <div class="mt-2 p-3 bg-gray-700 rounded-md hover:bg-gray-600">
+                                            <p class="italic truncate">"{{ activity.likeable.content }}"</p>
+                                        </div>
+                                    </Link>
+                                    <div v-else class="mt-2 p-3 bg-gray-700 rounded-md">
+                                         <p class="italic truncate">"{{ activity.likeable.content }}"</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -21,9 +21,18 @@ class ChangelogController extends Controller
         ]);
     }
 
-    public function markAsRead(Changelog $changelog)
+    public function markAsRead(Request $request)
     {
-        Auth::user()->readChangelogs()->syncWithoutDetaching($changelog->id);
+        $request->validate([
+            'changelog_id' => 'required|exists:changelogs,id',
+        ]);
+
+        $user = Auth::user();
+        $changelog = Changelog::find($request->changelog_id);
+
+        if ($changelog && !$user->readChangelogs->contains($changelog->id)) {
+            $user->readChangelogs()->attach($changelog->id);
+        }
 
         return back();
     }

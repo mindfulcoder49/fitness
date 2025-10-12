@@ -28,12 +28,31 @@ class ChangelogSeeder extends Seeder
         );
 
         Changelog::updateOrCreate(
-            ['release_date' => '2025-10-17'],
+            ['release_date' => '2025-10-11'],
             [
                 'changes' => [
                     '**Improvement: User Stats!** The "Your Stats" panel on the dashboard has been updated to better reflect site activity. It now shows "Likes on Posts" and "Likes Given" instead of comment-focused metrics.',
                     '**Display Fixes: Markdown Rendering!** Fixed several issues with Markdown rendering in posts, including proper handling of line breaks and lists.',
                     '**Longer Posts: Content Length Increased!** The maximum length for post content has been increased from 1000 to many more than that characters to allow for more detailed updates.',
+                ],
+            ]
+        );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-12'],
+            [
+                'changes' => [
+                    '**Updated Points Calculation!** Likes on blog posts given or received do not count towards points since only the admin can create blog posts. It is still in your to-do list.',
+                    '**New Feature: Post Editing!** You can now edit your own posts. Click the three-dot menu on your post and select "Edit" to open the new Markdown editor.',
+                    '**New Feature: Featured Posts!** Clicking a post from your notifications or to-do list will now highlight it at the top of your dashboard for easy viewing.',
+                    '**Improvement: Mobile Sidebar!** On smaller screens, the sidebar containing the Leaderboard and other panels is now a collapsible menu to save space.',
+                    '**Improvement: Collapsible Posts!** Very long posts are now collapsed by default with a "Show more" link to keep the feed tidy.',
+                    '**Improvement: Profile Page Feed!** The activity feed on user profile pages now displays full posts, just like on the main dashboard.',
+                    '**New:** Blog posts are now distinguished from regular fitness posts in notifications and to-do lists.',
+                    '**New:** Added more details to notifications and to-do items, including content previews.',
+                    '**Update:** The entire to-do list item is now a clickable link.',
+                    '**Fix:** Corrected a timezone bug on the Changelog page that caused dates to display incorrectly.',
+                    '**Fix:** Featured posts now correctly display even if they are blog posts.',
                 ],
             ]
         );

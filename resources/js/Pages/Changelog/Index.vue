@@ -35,7 +35,7 @@ const markAsRead = (changelogId) => {
                     <div class="space-y-8 text-gray-300">
                         <div v-for="changelog in changelogs" :key="changelog.id">
                             <div class="flex justify-between items-center">
-                                <h3 class="text-lg font-bold text-white">{{ new Date(changelog.release_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
+                                <h3 class="text-lg font-bold text-white">{{ new Date(Date.parse(changelog.release_date)).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
                                 <button v-if="!isRead(changelog.id)" @click="markAsRead(changelog.id)" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
                                     <span>Mark as Read</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">

@@ -22,12 +22,12 @@ class DashboardController extends Controller
         // Notifications
         $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->get();
         
-        $userPostIds = $user->posts()->pluck('id');
+        $userPostIds = $user->posts()->where('is_blog_post', false)->pluck('id');
         $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content')->whereIn('post_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
 
         $userCommentIds = $user->comments()->pluck('id');
-        $likesOnUserPosts = Like::with('user:id,username')->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
-        $likesOnUserComments = Like::with('user:id,username')->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserPosts = Like::with(['user:id,username', 'likeable:id,content'])->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserComments = Like::with(['user:id,username', 'likeable:id,content,post_id'])->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
         $likesOnUserContent = $likesOnUserPosts->merge($likesOnUserComments);
 
         $readChangelogIds = $user->readChangelogs()->pluck('changelog_id');
@@ -92,9 +92,10 @@ class DashboardController extends Controller
             ->map(function ($post) {
                 return [
                     'id' => 'like_post_' . $post->id,
-                    'type' => 'Like a Post',
+                    'type' => $post->is_blog_post ? 'Like a Blog Post' : 'Like a Post',
                     'description' => "Like " . $post->user->username . "'s post.",
                     'post_id' => $post->id,
+                    'content' => $post->content,
                 ];
             });
 
@@ -102,22 +103,45 @@ class DashboardController extends Controller
 
         // User-specific metrics
         $userMetrics = [
-            'days_posted' => $user->posts()->reorder()->select(DB::raw('DATE(created_at)'))->distinct()->count(),
-            'likes_on_posts' => $user->posts()->withCount('likes')->get()->sum('likes_count'),
-            'likes_given' => $user->likes()->count(),
+            'days_posted' => $user->posts()->where('is_blog_post', false)->reorder()->select(DB::raw('DATE(created_at)'))->distinct()->count(),
+            'likes_on_posts' => $user->posts()->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count'),
+            'likes_given' => $user->likes()->where(function ($query) {
+                $query->where('likeable_type', '!=', Post::class)
+                      ->orWhereExists(function ($subQuery) {
+                          $subQuery->select(DB::raw(1))
+                                   ->from('posts')
+                                   ->whereColumn('posts.id', 'likes.likeable_id')
+                                   ->where('posts.is_blog_post', false)
+                                   ->where('likes.likeable_type', Post::class);
+                      });
+            })->count(),
             'total_comments' => $user->comments()->count(),
             'changelogs_read' => $user->readChangelogs()->count(),
         ];
 
         // Leaderboard data
-        $leaderboard = User::withCount(['posts', 'comments', 'likes', 'readChangelogs'])
+        $leaderboard = User::withCount(['posts' => function ($query) {
+                $query->where('is_blog_post', false);
+            }, 'comments', 'likes' => function ($query) {
+                $query->where(function ($q) {
+                    $q->where('likeable_type', '!=', Post::class)
+                      ->orWhereExists(function ($subQuery) {
+                          $subQuery->select(DB::raw(1))
+                                   ->from('posts')
+                                   ->whereColumn('posts.id', 'likes.likeable_id')
+                                   ->where('posts.is_blog_post', false)
+                                   ->where('likes.likeable_type', Post::class);
+                      });
+                });
+            }, 'readChangelogs'])
             ->get()
             ->map(function ($u) {
-            $likesOnPosts = $u->posts()->withCount('likes')->get()->sum('likes_count');
+            $likesOnPosts = $u->posts()->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count');
             $likesOnComments = $u->comments()->withCount('likes')->get()->sum('likes_count');
 
             // Count distinct days the user has posted
             $distinctPostDays = $u->posts()
+                ->where('is_blog_post', false)
                 ->select(DB::raw('DATE(created_at) as post_date'))
                 ->distinct()
                 ->count();
@@ -145,38 +169,61 @@ class DashboardController extends Controller
             $prospectiveHasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
         }
 
-        $posts = Post::where('is_blog_post', false)
-            ->with(['user', 'comments.user', 'comments.likes', 'likes'])
-            ->withCount('likes', 'comments')
-            ->latest()
-            ->get()
-            ->map(function ($post) use ($user) {
-                // If the post's author has been deleted, skip this post entirely.
-                if (!$post->user) {
-                    return null;
-                }
+        $basePostQuery = Post::with(['user', 'comments.user', 'comments.likes', 'likes'])
+            ->withCount('likes', 'comments');
 
-                $post->is_liked = $post->likes->contains('user_id', $user->id);
-                $post->can = ['delete' => $user->can('delete', $post)];
+        $featuredPost = null;
+        $postIdsToExclude = [];
 
-                // Filter out comments from deleted users.
-                $post->comments = $post->comments->filter(function ($comment) {
-                    return $comment->user;
-                })->map(function ($comment) use ($user) {
-                    $comment->is_liked = $comment->likes->contains('user_id', $user->id);
-                    $comment->can = ['delete' => $user->can('delete', $comment)];
-                    return $comment;
-                })->values(); // Re-index the comments collection.
+        if ($request->has('post')) {
+            $featuredPost = (clone $basePostQuery)->find($request->input('post'));
+            if ($featuredPost) {
+                $postIdsToExclude[] = $featuredPost->id;
+            }
+        }
 
-                return $post;
-            })
-            ->filter(); // This removes any `null` posts from the final collection.
+        $postsQuery = (clone $basePostQuery)->where('is_blog_post', false)->whereNotIn('id', $postIdsToExclude)->latest();
+
+        if (!$featuredPost) {
+            $featuredPost = (clone $postsQuery)->first();
+            if ($featuredPost) {
+                $postsQuery->where('id', '!=', $featuredPost->id);
+            }
+        }
+        
+        $posts = $postsQuery->get();
+
+        $processPost = function ($post) use ($user) {
+            if (!$post || !$post->user) {
+                return null;
+            }
+
+            $post->is_liked = $post->likes->contains('user_id', $user->id);
+            $post->can = [
+                'delete' => $user->can('delete', $post),
+                'update' => $user->can('update', $post),
+            ];
+
+            $post->comments = $post->comments->filter(function ($comment) {
+                return $comment->user;
+            })->map(function ($comment) use ($user) {
+                $comment->is_liked = $comment->likes->contains('user_id', $user->id);
+                $comment->can = ['delete' => $user->can('delete', $comment)];
+                return $comment;
+            })->values();
+
+            return $post;
+        };
+
+        $featuredPost = $processPost($featuredPost);
+        $posts = $posts->map($processPost)->filter()->values();
 
         return Inertia::render('Dashboard', [
             'userMetrics' => $userMetrics,
             'leaderboard' => $leaderboard,
             'prospectiveHasPostedToday' => $prospectiveHasPostedToday,
-            'posts' => $posts->values(), // Re-index the posts collection.
+            'featuredPost' => $featuredPost,
+            'posts' => $posts,
             'notifications' => $notifications,
             'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
             'todos' => $todos,

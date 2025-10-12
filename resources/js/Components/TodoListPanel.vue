@@ -15,7 +15,7 @@ const getActionLink = (todo) => {
         return '#post-form'; // Assuming you have an element with id="post-form"
     }
     if (todo.post_id) {
-        return `#post-${todo.post_id}`;
+        return route('dashboard', { post: todo.post_id });
     }
     if (todo.changelog_id) {
         return route('changelog.index');
@@ -23,8 +23,8 @@ const getActionLink = (todo) => {
     return '#';
 };
 
-const isInertiaLink = (todo) => {
-    return todo.id === 'set_goal' || !!todo.changelog_id;
+const isAnchorTag = (todo) => {
+    return todo.id === 'post_today';
 };
 </script>
 
@@ -39,21 +39,24 @@ const isInertiaLink = (todo) => {
             </button>
         </div>
         <div v-if="todos.length > 0" class="space-y-3">
-            <div v-for="todo in todos" :key="todo.id" class="p-3 bg-gray-700 rounded-md text-sm">
-                <div class="flex justify-between items-center">
-                    <p class="font-bold text-amber-400">{{ todo.type }}</p>
-                </div>
-                <div class="mt-1 text-gray-300">
-                    <p>{{ todo.description }}</p>
-                </div>
-                 <div class="text-right mt-2">
-                    <Link v-if="isInertiaLink(todo)" :href="getActionLink(todo)" @click="emit('close')" class="text-sm text-indigo-400 hover:text-indigo-300">
+            <div v-for="todo in todos" :key="todo.id">
+                <component
+                    :is="isAnchorTag(todo) ? 'a' : Link"
+                    :href="getActionLink(todo)"
+                    @click="emit('close')"
+                    class="block p-3 bg-gray-700 rounded-md text-sm hover:bg-gray-600 w-full text-left"
+                >
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold text-amber-400">{{ todo.type }}</p>
+                    </div>
+                    <div class="mt-1 text-gray-300">
+                        <p>{{ todo.description }}</p>
+                        <p v-if="todo.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ todo.content.substring(0, 100) }}..."</p>
+                    </div>
+                    <div class="text-right mt-2 text-sm text-indigo-400">
                         Go &rarr;
-                    </Link>
-                    <a v-else :href="getActionLink(todo)" @click="emit('close')" class="text-sm text-indigo-400 hover:text-indigo-300">
-                        Go &rarr;
-                    </a>
-                </div>
+                    </div>
+                </component>
             </div>
         </div>
         <div v-else>

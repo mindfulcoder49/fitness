@@ -18,7 +18,7 @@ const isNew = (item) => {
 const allNotifications = computed(() => {
     const { posts, commentsOnUserPosts, likesOnUserContent, changelogs } = props.notifications;
 
-    const formattedPosts = (posts || []).map(item => ({ ...item, type: 'New Post' }));
+    const formattedPosts = (posts || []).map(item => ({ ...item, type: item.is_blog_post ? 'New Blog Post' : 'New Post' }));
     const formattedComments = (commentsOnUserPosts || []).map(item => ({ ...item, type: 'New Comment' }));
     const formattedLikes = (likesOnUserContent || []).map(item => ({ ...item, type: 'New Like' }));
     const formattedChangelogs = (changelogs || []).map(item => ({ ...item, type: 'App Update' }));
@@ -26,6 +26,25 @@ const allNotifications = computed(() => {
     return [...formattedPosts, ...formattedComments, ...formattedLikes, ...formattedChangelogs]
         .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
+
+const getNotificationLink = (item) => {
+    if (item.type === 'New Post') {
+        return route('dashboard', { post: item.id });
+    }
+    if (item.type === 'New Comment') {
+        return route('dashboard', { post: item.post.id });
+    }
+    if (item.type === 'New Like' && item.likeable_type.endsWith('Post')) {
+        return route('dashboard', { post: item.likeable_id });
+    }
+    if (item.type === 'New Like' && item.likeable_type.endsWith('Comment')) {
+        return route('dashboard', { post: item.likeable.post_id });
+    }
+    if (item.type === 'App Update') {
+        return route('changelog.index');
+    }
+    return '#';
+};
 </script>
 
 <template>
@@ -39,29 +58,32 @@ const allNotifications = computed(() => {
             </button>
         </div>
         <div v-if="allNotifications.length > 0" class="space-y-3">
-            <div v-for="item in allNotifications" :key="item.id" class="p-3 bg-gray-700 rounded-md text-sm">
+            <Link v-for="item in allNotifications" :key="item.id" :href="getNotificationLink(item)" @click="emit('close')" class="block p-3 bg-gray-700 rounded-md text-sm hover:bg-gray-600">
                 <div class="flex justify-between items-center">
                     <p class="font-bold text-indigo-400">{{ item.type }}</p>
                     <span v-if="isNew(item)" class="px-2 py-0.5 text-xs font-semibold text-white bg-green-500 rounded-full">New</span>
                 </div>
                 <div class="mt-1 text-gray-300">
-                    <template v-if="item.type === 'New Post'">
-                        <p><span class="font-semibold">{{ item.user.username }}</span> created a new post.</p>
+                    <template v-if="item.type === 'New Post' || item.type === 'New Blog Post'">
+                        <p><span class="font-semibold">{{ item.user.username }}</span> created a new {{ item.type === 'New Blog Post' ? 'blog post' : 'post' }}.</p>
+                        <p v-if="item.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'New Comment'">
                         <p><span class="font-semibold">{{ item.user.username }}</span> commented on your post: <span class="italic">"{{ item.post.content.substring(0, 30) }}..."</span></p>
+                        <p v-if="item.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'New Like'">
                         <p><span class="font-semibold">{{ item.user.username }}</span> liked your {{ item.likeable_type.split('\\').pop().toLowerCase() }}.</p>
+                        <p v-if="item.likeable && item.likeable.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.likeable.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'App Update'">
-                        <Link :href="route('changelog.index')" @click="emit('close')" class="hover:underline">
+                        <p class="hover:underline">
                             {{ item.description }}
-                        </Link>
+                        </p>
                     </template>
                 </div>
                 <p class="text-xs text-gray-500 mt-2 text-right">{{ new Date(item.created_at).toLocaleString() }}</p>
-            </div>
+            </Link>
         </div>
         <div v-else>
             <p class="text-gray-400">No new notifications in the last week.</p>

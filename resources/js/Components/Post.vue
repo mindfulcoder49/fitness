@@ -1,20 +1,36 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Link, useForm, usePage, router } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import marked from 'marked';
+import MarkdownEditor from '@/Components/MarkdownEditor.vue';
 
 const props = defineProps({
     post: Object,
 });
 
 const user = usePage().props.auth.user;
+const isEditing = ref(false);
+
+const editForm = useForm({
+    content: props.post.content,
+});
+
+// Watch for prop changes to keep the form in sync
+watch(() => props.post.content, (newContent) => {
+    editForm.content = newContent;
+});
 
 const parsedContent = computed(() => {
     if (!props.post.content) return '';
     return marked(props.post.content, { breaks: true });
 });
+
+// Logic for collapsing long posts
+const CONTENT_COLLAPSE_THRESHOLD = 600; // characters
+const isLongPost = computed(() => props.post.content && props.post.content.length > CONTENT_COLLAPSE_THRESHOLD);
+const isExpanded = ref(false);
 
 const commentForm = useForm({
     content: '',
@@ -26,6 +42,15 @@ const submitComment = () => {
     commentForm.post(route('comments.store', props.post.id), {
         preserveScroll: true,
         onSuccess: () => commentForm.reset(),
+    });
+};
+
+const updatePost = () => {
+    editForm.patch(route('posts.update', props.post.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            isEditing.value = false;
+        },
     });
 };
 
@@ -48,7 +73,7 @@ const toggleLike = (likeableId, likeableType) => {
                     {{ new Date(post.created_at).toLocaleString() }}
                 </div>
             </div>
-            <Dropdown v-if="post.can.delete" align="right" width="48">
+            <Dropdown v-if="post.can.update || post.can.delete" align="right" width="48">
                 <template #trigger>
                     <button>
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400 dark:text-gray-300" viewBox="0 0 20 20" fill="currentColor">
@@ -57,23 +82,57 @@ const toggleLike = (likeableId, likeableType) => {
                     </button>
                 </template>
                 <template #content>
-                    <DropdownLink as="button" :href="route('posts.destroy', post.id)" method="delete">
+                    <button v-if="post.can.update" @click="isEditing = true" class="block w-full px-4 py-2 text-left text-sm leading-5 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:bg-gray-100 dark:focus:bg-gray-800 transition duration-150 ease-in-out">
+                        Edit
+                    </button>
+                    <DropdownLink v-if="post.can.delete" as="button" :href="route('posts.destroy', post.id)" method="delete">
                         Delete
                     </DropdownLink>
                 </template>
             </Dropdown>
         </div>
-        <div v-if="post.content" class="mt-4 text-lg text-gray-900 dark:text-gray-100 prose dark:prose-invert max-w-none" v-html="parsedContent"></div>
 
-        <div v-if="post.image_url" class="mt-4">
-            <img :src="post.image_url" alt="Post image" class="max-w-full rounded-lg" />
-        </div>
+        <!-- View Mode -->
+        <template v-if="!isEditing">
+            <div v-if="post.content"
+                 class="mt-4 text-lg text-gray-900 dark:text-gray-100 prose dark:prose-invert max-w-none relative post-content"
+                 :class="{ 'max-h-60 overflow-hidden': isLongPost && !isExpanded }">
+                <div v-html="parsedContent"></div>
+                <div v-if="isLongPost && !isExpanded" class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-gray-800 to-transparent pointer-events-none"></div>
+            </div>
 
-        <div v-if="post.video_url" class="mt-4">
-            <video :src="post.video_url" controls class="max-w-full rounded-lg"></video>
-        </div>
+            <div v-if="isLongPost" class="mt-2">
+                <button @click="isExpanded = !isExpanded" class="text-sm font-semibold text-indigo-400 hover:text-indigo-300">
+                    {{ isExpanded ? 'Show less' : 'Show more' }}
+                </button>
+            </div>
 
-        <div class="mt-4 flex items-center space-x-4">
+            <div v-if="post.image_url" class="mt-4">
+                <img :src="post.image_url" alt="Post image" class="max-w-full rounded-lg" />
+            </div>
+
+            <div v-if="post.video_url" class="mt-4">
+                <video :src="post.video_url" controls class="max-w-full rounded-lg"></video>
+            </div>
+        </template>
+
+        <!-- Edit Mode -->
+        <template v-else>
+            <div class="mt-4">
+                <MarkdownEditor v-model="editForm.content" />
+                <div v-if="editForm.errors.content" class="mt-2 text-sm text-red-500">{{ editForm.errors.content }}</div>
+                <div class="mt-4 flex justify-end space-x-2">
+                    <button @click="isEditing = false; editForm.reset();" class="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-600 rounded-md hover:bg-gray-500">
+                        Cancel
+                    </button>
+                    <button @click="updatePost" :disabled="editForm.processing" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-500 disabled:opacity-50">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </template>
+
+        <div v-if="!isEditing" class="mt-4 flex items-center space-x-4">
             <button @click="toggleLike(post.id, 'App\\Models\\Post')" class="flex items-center text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" :class="post.is_liked ? 'text-red-500' : ''" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
@@ -87,7 +146,7 @@ const toggleLike = (likeableId, likeableType) => {
                 <span>{{ post.comments_count }}</span>
             </button>
         </div>
-        <div v-if="showComments" class="mt-4">
+        <div v-if="showComments && !isEditing" class="mt-4">
             <div v-for="comment in post.comments" :key="comment.id" class="mt-2 bg-gray-100 p-2 rounded-lg dark:bg-gray-700">
                 <div class="flex justify-between items-start">
                     <div>
@@ -141,5 +200,9 @@ const toggleLike = (likeableId, likeableType) => {
 .prose :deep(*) {
     margin-top: 1.25em;
     margin-bottom: 1.25em;
+}
+
+.post-content :deep(> :last-child) {
+    margin-bottom: 0;
 }
 </style>

@@ -11,6 +11,14 @@ class PostPolicy
 {
     use HandlesAuthorization;
 
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Post $post): bool
+    {
+        return $user->role === 'admin' || $user->is($post->user);
+    }
+
     public function delete(User $user, Post $post): bool
     {
         return $user->role === 'admin' || $user->is($post->user);

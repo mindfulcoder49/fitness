@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class PostController extends Controller
 {
@@ -63,6 +65,21 @@ class PostController extends Controller
         ]);
 
         return redirect()->route('dashboard');
+    }
+
+    public function update(Request $request, Post $post)
+    {
+        $this->authorize('update', $post);
+
+        $request->validate([
+            'content' => 'required|string|max:50000',
+        ]);
+
+        $post->update([
+            'content' => $request->input('content'),
+        ]);
+
+        return redirect()->back();
     }
 
     public function destroy(Post $post)
