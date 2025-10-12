@@ -82,12 +82,11 @@ class DashboardController extends Controller
 
         // 4. Posts not liked
         $likedPostIds = $user->likes()->where('likeable_type', Post::class)->pluck('likeable_id');
+        
         $postsToLike = Post::with('user:id,username')
             ->where('user_id', '!=', $user->id)
             ->whereNotIn('id', $likedPostIds)
-            ->where('created_at', '>=', $weekAgo)
             ->latest()
-            ->take(5) // Limit to a reasonable number
             ->get()
             ->map(function ($post) {
                 return [
