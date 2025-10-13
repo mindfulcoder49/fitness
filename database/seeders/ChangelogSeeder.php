@@ -56,5 +56,20 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-13'],
+            [
+                'changes' => [
+                    '**Major Feature: Multi-Group Functionality!** The application has been completely redesigned to support multiple groups. You can now browse, join, and participate in various public and private fitness communities.',
+                    '**New Feature: Group Tasks!** Group admins can now create and manage daily tasks for their members. When posting in a group with an active task, you can link your post to it.',
+                    '**New Feature: Group-Specific Stats!** The sidebar on group pages now includes a "Your Stats" panel showing your activity *within that group*.',
+                    '**Improvement: Group Page Redesign!** The group page has been updated with a new layout and features.',
+                    '**Improvement: Dynamic Group Info Panel!** The sidebar on group pages now dynamically displays the current daily task, if one is set.',
+                    '**Improvement: Task Visibility!** Posts that are linked to a task will now display a badge with the task\'s title.',
+                    '**Improvement: Responsive Group Page!** The sidebar on group pages is now a collapsible menu on mobile devices for a better viewing experience.',
+                ],
+            ]
+        );
     }
 }

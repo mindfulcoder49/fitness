@@ -67,8 +67,13 @@ const toggleLike = (likeableId, likeableType) => {
 <template>
     <div class="p-6 bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 dark:bg-gray-800">
         <div class="flex justify-between">
-            <div class="flex items-center">
+            <div class="flex items-center flex-wrap">
                 <Link :href="route('users.show', { user: post.user.username })" class="font-bold text-gray-800 dark:text-gray-200 hover:underline">{{ post.user.username }}</Link>
+                <span v-if="post.group" class="text-gray-500 dark:text-gray-400 mx-2">&middot;</span>
+                <Link v-if="post.group" :href="route('groups.show', { group: post.group.id })" class="text-sm text-indigo-400 hover:underline">{{ post.group.name }}</Link>
+                <div v-if="post.group_task" class="ml-2 text-xs bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">
+                    Task: {{ post.group_task.title }}
+                </div>
                 <div class="ml-2 text-sm text-gray-600 dark:text-gray-400">
                     {{ new Date(post.created_at).toLocaleString() }}
                 </div>

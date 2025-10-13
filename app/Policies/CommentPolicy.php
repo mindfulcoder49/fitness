@@ -19,6 +19,17 @@ class CommentPolicy
      */
     public function delete(User $user, Comment $comment): bool
     {
-        return $user->role === 'admin' || $user->is($comment->user);
+        if ($user->is($comment->user)) {
+            return true;
+        }
+
+        // Check if the user is an admin of the comment's group.
+        if ($comment->post && $comment->post->group) {
+            $group = $comment->post->group;
+            $membership = $user->groups()->where('group_id', $group->id)->first();
+            return $membership && ($membership->pivot->role === 'admin' || $group->creator_id === $user->id);
+        }
+
+        return false;
     }
 }

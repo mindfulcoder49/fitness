@@ -24,11 +24,9 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'role',
-        'daily_fitness_goal',
+        'is_admin',
         'can_post_images',
         'can_post_videos',
-        'invitation_sent_at',
         'notifications_last_checked_at',
     ];
 
@@ -43,21 +41,18 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'can_post_images' => 'boolean',
-            'can_post_videos' => 'boolean',
-            'invitation_sent_at' => 'datetime',
-            'notifications_last_checked_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+        'is_admin' => 'boolean',
+        'can_post_images' => 'boolean',
+        'can_post_videos' => 'boolean',
+        'notifications_last_checked_at' => 'datetime',
+    ];
 
     public function posts(): HasMany
     {
@@ -76,6 +71,19 @@ class User extends Authenticatable
 
     public function readChangelogs(): BelongsToMany
     {
-        return $this->belongsToMany(Changelog::class);
+        return $this->belongsToMany(Changelog::class, 'changelog_user')->withPivot('read_at');
+    }
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class)
+            ->using(GroupUser::class)
+            ->withPivot('role', 'location', 'points')
+            ->withTimestamps();
+    }
+
+    public function userAvailabilities(): HasMany
+    {
+        return $this->hasMany(UserAvailability::class);
     }
 }

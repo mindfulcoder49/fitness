@@ -50,22 +50,6 @@ class ProfileController extends Controller
     }
 
     /**
-     * Update the user's fitness goal.
-     */
-    public function updateFitnessGoal(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'daily_fitness_goal' => ['required', 'string', 'max:1000'],
-        ]);
-
-        $request->user()->update([
-            'daily_fitness_goal' => $request->input('daily_fitness_goal'),
-        ]);
-
-        return Redirect::route('profile.edit');
-    }
-
-    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

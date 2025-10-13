@@ -19,6 +19,9 @@ class DashboardController extends Controller
         $user = Auth::user();
         $weekAgo = now()->subWeek();
 
+        // User's groups
+        $groups = $user->groups()->with('creator')->get();
+
         // Notifications
         $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->get();
         
@@ -100,129 +103,8 @@ class DashboardController extends Controller
 
         $todos = array_merge($todos, $postsToLike->all());
 
-        // User-specific metrics
-        $userMetrics = [
-            'days_posted' => $user->posts()->where('is_blog_post', false)->reorder()->select(DB::raw('DATE(created_at)'))->distinct()->count(),
-            'likes_on_posts' => $user->posts()->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count'),
-            'likes_given' => $user->likes()->where(function ($query) {
-                $query->where('likeable_type', '!=', Post::class)
-                      ->orWhereExists(function ($subQuery) {
-                          $subQuery->select(DB::raw(1))
-                                   ->from('posts')
-                                   ->whereColumn('posts.id', 'likes.likeable_id')
-                                   ->where('posts.is_blog_post', false)
-                                   ->where('likes.likeable_type', Post::class);
-                      });
-            })->count(),
-            'total_comments' => $user->comments()->count(),
-            'changelogs_read' => $user->readChangelogs()->count(),
-        ];
-
-        // Leaderboard data
-        $leaderboard = User::withCount(['posts' => function ($query) {
-                $query->where('is_blog_post', false);
-            }, 'comments', 'likes' => function ($query) {
-                $query->where(function ($q) {
-                    $q->where('likeable_type', '!=', Post::class)
-                      ->orWhereExists(function ($subQuery) {
-                          $subQuery->select(DB::raw(1))
-                                   ->from('posts')
-                                   ->whereColumn('posts.id', 'likes.likeable_id')
-                                   ->where('posts.is_blog_post', false)
-                                   ->where('likes.likeable_type', Post::class);
-                      });
-                });
-            }, 'readChangelogs'])
-            ->get()
-            ->map(function ($u) {
-            $likesOnPosts = $u->posts()->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count');
-            $likesOnComments = $u->comments()->withCount('likes')->get()->sum('likes_count');
-
-            // Count distinct days the user has posted
-            $distinctPostDays = $u->posts()
-                ->where('is_blog_post', false)
-                ->select(DB::raw('DATE(created_at) as post_date'))
-                ->distinct()
-                ->count();
-
-            // Simple scoring: distinct post days=3, comments=1, likes given=0.5, likes received=1, changelog read=1
-            $score = ($distinctPostDays * 3) +
-                 ($u->comments_count * 1) +
-                 ($u->likes_count * 0.5) +
-                 ($likesOnPosts * 1) +
-                 ($likesOnComments * 1) +
-                 ($u->read_changelogs_count * 0.5);
-
-            return [
-                'id' => $u->id,
-                'name' => $u->username,
-                'score' => round($score),
-            ];
-            })
-            ->sortByDesc('score')
-            ->values()
-            ->take(20);
-
-        $prospectiveHasPostedToday = false;
-        if ($user->role === 'prospective') {
-            $prospectiveHasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
-        }
-
-        $basePostQuery = Post::with(['user', 'comments.user', 'comments.likes', 'likes'])
-            ->withCount('likes', 'comments');
-
-        $featuredPost = null;
-        $postIdsToExclude = [];
-
-        if ($request->has('post')) {
-            $featuredPost = (clone $basePostQuery)->find($request->input('post'));
-            if ($featuredPost) {
-                $postIdsToExclude[] = $featuredPost->id;
-            }
-        }
-
-        $postsQuery = (clone $basePostQuery)->where('is_blog_post', false)->whereNotIn('id', $postIdsToExclude)->latest();
-
-        if (!$featuredPost) {
-            $featuredPost = (clone $postsQuery)->first();
-            if ($featuredPost) {
-                $postsQuery->where('id', '!=', $featuredPost->id);
-            }
-        }
-        
-        $posts = $postsQuery->get();
-
-        $processPost = function ($post) use ($user) {
-            if (!$post || !$post->user) {
-                return null;
-            }
-
-            $post->is_liked = $post->likes->contains('user_id', $user->id);
-            $post->can = [
-                'delete' => $user->can('delete', $post),
-                'update' => $user->can('update', $post),
-            ];
-
-            $post->comments = $post->comments->filter(function ($comment) {
-                return $comment->user;
-            })->map(function ($comment) use ($user) {
-                $comment->is_liked = $comment->likes->contains('user_id', $user->id);
-                $comment->can = ['delete' => $user->can('delete', $comment)];
-                return $comment;
-            })->values();
-
-            return $post;
-        };
-
-        $featuredPost = $processPost($featuredPost);
-        $posts = $posts->map($processPost)->filter()->values();
-
         return Inertia::render('Dashboard', [
-            'userMetrics' => $userMetrics,
-            'leaderboard' => $leaderboard,
-            'prospectiveHasPostedToday' => $prospectiveHasPostedToday,
-            'featuredPost' => $featuredPost,
-            'posts' => $posts,
+            'groups' => $groups,
             'notifications' => $notifications,
             'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
             'todos' => $todos,

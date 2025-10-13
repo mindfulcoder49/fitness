@@ -5,16 +5,17 @@ import { Head } from '@inertiajs/vue3';
 
 defineProps({
     posts: Array,
+    group: Object, // Optional group prop
 });
 </script>
 
 <template>
-    <Head title="Blog" />
+    <Head :title="group ? `${group.name} Blog` : 'Blog'" />
 
     <AuthenticatedLayout>
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                Blog
+                <span v-if="group">{{ group.name }} &mdash; </span>Blog
             </h2>
         </template>
 

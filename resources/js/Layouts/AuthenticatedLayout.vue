@@ -44,6 +44,12 @@ console.log('User object in AuthenticatedLayout:', user);
                                     Dashboard
                                 </NavLink>
                                 <NavLink
+                                    :href="route('groups.index')"
+                                    :active="route().current('groups.index')"
+                                >
+                                    Groups
+                                </NavLink>
+                                <NavLink
                                     :href="route('blog.index')"
                                     :active="route().current('blog.index')"
                                 >
@@ -56,7 +62,7 @@ console.log('User object in AuthenticatedLayout:', user);
                                     Changelog
                                 </NavLink>
                                 <NavLink
-                                    v-if="user.role === 'admin'"
+                                    v-if="user.is_admin"
                                     :href="route('admin.dashboard')"
                                     :active="route().current('admin.dashboard')"
                                 >
@@ -170,6 +176,12 @@ console.log('User object in AuthenticatedLayout:', user);
                             Dashboard
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
+                            :href="route('groups.index')"
+                            :active="route().current('groups.index')"
+                        >
+                            Groups
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
                             :href="route('blog.index')"
                             :active="route().current('blog.index')"
                         >
@@ -182,7 +194,7 @@ console.log('User object in AuthenticatedLayout:', user);
                             Changelog
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            v-if="user.role === 'admin'"
+                            v-if="user.is_admin"
                             :href="route('admin.dashboard')"
                             :active="route().current('admin.dashboard')"
                         >

@@ -1,23 +1,13 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import Post from '@/Components/Post.vue';
-import Leaderboard from '@/Components/Leaderboard.vue';
-import UserMetrics from '@/Components/UserMetrics.vue';
+import { Head, Link, usePage, router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 import NotificationsPanel from '@/Components/NotificationsPanel.vue';
 import TodoListPanel from '@/Components/TodoListPanel.vue';
-import ApplicationInvitation from '@/Components/ApplicationInvitation.vue';
-import InfoPanel from '@/Components/InfoPanel.vue';
-import { Head, usePage, router, useForm, Link } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-
-const user = computed(() => usePage().props.auth.user);
+import CreateGroupForm from '@/Components/CreateGroupForm.vue';
 
 const props = defineProps({
-    featuredPost: Object,
-    posts: Array,
-    userMetrics: Object,
-    leaderboard: Array,
-    prospectiveHasPostedToday: Boolean,
+    groups: Array,
     notifications: Object,
     notificationsLastCheckedAt: String,
     todos: Array,
@@ -25,18 +15,15 @@ const props = defineProps({
 
 const showNotifications = ref(false);
 const showTodos = ref(false);
-const showMobileSidebar = ref(false);
+const showCreateGroupForm = ref(false);
 
 const newNotificationCount = computed(() => {
     if (!props.notifications) return 0;
-
     const lastChecked = props.notificationsLastCheckedAt;
-
     const newPosts = (props.notifications.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
     const newComments = (props.notifications.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
     const newLikes = (props.notifications.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
-    const newChangelogs = (props.notifications.changelogs || []).length; // Changelogs are always "new" until read
-
+    const newChangelogs = (props.notifications.changelogs || []).length;
     return newPosts + newComments + newLikes + newChangelogs;
 });
 
@@ -49,7 +36,6 @@ const toggleNotifications = () => {
         router.post(route('notifications.mark-as-read'), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                // Manually update prop to avoid full page reload
                 usePage().props.notificationsLastCheckedAt = new Date().toISOString();
             }
         });
@@ -60,28 +46,6 @@ const toggleTodos = () => {
     showNotifications.value = false;
     showTodos.value = !showTodos.value;
 };
-
-const form = useForm({
-    content: '',
-    image: null,
-    video: null,
-});
-
-const goalForm = useForm({
-    daily_fitness_goal: '',
-});
-
-const submitGoal = () => {
-    goalForm.patch(route('profile.update-fitness-goal'), {
-        onSuccess: () => goalForm.reset(),
-    });
-};
-
-const submit = () => {
-    form.post(route('posts.store'), {
-        onSuccess: () => form.reset('content', 'image', 'video'),
-    });
-};
 </script>
 
 <template>
@@ -91,7 +55,7 @@ const submit = () => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    Update Feed
+                    Your Groups
                 </h2>
                 <div class="flex items-center space-x-2 sm:space-x-4">
                     <button @click="toggleTodos" class="relative p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
@@ -110,124 +74,39 @@ const submit = () => {
                             {{ newNotificationCount }}
                         </span>
                     </button>
-                    <!-- Hamburger menu for mobile sidebar -->
-                    <button @click="showMobileSidebar = !showMobileSidebar" class="lg:hidden p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </button>
                 </div>
             </div>
         </template>
 
         <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastCheckedAt" @close="showNotifications = false" />
         <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" />
+        <CreateGroupForm :show="showCreateGroupForm" @close="showCreateGroupForm = false" />
 
         <div class="py-12">
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Main content -->
-                <div class="lg:col-span-2 space-y-6">
-                    <!-- Featured Post -->
-                    <div v-if="featuredPost" class="bg-gray-900/50 sm:rounded-lg">
-                         <Post :post="featuredPost" />
-                    </div>
-
-                    <!-- User Metrics -->
-                    <UserMetrics :metrics="userMetrics" />
-
-                    <!-- Onboarding: Set Fitness Goal -->
-                    <div v-if="!user.daily_fitness_goal" class="bg-indigo-900/50 p-6 shadow-sm sm:rounded-lg">
-                        <h3 class="text-2xl font-bold text-white">Welcome, Prospective Member!</h3>
-                        <p class="mt-2 text-gray-300">To begin your journey, please describe your daily fitness activity. This is your personal commitment.</p>
-                        <form @submit.prevent="submitGoal" class="mt-4">
-                            <textarea
-                                v-model="goalForm.daily_fitness_goal"
-                                placeholder="e.g., 'Run 2 miles every morning' or '30 minutes of yoga'"
-                                class="w-full rounded-md border-gray-600 bg-gray-900 text-gray-100 shadow-sm focus:border-indigo-600 focus:ring-indigo-600"
-                            ></textarea>
-                            <button type="submit" class="mt-2 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-400" :disabled="goalForm.processing">Set My Goal</button>
-                        </form>
-                    </div>
-
-                    <!-- Display Fitness Goal -->
-                    <div v-if="user.daily_fitness_goal" class="bg-gray-800 p-6 shadow-sm sm:rounded-lg">
-                        <div class="flex justify-between items-center">
-                            <div>
-                                <h3 class="text-lg font-semibold text-indigo-400">Your Daily Fitness Goal</h3>
-                                <p class="mt-2 text-xl text-white">{{ user.daily_fitness_goal }}</p>
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900 dark:text-gray-100">
+                        <h3 class="text-2xl font-bold">Select a Group</h3>
+                        <p class="mt-2 text-gray-400">
+                            Choose a group to view its feed, tasks, and leaderboard.
+                        </p>
+                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <Link v-for="group in groups" :key="group.id" :href="route('groups.show', group.id)" class="block p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                                <h4 class="text-xl font-semibold text-white">{{ group.name }}</h4>
+                                <p class="mt-2 text-gray-300">{{ group.description }}</p>
+                                <div class="mt-4 text-sm text-gray-400">
+                                    Created by: {{ group.creator.name }}
+                                </div>
+                            </Link>
+                            <!-- Add a card for creating/joining groups -->
+                             <div class="flex items-center justify-center p-6 bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-lg">
+                                <div class="text-center">
+                                    <p class="text-gray-400">Want to start a new community?</p>
+                                    <button @click="showCreateGroupForm = true" class="mt-2 text-indigo-400 hover:text-indigo-300 font-semibold">Create a Group</button>
+                                    <p class="mt-4 text-gray-400">Or find one to join.</p>
+                                    <Link :href="route('groups.index')" class="mt-2 text-indigo-400 hover:text-indigo-300 font-semibold">Browse Public Groups</Link>
+                                </div>
                             </div>
-                            <Link :href="route('profile.edit')" class="text-sm text-gray-400 hover:text-white">Edit Goal</Link>
-                        </div>
-                    </div>
-
-                    <!-- Post Creation Form -->
-                    <div id="post-form" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
-                        <div class="p-6">
-                            <div v-if="user.role === 'prospective' && prospectiveHasPostedToday" class="text-center text-gray-500 dark:text-gray-400">
-                                You have posted your update for today. Come back tomorrow!
-                            </div>
-                            <form v-else @submit.prevent="submit">
-                                <div v-if="user.role === 'prospective' && user.daily_fitness_goal">
-                                    <p class="text-gray-900 dark:text-gray-100">
-                                        I completed my daily fitness goal: {{ user.daily_fitness_goal }} and...
-                                    </p>
-                                </div>
-                                <textarea
-                                    v-model="form.content"
-                                    :placeholder="user.role === 'prospective' && user.daily_fitness_goal ? '...add more details about your activity.' : 'Post an update on your fitness activity...'"
-                                    class="w-full border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100 dark:focus:border-indigo-600 dark:focus:ring-indigo-600"
-                                    :disabled="user.role === 'prospective' && prospectiveHasPostedToday"
-                                ></textarea>
-                                <div class="mt-4 flex items-center justify-between">
-                                    <div class="flex items-center space-x-4">
-                                        <div v-if="user.can_post_images">
-                                            <label for="image-upload" class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                                Add Image
-                                            </label>
-                                            <input id="image-upload" type="file" class="hidden" @input="form.image = $event.target.files[0]" accept="image/*" />
-                                        </div>
-                                         <div v-if="user.can_post_videos">
-                                            <label for="video-upload" class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
-                                                Add Video
-                                            </label>
-                                            <input id="video-upload" type="file" class="hidden" @input="form.video = $event.target.files[0]" accept="video/*" />
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-md dark:bg-gray-200 dark:text-gray-800" :disabled="form.processing || (user.role === 'prospective' && prospectiveHasPostedToday)">Post</button>
-                                </div>
-                                 <div v-if="form.progress" class="mt-2 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                                    <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: form.progress.percentage + '%' }"></div>
-                                </div>
-                                <div v-if="form.image" class="mt-2 text-sm text-gray-500">Image selected: {{ form.image.name }}</div>
-                                <div v-if="form.video" class="mt-2 text-sm text-gray-500">Video selected: {{ form.video.name }}</div>
-                                <p v-if="form.errors.daily_limit" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.daily_limit }}</p>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- Posts Feed -->
-                    <div class="space-y-6">
-                        <h3 v-if="posts.length > 0" class="text-lg font-semibold text-gray-300">Recent Activity</h3>
-                        <Post v-for="post in posts" :key="post.id" :post="post" />
-                    </div>
-                </div>
-
-                <!-- Sidebar -->
-                <div :class="[
-                    'lg:col-span-1 lg:order-none',
-                    'fixed top-0 right-0 h-full w-80 bg-gray-900 z-40 transform transition-transform lg:relative lg:translate-x-0 lg:bg-transparent lg:p-0 lg:z-auto',
-                    showMobileSidebar ? 'translate-x-0' : 'translate-x-full'
-                ]">
-                    <div class="h-full overflow-y-auto ">
-                        <button @click="showMobileSidebar = false" class="lg:hidden absolute top-4 right-4 text-gray-300 hover:text-white z-50">
-                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                        <div class="px-6 lg:p-0 lg:mt-0 space-y-6">
-                            <Leaderboard :users="leaderboard" />
-                            <ApplicationInvitation />
-                            <InfoPanel />
                         </div>
                     </div>
                 </div>

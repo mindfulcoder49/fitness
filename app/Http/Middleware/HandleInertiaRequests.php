@@ -32,10 +32,6 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if ($user) {
-            Log::info('Sharing user data with Inertia:', $user->toArray());
-        }
-
         return array_merge(parent::share($request), [
             'auth' => [
                 'user' => $user ? [
@@ -43,11 +39,9 @@ class HandleInertiaRequests extends Middleware
                     'name' => $user->name,
                     'username' => $user->username,
                     'email' => $user->email,
-                    'role' => $user->role,
-                    'daily_fitness_goal' => $user->daily_fitness_goal,
+                    'is_admin' => $user->is_admin,
                     'can_post_images' => $user->can_post_images,
                     'can_post_videos' => $user->can_post_videos,
-                    'invitation_sent_at' => $user->invitation_sent_at,
                 ] : null,
             ],
         ]);

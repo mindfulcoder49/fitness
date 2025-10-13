@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Post;
 use App\Models\Comment;
-use App\Models\Like;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -16,65 +15,64 @@ class UserController extends Controller
     {
         $visitingUser = Auth::user();
 
-        $user->loadCount(['posts', 'comments', 'likes', 'readChangelogs']);
+        // Find common groups
+        $visitingUserGroupIds = $visitingUser->groups()->pluck('groups.id');
+        $profileUserGroups = $user->groups()->whereIn('groups.id', $visitingUserGroupIds)->get();
 
-        $posts = $user->posts()->where('is_blog_post', false)->get();
-        $comments = $user->comments()->with('post.user')->get();
-        $likes = $user->likes()->with('likeable.user')->get();
+        $activityByGroup = $profileUserGroups->mapWithKeys(function ($group) use ($user, $visitingUser) {
+            $posts = $user->posts()
+                ->with(['user', 'comments.user', 'comments.likes', 'likes'])
+                ->withCount('likes', 'comments')
+                ->where('group_id', $group->id)
+                ->where('is_blog_post', false)
+                ->get();
 
-        $activityFeed = collect()
-            ->concat($posts->map(function ($post) {
-                $post->activity_type = 'post';
+            // Process posts to add required properties for the Post component
+            $processedPosts = $posts->map(function ($post) use ($visitingUser) {
+                if (!$post || !$post->user) return null;
+                $post->is_liked = $post->likes->contains('user_id', $visitingUser->id);
+                $post->can = [
+                    'delete' => $visitingUser->can('delete', $post),
+                    'update' => $visitingUser->can('update', $post),
+                ];
+                $post->comments = $post->comments->filter(fn ($c) => $c->user)->map(function ($comment) use ($visitingUser) {
+                    $comment->is_liked = $comment->likes->contains('user_id', $visitingUser->id);
+                    $comment->can = ['delete' => $visitingUser->can('delete', $comment)];
+                    return $comment;
+                })->values();
                 return $post;
-            }))
-            ->concat($comments->map(function ($comment) {
-                $comment->activity_type = 'comment';
-                return $comment;
-            }))
-            ->concat($likes->map(function ($like) {
-                $like->activity_type = 'like';
-                return $like;
-            }))
-            ->sortByDesc('created_at')
-            ->take(30)
-            ->values();
+            })->filter();
 
-        $processPost = function ($post) use ($visitingUser) {
-            if (!$post || !$post->user) {
-                return null;
-            }
+            $comments = $user->comments()->whereHas('post', fn ($q) => $q->where('group_id', $group->id))->with('post.user')->get();
+            
+            $likes = $user->likes()->whereHasMorph(
+                'likeable',
+                [Post::class, Comment::class],
+                function ($query, $type) use ($group) {
+                    if ($type === Post::class) {
+                        $query->where('group_id', $group->id);
+                    } elseif ($type === Comment::class) {
+                        $query->whereHas('post', function ($subQuery) use ($group) {
+                            $subQuery->where('group_id', $group->id);
+                        });
+                    }
+                }
+            )->with('likeable.user')->get();
 
-            $post->loadCount('likes', 'comments');
-            $post->load('likes', 'comments.user', 'comments.likes');
+            $activityFeed = collect()->concat($processedPosts->map(fn ($p) => $p->setAttribute('activity_type', 'post')))
+                ->concat($comments->map(fn ($c) => $c->setAttribute('activity_type', 'comment')))
+                ->concat($likes->map(fn ($l) => $l->setAttribute('activity_type', 'like')))
+                ->sortByDesc('created_at')->take(20)->values();
 
-            $post->is_liked = $post->likes->contains('user_id', $visitingUser->id);
-            $post->can = [
-                'delete' => $visitingUser->can('delete', $post),
-                'update' => $visitingUser->can('update', $post),
-            ];
-
-            $post->comments = $post->comments->filter(function ($comment) {
-                return $comment->user;
-            })->map(function ($comment) use ($visitingUser) {
-                $comment->is_liked = $comment->likes->contains('user_id', $visitingUser->id);
-                $comment->can = ['delete' => $visitingUser->can('delete', $comment)];
-                return $comment;
-            })->values();
-
-            return $post;
-        };
-
-        $activityFeed = $activityFeed->map(function ($activity) use ($processPost) {
-            if ($activity->activity_type === 'post') {
-                return $processPost($activity);
-            }
-            return $activity;
-        })->filter();
-
+            return [$group->id => [
+                'group' => $group,
+                'activity' => $activityFeed,
+            ]];
+        });
 
         return Inertia::render('Users/Show', [
-            'profileUser' => $user,
-            'activityFeed' => $activityFeed,
+            'profileUser' => $user->loadCount(['posts', 'comments', 'likes']),
+            'activityByGroup' => $activityByGroup,
         ]);
     }
 }

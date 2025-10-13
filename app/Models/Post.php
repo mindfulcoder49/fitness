@@ -16,6 +16,8 @@ class Post extends Model
 
     protected $fillable = [
         'user_id',
+        'group_id',
+        'group_task_id',
         'content',
         'image_path',
         'video_path',
@@ -45,6 +47,16 @@ class Post extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class);
+    }
+
+    public function groupTask(): BelongsTo
+    {
+        return $this->belongsTo(GroupTask::class);
     }
 
     public function likes(): MorphMany
