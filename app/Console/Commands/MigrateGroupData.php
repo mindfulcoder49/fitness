@@ -102,6 +102,10 @@ class MigrateGroupData extends Command
 
                 // 2. Migrate users to the group
                 foreach ($users as $userData) {
+                    // Add a check to skip null entries in the JSON file
+                    if (!$userData) {
+                        continue;
+                    }
                     $user = User::find($userData['id']);
                     if ($user) {
                         $user->groups()->attach($group->id, [
