@@ -80,54 +80,64 @@ class MigrateGroupData extends Command
         $users = $data['users'];
         $posts = $data['posts'];
 
-        DB::transaction(function () use ($users, $posts) {
-            // 1. Create a default group
-            $firstUser = User::find(1);
-            if (!$firstUser) {
-                $this->error('Admin user (ID: 1) not found. Cannot create default group.');
-                return;
-            }
-
-            $group = Group::create([
-                'name' => 'Original Fitness Group',
-                'description' => 'The first group from the original system.',
-                'creator_id' => $firstUser->id,
-                'is_public' => true,
-            ]);
-            $this->info("Created default group: '{$group->name}'");
-
-            // 2. Migrate users to the group
-            foreach ($users as $userData) {
-                $user = User::find($userData['id']);
-                if ($user) {
-                    $user->groups()->attach($group->id, [
-                        'role' => $userData['role'] ?? 'member',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+        try {
+            DB::transaction(function () use ($users, $posts) {
+                // 1. Find an admin or the first user to be the group creator
+                $groupCreator = User::where('is_admin', true)->orderBy('id', 'asc')->first();
+                if (!$groupCreator) {
+                    $groupCreator = User::orderBy('id', 'asc')->first();
                 }
-            }
-            $this->info('Migrated ' . count($users) . ' users to the default group.');
 
-            // 3. Assign posts to the group
-            $postIds = array_column($posts, 'id');
-            Post::whereIn('id', $postIds)->update(['group_id' => $group->id]);
-            $this->info('Assigned ' . count($postIds) . ' posts to the default group.');
+                if (!$groupCreator) {
+                    throw new \Exception('No users found in the database. Cannot create default group.');
+                }
 
-            // 4. Create a default group task from the first user's goal
-            $adminUserData = collect($users)->firstWhere('id', 1);
-            if ($adminUserData && !empty($adminUserData['daily_fitness_goal'])) {
-                GroupTask::create([
-                    'group_id' => $group->id,
-                    'title' => 'Daily Activity',
-                    'description' => $adminUserData['daily_fitness_goal'],
-                    'is_current' => true,
+                $group = Group::create([
+                    'name' => 'Original Fitness Group',
+                    'description' => 'The first group from the original system.',
+                    'creator_id' => $groupCreator->id,
+                    'is_public' => true,
                 ]);
-                $this->info("Created a default group task from admin's old goal.");
-            }
-        });
+                $this->info("Created default group: '{$group->name}'");
 
-        File::delete($this->filePath);
-        $this->info('Import complete and migration file deleted.');
+                // 2. Migrate users to the group
+                foreach ($users as $userData) {
+                    $user = User::find($userData['id']);
+                    if ($user) {
+                        $user->groups()->attach($group->id, [
+                            'role' => $userData['role'] ?? 'member',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+                }
+                $this->info('Migrated ' . count($users) . ' users to the default group.');
+
+                // 3. Assign posts to the group
+                $postIds = array_column($posts, 'id');
+                Post::whereIn('id', $postIds)->update(['group_id' => $group->id]);
+                $this->info('Assigned ' . count($postIds) . ' posts to the default group.');
+
+                // 4. Create a default group task from the creator's old goal
+                $creatorData = collect($users)->firstWhere('id', $groupCreator->id);
+                if ($creatorData && !empty($creatorData['daily_fitness_goal'])) {
+                    GroupTask::create([
+                        'group_id' => $group->id,
+                        'title' => 'Daily Activity',
+                        'description' => $creatorData['daily_fitness_goal'],
+                        'is_current' => true,
+                    ]);
+                    $this->info("Created a default group task from the group creator's old goal.");
+                }
+            });
+
+            // If transaction is successful, delete the file.
+            File::delete($this->filePath);
+            $this->info('Import complete and migration file deleted.');
+
+        } catch (\Exception $e) {
+            $this->error('An error occurred during import: ' . $e->getMessage());
+            $this->error('Import failed. The migration file has been preserved.');
+        }
     }
 }
