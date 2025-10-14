@@ -233,9 +233,14 @@ class GroupController extends Controller
             ->get();
 
         $userCommentIdsInGroup = $user->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id))->pluck('id');
-        $likesOnUserContent = Like::with(['user:id,username', 'likeable' => function ($query) {
-                $query->with('post:id,group_id');
-            }])
+        $likesOnUserContent = Like::with([
+            'user:id,username',
+            'likeable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    \App\Models\Comment::class => ['post:id,group_id'],
+                ]);
+            }
+        ])
             ->where(function ($query) use ($userPostIdsInGroup, $userCommentIdsInGroup) {
                 $query->where(function ($q) use ($userPostIdsInGroup) {
                     $q->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIdsInGroup);
