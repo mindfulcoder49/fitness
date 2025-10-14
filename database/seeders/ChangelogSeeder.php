@@ -61,13 +61,28 @@ class ChangelogSeeder extends Seeder
             ['release_date' => '2025-10-13'],
             [
                 'changes' => [
-                    '**Major Feature: Multi-Group Functionality!** The application has been completely redesigned to support multiple groups. You can now browse, join, and participate in various public and private fitness communities.',
+                    '**Major Feature: Multi-Group Platform!** The application has been redesigned to support multiple groups. You can now browse, join, and participate in various public and private communities.',
                     '**New Feature: Group Tasks!** Group admins can now create and manage daily tasks for their members. When posting in a group with an active task, you can link your post to it.',
                     '**New Feature: Group-Specific Stats!** The sidebar on group pages now includes a "Your Stats" panel showing your activity *within that group*.',
                     '**Improvement: Group Page Redesign!** The group page has been updated with a new layout and features.',
                     '**Improvement: Dynamic Group Info Panel!** The sidebar on group pages now dynamically displays the current daily task, if one is set.',
                     '**Improvement: Task Visibility!** Posts that are linked to a task will now display a badge with the task\'s title.',
                     '**Improvement: Responsive Group Page!** The sidebar on group pages is now a collapsible menu on mobile devices for a better viewing experience.',
+                ],
+            ]
+        );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-14'],
+            [
+                'changes' => [
+                    '**New Feature: Group Chat!** Each group now has its own real-time chat room. Click the "Chat" link in the group header to join the conversation.',
+                    '**Update: Welcome Page!** The public-facing welcome page has been completely rewritten to reflect the new multi-group platform.',
+                    '**Fix: Daily Post Tracking!** The logic that checks if you\'ve posted \'today\' now correctly uses the Boston timezone (America/New_York) instead of UTC. This ensures daily post limits and to-do items work as expected.',
+                    '**Improvement: Link Reliability!** Links to posts from notifications and the to-do list now reliably feature the correct post at the top of the page.',
+                    '**New Feature: Group Blog Navigation!** A \'Back to Group\' link has been added to the header of group blog pages for easier navigation.',
+                    '**Fix: Create Group Dialog!** Corrected a minor display issue in the create group dialog.',
+                    '**Fix: Point Calculations!** Fixed point calculations that regressed during redesign',
                 ],
             ]
         );

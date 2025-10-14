@@ -11,6 +11,18 @@ class GroupPolicy
     use HandlesAuthorization;
 
     /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Group $group): bool
+    {
+        if ($group->is_public) {
+            return true;
+        }
+
+        return $user->groups()->where('group_id', $group->id)->exists();
+    }
+
+    /**
      * Check if the user is an admin or creator of the group.
      */
     protected function isGroupAdmin(User $user, Group $group): bool

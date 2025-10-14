@@ -30,6 +30,7 @@ class MigrationConsolidationSeeder extends Seeder
         $newMigrations = [
             '2024_05_22_000001_create_cult_tables',
             '2024_05_22_000002_add_cult_columns_to_users_table',
+            '2025_10_12_000000_create_group_system_tables',
         ];
 
         // Get migrations that have already been run.

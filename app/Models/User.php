@@ -78,12 +78,17 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Group::class)
             ->using(GroupUser::class)
-            ->withPivot('role', 'location', 'points')
+            ->withPivot('role', 'location', 'points', 'group_messages_last_checked_at')
             ->withTimestamps();
     }
 
     public function userAvailabilities(): HasMany
     {
         return $this->hasMany(UserAvailability::class);
+    }
+
+    public function groupMessages(): HasMany
+    {
+        return $this->hasMany(GroupMessage::class);
     }
 }

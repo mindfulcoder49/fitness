@@ -14,6 +14,12 @@ const getActionLink = (todo) => {
     if (todo.id === 'post_today') {
         return '#post-form'; // Assuming you have an element with id="post-form"
     }
+    if (todo.post_id && todo.group_id) {
+        if (todo.type === 'Like a Blog Post') {
+            return route('groups.blog', { group: todo.group_id, post: todo.post_id });
+        }
+        return route('groups.show', { group: todo.group_id, post: todo.post_id });
+    }
     if (todo.post_id) {
         return route('dashboard', { post: todo.post_id });
     }

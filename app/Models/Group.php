@@ -28,7 +28,7 @@ class Group extends Model
     {
         return $this->belongsToMany(User::class)
             ->using(GroupUser::class)
-            ->withPivot('role', 'location', 'points')
+            ->withPivot('role', 'location', 'points', 'group_messages_last_checked_at')
             ->withTimestamps();
     }
 
@@ -50,5 +50,10 @@ class Group extends Model
     public function userAvailabilities(): HasMany
     {
         return $this->hasMany(UserAvailability::class);
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(GroupMessage::class);
     }
 }

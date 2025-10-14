@@ -26,11 +26,13 @@ class DashboardController extends Controller
         $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->get();
         
         $userPostIds = $user->posts()->where('is_blog_post', false)->pluck('id');
-        $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content')->whereIn('post_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $commentsOnUserPosts = Comment::with(['user:id,username', 'post:id,content,group_id'])->whereIn('post_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
 
         $userCommentIds = $user->comments()->pluck('id');
-        $likesOnUserPosts = Like::with(['user:id,username', 'likeable:id,content'])->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
-        $likesOnUserComments = Like::with(['user:id,username', 'likeable:id,content,post_id'])->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserPosts = Like::with(['user:id,username', 'likeable:id,content,group_id'])->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
+        $likesOnUserComments = Like::with(['user:id,username', 'likeable' => function ($query) {
+                $query->with('post:id,group_id');
+            }])->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
         $likesOnUserContent = $likesOnUserPosts->merge($likesOnUserComments);
 
         $readChangelogIds = $user->readChangelogs()->pluck('changelog_id');
@@ -54,22 +56,14 @@ class DashboardController extends Controller
 
         // To-Do List Data
         $todos = [];
-        // 1. Set daily fitness goal
-        if (!$user->daily_fitness_goal) {
-            $todos[] = [
-                'id' => 'set_goal',
-                'type' => 'Set Your Goal',
-                'description' => 'Set your daily fitness goal to get started.',
-            ];
-        }
 
         // 2. Post daily update
-        $hasPostedToday = $user->posts()->whereDate('created_at', today())->exists();
+        $hasPostedToday = $user->posts()->where('created_at', '>=', now('America/New_York')->startOfDay())->exists();
         if (!$hasPostedToday) {
             $todos[] = [
                 'id' => 'post_today',
                 'type' => 'Daily Update',
-                'description' => 'Post your daily fitness update.',
+                'description' => 'Post your daily update.',
             ];
         }
 
@@ -97,6 +91,7 @@ class DashboardController extends Controller
                     'type' => $post->is_blog_post ? 'Like a Blog Post' : 'Like a Post',
                     'description' => "Like " . $post->user->username . "'s post.",
                     'post_id' => $post->id,
+                    'group_id' => $post->group_id,
                     'content' => $post->content,
                 ];
             });

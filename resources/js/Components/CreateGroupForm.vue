@@ -36,7 +36,7 @@ const createGroup = () => {
             <form @submit.prevent="createGroup">
                 <div>
                     <InputLabel for="name" value="Group Name" />
-                    <TextInput id="name" v-model="form.name" type="text" class="mt-1 block w-full" required autofocus />
+                    <TextInput id="name" v-model="form.name" type="text" class="mt-1 block w-full border-gray-600 bg-gray-900 text-gray-300 focus:border-indigo-600 focus:ring-indigo-600 rounded-md shadow-sm" required autofocus />
                     <InputError class="mt-2" :message="form.errors.name" />
                 </div>
 

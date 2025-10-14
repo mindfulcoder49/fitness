@@ -67,6 +67,8 @@ class GroupController extends Controller
 
     public function show(Request $request, Group $group)
     {
+        Gate::authorize('view', $group);
+
         $user = Auth::user();
         $weekAgo = now()->subWeek();
 
@@ -79,6 +81,18 @@ class GroupController extends Controller
         $group->load('creator');
         $membership = $user->groups()->where('group_id', $group->id)->first();
         $isGroupAdmin = $membership?->pivot->role === 'admin' || $group->creator_id === $user->id;
+
+        // New chat message count
+        $newChatMessageCount = 0;
+        if ($membership) {
+            $lastChecked = $membership->pivot->group_messages_last_checked_at;
+            $newChatMessageCount = $group->messages()
+                ->where('user_id', '!=', $user->id)
+                ->when($lastChecked, function ($query) use ($lastChecked) {
+                    return $query->where('created_at', '>', $lastChecked);
+                })
+                ->count();
+        }
 
         // Group-specific posts
         $basePostQuery = $group->posts()->with(['user', 'comments.user', 'comments.likes', 'likes', 'groupTask'])
@@ -102,6 +116,15 @@ class GroupController extends Controller
         };
         $posts = $posts->map($processPost)->filter()->values();
 
+        // Handle featured post
+        $featuredPost = null;
+        if ($request->has('post')) {
+            $featuredPost = (clone $basePostQuery)->find($request->post);
+            if ($featuredPost) {
+                $featuredPost = $processPost($featuredPost);
+            }
+        }
+
         // Group-specific user metrics
         $groupUserMetrics = [
             'days_posted' => $user->posts()->where('group_id', $group->id)->select(DB::raw('DATE(created_at)'))->distinct()->count(),
@@ -124,36 +147,37 @@ class GroupController extends Controller
 
         // Group-specific leaderboard
         $leaderboard = $group->users()->get()->map(function ($u) use ($group) {
-            // Distinct post days in this group
+            // Distinct post days in this group (non-blog posts)
             $distinctPostDays = $u->posts()
                 ->where('group_id', $group->id)
+                ->where('is_blog_post', false)
                 ->select(DB::raw('DATE(created_at) as post_date'))
                 ->distinct()
                 ->count();
 
-            // Comments in this group
-            $commentsCount = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id))->count();
+            // Comments in this group (on non-blog posts)
+            $commentsCount = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id)->where('is_blog_post', false))->count();
 
-            // Likes given in this group
+            // Likes given in this group (on non-blog posts/comments)
             $likesGivenCount = $u->likes()->whereHasMorph(
                 'likeable',
                 [Post::class, Comment::class],
                 function ($query, $type) use ($group) {
                     if ($type === Post::class) {
-                        $query->where('group_id', $group->id);
+                        $query->where('group_id', $group->id)->where('is_blog_post', false);
                     } elseif ($type === Comment::class) {
                         $query->whereHas('post', function ($subQuery) use ($group) {
-                            $subQuery->where('group_id', $group->id);
+                            $subQuery->where('group_id', $group->id)->where('is_blog_post', false);
                         });
                     }
                 }
             )->count();
 
-            // Likes received on posts in this group
-            $likesOnPosts = $u->posts()->where('group_id', $group->id)->withCount('likes')->get()->sum('likes_count');
+            // Likes received on posts in this group (non-blog posts)
+            $likesOnPosts = $u->posts()->where('group_id', $group->id)->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count');
 
-            // Likes received on comments in this group
-            $likesOnComments = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id))->withCount('likes')->get()->sum('likes_count');
+            // Likes received on comments in this group (on non-blog posts)
+            $likesOnComments = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id)->where('is_blog_post', false))->withCount('likes')->get()->sum('likes_count');
 
             // Scoring: distinct post days=3, comments=1, likes given=0.5, likes received=1
             $score = ($distinctPostDays * 3) +
@@ -175,7 +199,7 @@ class GroupController extends Controller
         if ($currentTask) {
             $hasPostedTodayForTask = $user->posts()
                 ->where('group_id', $group->id)
-                ->whereDate('created_at', today())
+                ->where('created_at', '>=', now('America/New_York')->startOfDay())
                 ->exists();
             if (!$hasPostedTodayForTask) {
                 $todos[] = [
@@ -186,6 +210,14 @@ class GroupController extends Controller
             }
         }
 
+        // Check if prospective member has posted today for the UI lock
+        $hasPostedToday = false;
+        if ($membership?->pivot->role === 'prospective') {
+            $hasPostedToday = $user->posts()
+                ->where('created_at', '>=', now('America/New_York')->startOfDay())
+                ->exists();
+        }
+
         // Group-specific notifications
         $postsForNotifications = $group->posts()
             ->with('user:id,username')
@@ -194,14 +226,16 @@ class GroupController extends Controller
             ->get();
 
         $userPostIdsInGroup = $user->posts()->where('group_id', $group->id)->pluck('id');
-        $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content')
+        $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content,group_id')
             ->whereIn('post_id', $userPostIdsInGroup)
             ->where('user_id', '!=', $user->id)
             ->where('created_at', '>=', $weekAgo)
             ->get();
 
         $userCommentIdsInGroup = $user->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id))->pluck('id');
-        $likesOnUserContent = Like::with(['user:id,username', 'likeable'])
+        $likesOnUserContent = Like::with(['user:id,username', 'likeable' => function ($query) {
+                $query->with('post:id,group_id');
+            }])
             ->where(function ($query) use ($userPostIdsInGroup, $userCommentIdsInGroup) {
                 $query->where(function ($q) use ($userPostIdsInGroup) {
                     $q->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIdsInGroup);
@@ -225,24 +259,27 @@ class GroupController extends Controller
             'membership' => $membership,
             'isGroupAdmin' => $isGroupAdmin,
             'posts' => $posts,
+            'featuredPost' => $featuredPost,
             'leaderboard' => $leaderboard,
             'currentTask' => $currentTask,
             'userMetrics' => $groupUserMetrics,
             'todos' => $todos,
+            'hasPostedToday' => $hasPostedToday,
             'notifications' => $notifications,
             'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
+            'newChatMessageCount' => $newChatMessageCount,
         ]);
     }
 
-    public function blog(Group $group)
+    public function blog(Request $request, Group $group)
     {
         $user = Auth::user();
-        $posts = $group->posts()
+        $postsQuery = $group->posts()
             ->where('is_blog_post', true)
             ->with(['user', 'group', 'comments.user', 'comments.likes', 'likes'])
-            ->withCount('likes', 'comments')
-            ->latest()
-            ->get();
+            ->withCount('likes', 'comments');
+
+        $posts = (clone $postsQuery)->latest()->get();
 
         $processPost = function ($post) use ($user) {
             if (!$post || !$post->user) return null;
@@ -261,8 +298,18 @@ class GroupController extends Controller
 
         $processedPosts = $posts->map($processPost)->filter()->values();
 
+        // Handle featured post
+        $featuredPost = null;
+        if ($request->has('post')) {
+            $featuredPost = (clone $postsQuery)->find($request->post);
+            if ($featuredPost) {
+                $featuredPost = $processPost($featuredPost);
+            }
+        }
+
         return Inertia::render('Blog/Index', [
             'posts' => $processedPosts,
+            'featuredPost' => $featuredPost,
             'group' => $group,
         ]);
     }

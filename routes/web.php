@@ -6,6 +6,7 @@ use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\GroupMessageController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -36,8 +37,11 @@ Route::get('/groups', [GroupController::class, 'index'])->middleware(['auth', 'v
 Route::post('/groups', [GroupController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.store');
 Route::post('/groups/{group}/join', [GroupController::class, 'join'])->middleware(['auth', 'verified'])->name('groups.join');
 Route::get('/groups/{group}', [GroupController::class, 'show'])->middleware(['auth', 'verified'])->name('groups.show');
-Route::get('/groups/{group}/blog', [GroupController::class, 'blog'])->middleware(['auth', 'verified'])->name('groups.blog');
+Route::get('/groups/{group}/blog/{post?}', [GroupController::class, 'blog'])->middleware(['auth', 'verified'])->name('groups.blog');
 Route::get('/groups/{group}/admin', [GroupController::class, 'admin'])->middleware(['auth', 'verified'])->name('groups.admin');
+Route::get('/groups/{group}/chat', [GroupMessageController::class, 'show'])->middleware(['auth', 'verified'])->name('groups.chat');
+Route::get('/groups/{group}/messages', [GroupMessageController::class, 'index'])->middleware(['auth', 'verified'])->name('groups.messages.index');
+Route::post('/groups/{group}/messages', [GroupMessageController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.messages.store');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -16,12 +16,19 @@ const props = defineProps({
     membership: Object,
     isGroupAdmin: Boolean,
     posts: Array,
+    featuredPost: Object,
     leaderboard: Array,
     currentTask: Object,
     userMetrics: Object,
     todos: Array,
+    hasPostedToday: Boolean,
     notifications: Object,
     notificationsLastCheckedAt: String,
+    newChatMessageCount: Number,
+});
+
+const displayFeaturedPost = computed(() => {
+    return props.featuredPost || props.posts[0] || null;
 });
 
 const showTodos = ref(false);
@@ -72,12 +79,6 @@ const submit = () => {
     });
 };
 
-const hasPostedToday = computed(() => {
-    if (props.membership?.role !== 'prospective') return false;
-    // A prospective member has posted if their todo list for posting is empty.
-    return !props.todos.some(todo => todo.id === 'post_today');
-});
-
 </script>
 
 <template>
@@ -90,6 +91,12 @@ const hasPostedToday = computed(() => {
                     {{ group.name }}
                 </h2>
                 <div class="flex items-center space-x-2 sm:space-x-4">
+                    <Link :href="route('groups.chat', { group: group.id })" class="relative text-sm font-medium text-gray-300 hover:text-white">
+                        Chat
+                        <span v-if="newChatMessageCount > 0" class="absolute -top-2 -right-2 block h-4 w-4 transform rounded-full text-white bg-red-500 text-xs flex items-center justify-center">
+                            {{ newChatMessageCount > 9 ? '9+' : newChatMessageCount }}
+                        </span>
+                    </Link>
                     <Link :href="route('groups.blog', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
                         Blog
                     </Link>
@@ -122,13 +129,21 @@ const hasPostedToday = computed(() => {
             </div>
         </template>
 
-        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastCheckedAt" @close="showNotifications = false" />
+        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastCheckedAt" :group-id="group.id" @close="showNotifications = false" />
         <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main content -->
                 <div class="lg:col-span-2 space-y-6">
+                    <!-- Featured Post -->
+                    <div v-if="displayFeaturedPost" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
+                        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg font-semibold text-indigo-400">Featured Post</h3>
+                        </div>
+                        <Post :post="displayFeaturedPost" />
+                    </div>
+
                     <!-- Display Group Task -->
                     <div v-if="currentTask" class="bg-gray-800 p-6 shadow-sm sm:rounded-lg">
                         <div>

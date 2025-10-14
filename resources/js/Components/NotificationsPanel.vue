@@ -5,6 +5,7 @@ import { Link } from '@inertiajs/vue3';
 const props = defineProps({
     notifications: Object,
     lastChecked: String,
+    groupId: Number,
 });
 
 const emit = defineEmits(['close']);
@@ -28,17 +29,24 @@ const allNotifications = computed(() => {
 });
 
 const getNotificationLink = (item) => {
-    if (item.type === 'New Post') {
-        return route('dashboard', { post: item.id });
+    if (item.type === 'New Post' || item.type === 'New Blog Post') {
+        const groupId = props.groupId || item.group_id;
+        if (item.is_blog_post) {
+            return route('groups.blog', { group: groupId, post: item.id });
+        }
+        return route('groups.show', { group: groupId, post: item.id });
     }
     if (item.type === 'New Comment') {
-        return route('dashboard', { post: item.post.id });
+        const groupId = props.groupId || item.post.group_id;
+        return route('groups.show', { group: groupId, post: item.post.id });
     }
     if (item.type === 'New Like' && item.likeable_type.endsWith('Post')) {
-        return route('dashboard', { post: item.likeable_id });
+        const groupId = props.groupId || item.likeable.group_id;
+        return route('groups.show', { group: groupId, post: item.likeable_id });
     }
     if (item.type === 'New Like' && item.likeable_type.endsWith('Comment')) {
-        return route('dashboard', { post: item.likeable.post_id });
+        const groupId = props.groupId || item.likeable.post.group_id;
+        return route('groups.show', { group: groupId, post: item.likeable.post_id });
     }
     if (item.type === 'App Update') {
         return route('changelog.index');

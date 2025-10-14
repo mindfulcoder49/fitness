@@ -84,15 +84,15 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::table('posts', function (Blueprint $table) {
+            $table->dropForeign(['group_id']);
+            $table->dropColumn('group_id');
+        });
+
         Schema::table('users', function (Blueprint $table) {
             $table->string('role')->default('prospective');
             $table->text('daily_fitness_goal')->nullable();
             $table->timestamp('invitation_sent_at')->nullable();
-        });
-
-        Schema::table('posts', function (Blueprint $table) {
-            $table->dropForeign(['group_id']);
-            $table->dropColumn('group_id');
         });
 
         Schema::dropIfExists('user_availabilities');

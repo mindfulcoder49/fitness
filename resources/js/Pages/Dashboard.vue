@@ -88,7 +88,7 @@ const toggleTodos = () => {
                     <div class="p-6 text-gray-900 dark:text-gray-100">
                         <h3 class="text-2xl font-bold">Select a Group</h3>
                         <p class="mt-2 text-gray-400">
-                            Choose a group to view its feed, tasks, and leaderboard.
+                            Choose a group to view its feed and participate, or create your own.
                         </p>
                         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <Link v-for="group in groups" :key="group.id" :href="route('groups.show', group.id)" class="block p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
