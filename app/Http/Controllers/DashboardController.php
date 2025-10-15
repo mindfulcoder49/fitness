@@ -21,9 +21,10 @@ class DashboardController extends Controller
 
         // User's groups
         $groups = $user->groups()->with('creator')->get();
+        $userGroupIds = $groups->pluck('id');
 
         // Notifications
-        $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->get();
+        $postsForNotifications = Post::with('user:id,username')->where('created_at', '>=', $weekAgo)->where('user_id', '!=', $user->id)->whereIn('group_id', $userGroupIds)->get();
         
         $userPostIds = $user->posts()->where('is_blog_post', false)->pluck('id');
         $commentsOnUserPosts = Comment::with(['user:id,username', 'post:id,content,group_id'])->whereIn('post_id', $userPostIds)->where('user_id', '!=', $user->id)->where('created_at', '>=', $weekAgo)->get();
@@ -83,6 +84,7 @@ class DashboardController extends Controller
         $postsToLike = Post::with('user:id,username')
             ->where('user_id', '!=', $user->id)
             ->whereNotIn('id', $likedPostIds)
+            ->whereIn('group_id', $userGroupIds)
             ->latest()
             ->get()
             ->map(function ($post) {
