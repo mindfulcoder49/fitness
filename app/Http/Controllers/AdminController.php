@@ -25,7 +25,7 @@ class AdminController extends Controller
                 'users',
                 'creator',
                 'tasks',
-                'posts' => fn($q) => $q->with('user')->latest(),
+                'posts' => fn($q) => $q->with(['user', 'groupTask'])->latest(),
                 'posts.comments' => fn($q) => $q->with('user')->latest(),
                 'posts.likes' => fn($q) => $q->with('user')->latest(),
                 'posts.comments.likes' => fn($q) => $q->with('user')->latest(),
@@ -133,7 +133,6 @@ class AdminController extends Controller
     public function setCurrentTask(GroupTask $task)
     {
         DB::transaction(function () use ($task) {
-            $task->group->tasks()->update(['is_current' => false]);
             $task->update(['is_current' => true]);
         });
         return back();

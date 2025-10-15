@@ -32,7 +32,7 @@ const joinGroup = (groupId) => {
                         <p class="mt-2 text-gray-400">
                             Browse public groups and join one that fits your interests.
                         </p>
-                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div v-for="group in groups" :key="group.id" class="flex flex-col justify-between p-6 bg-gray-700 rounded-lg transition">
                                 <div>
                                     <h4 class="text-xl font-semibold text-white">{{ group.name }}</h4>

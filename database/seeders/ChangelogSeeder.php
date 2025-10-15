@@ -86,5 +86,16 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-15'],
+            [
+                'changes' => [
+                    '**Fix: Dashboard Notifications!** The main dashboard notifications panel now correctly shows only notifications relevant to you, instead of from all groups.',
+                    '**New Feature: Multiple Daily Tasks!** Group admins can now set multiple "current" tasks for a single day, offering more variety for members.',
+                    '**Improvement: Task-Based Posting!** When a group has active tasks, you are now required to select which task your post is for. You can submit one post per task, per day.',
+                ],
+            ]
+        );
     }
 }

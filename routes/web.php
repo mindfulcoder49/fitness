@@ -66,6 +66,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/groups/tasks/{task}', [AdminController::class, 'updateTask'])->name('groups.tasks.update');
     Route::delete('/groups/tasks/{task}', [AdminController::class, 'destroyTask'])->name('groups.tasks.destroy');
     Route::patch('/groups/tasks/{task}/set-current', [AdminController::class, 'setCurrentTask'])->name('groups.tasks.set-current');
+    Route::patch('/groups/tasks/{task}/unset-current', [AdminController::class, 'unsetCurrentTask'])->name('groups.tasks.unset-current');
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::delete('/posts/{post}', [AdminController::class, 'destroyPost'])->name('posts.destroy');
     Route::patch('/posts/{post}/toggle-blog', [AdminController::class, 'toggleBlogPost'])->name('posts.toggle-blog');

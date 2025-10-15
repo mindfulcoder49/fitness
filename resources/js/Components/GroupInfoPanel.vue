@@ -1,20 +1,30 @@
 <script setup>
-defineProps({
-    currentTask: Object,
+import { onMounted } from 'vue';
+
+const props = defineProps({
+    currentTasks: Array,
+});
+
+onMounted(() => {
+    console.log('GroupInfoPanel.vue: Received currentTasks prop:', props.currentTasks);
 });
 </script>
 
 <template>
     <div class="p-6 bg-gray-800 shadow-sm sm:rounded-lg">
-        <div v-if="currentTask">
-            <h3 class="text-lg font-semibold text-indigo-400 mb-2">Today's Task</h3>
-            <h4 class="font-bold text-white text-xl">{{ currentTask.title }}</h4>
-            <p class="mt-2 text-gray-300">{{ currentTask.description }}</p>
-            <p class="mt-4 text-xs text-gray-400">Post an update and check the box to mark it as complete for the day.</p>
+        <div v-if="currentTasks && currentTasks.length > 0">
+            <h3 class="text-lg font-semibold text-indigo-400 mb-2">Today's Tasks</h3>
+            <ul class="space-y-3">
+                <li v-for="task in currentTasks" :key="task.id">
+                    <h4 class="font-bold text-white text-lg">{{ task.title }}</h4>
+                    <p class="mt-1 text-gray-300 text-sm">{{ task.description }}</p>
+                </li>
+            </ul>
+            <p class="mt-4 text-xs text-gray-400">Select a task when you post an update to mark it as complete for the day.</p>
         </div>
         <div v-else>
             <h3 class="text-lg font-semibold text-indigo-400 mb-2">Group Info</h3>
-            <p class="text-gray-300">There is no active task for this group today.</p>
+            <p class="text-gray-300">There are no active tasks for this group today.</p>
             <p class="mt-2 text-sm text-gray-400">You can still post general updates to the group feed.</p>
         </div>
         <hr class="border-gray-700 my-4" />

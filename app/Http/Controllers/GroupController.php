@@ -6,10 +6,12 @@ use App\Models\Group;
 use App\Models\Post;
 use App\Models\Comment;
 use App\Models\Like;
+use App\Models\GroupTask;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class GroupController extends Controller
@@ -194,19 +196,25 @@ class GroupController extends Controller
         })->sortByDesc('score')->values()->take(20);
 
         // Group-specific tasks (To-Do List)
-        $currentTask = $group->tasks()->where('is_current', true)->first();
+        Log::info("GroupShow: Fetching current tasks for group ID: {$group->id}");
+        $currentTasks = $group->tasks()->where('is_current', true)->get();
+        Log::info("GroupShow: Found {$currentTasks->count()} current tasks.", $currentTasks->pluck('id', 'title')->all());
         $todos = [];
-        if ($currentTask) {
-            $hasPostedTodayForTask = $user->posts()
+        if ($currentTasks->isNotEmpty()) {
+            $postedTaskIdsToday = $user->posts()
                 ->where('group_id', $group->id)
+                ->whereNotNull('group_task_id')
                 ->where('created_at', '>=', now('America/New_York')->startOfDay())
-                ->exists();
-            if (!$hasPostedTodayForTask) {
-                $todos[] = [
-                    'id' => 'post_today_group_' . $group->id,
-                    'type' => 'Daily Update',
-                    'description' => $currentTask->title . ': ' . $currentTask->description,
-                ];
+                ->pluck('group_task_id');
+
+            foreach ($currentTasks as $task) {
+                if (!$postedTaskIdsToday->contains($task->id)) {
+                    $todos[] = [
+                        'id' => 'post_today_task_' . $task->id,
+                        'type' => 'Daily Task',
+                        'description' => $task->title,
+                    ];
+                }
             }
         }
 
@@ -259,21 +267,25 @@ class GroupController extends Controller
             'changelogs' => [], // No app-level changelogs on group page
         ];
 
-        return Inertia::render('Group/Show', [
+        $viewData = [
             'group' => $group,
             'membership' => $membership,
             'isGroupAdmin' => $isGroupAdmin,
             'posts' => $posts,
             'featuredPost' => $featuredPost,
             'leaderboard' => $leaderboard,
-            'currentTask' => $currentTask,
+            'currentTasks' => $currentTasks,
             'userMetrics' => $groupUserMetrics,
             'todos' => $todos,
             'hasPostedToday' => $hasPostedToday,
             'notifications' => $notifications,
             'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
             'newChatMessageCount' => $newChatMessageCount,
-        ]);
+        ];
+
+        Log::info("GroupShow: Data being passed to view for group ID: {$group->id}", ['currentTasks_count' => $currentTasks->count()]);
+
+        return Inertia::render('Group/Show', $viewData);
     }
 
     public function blog(Request $request, Group $group)
@@ -336,5 +348,24 @@ class GroupController extends Controller
         return Inertia::render('Group/Admin', [
             'group' => $group,
         ]);
+    }
+
+    public function setCurrentTask(GroupTask $task)
+    {
+        Gate::authorize('manageTasks', $task->group);
+
+        // Only update the specific task's is_current field
+        $task->update(['is_current' => true]);
+
+        return back();
+    }
+
+    public function unsetCurrentTask(GroupTask $task)
+    {
+        Gate::authorize('manageTasks', $task->group);
+
+        $task->update(['is_current' => false]);
+
+        return back();
     }
 }

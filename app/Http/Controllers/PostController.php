@@ -23,7 +23,7 @@ class PostController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:10000',
             'video' => 'nullable|mimetypes:video/mp4,video/webm,video/ogg|max:20480',
             'group_id' => 'required|exists:groups,id',
-            'is_for_task' => 'nullable|boolean',
+            'group_task_id' => 'nullable|exists:group_tasks,id',
         ]);
 
         $user = Auth::user();
@@ -37,19 +37,18 @@ class PostController extends Controller
         $content = $validated['content'];
         $isBlogPost = $request->boolean('is_blog_post');
 
-        $currentTask = $group->tasks()->where('is_current', true)->first();
-        $groupTaskId = null;
-        if ($currentTask && !empty($validated['is_for_task'])) {
+        $groupTaskId = $validated['group_task_id'] ?? null;
+        if ($groupTaskId) {
+            $task = $group->tasks()->findOrFail($groupTaskId);
             // Check if user has already posted for this task today
             $hasPostedForTaskToday = $user->posts()
-                ->where('group_task_id', $currentTask->id)
+                ->where('group_task_id', $task->id)
                 ->whereDate('created_at', today())
                 ->exists();
 
             if ($hasPostedForTaskToday) {
-                return back()->withErrors(['daily_limit' => 'You have already posted for today\'s task.']);
+                return back()->withErrors(['daily_limit' => 'You have already posted for this task today.']);
             }
-            $groupTaskId = $currentTask->id;
         }
 
         if ($group->pivot->role === 'prospective') {

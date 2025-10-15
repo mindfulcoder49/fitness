@@ -14,6 +14,7 @@ const editingTask = ref(null);
 const taskForm = useForm({
     title: '',
     description: '',
+    is_current: false,
 });
 
 const allComments = computed(() => {
@@ -77,6 +78,7 @@ const editTask = (task) => {
     editingTask.value = task;
     taskForm.title = task.title;
     taskForm.description = task.description;
+    taskForm.is_current = task.is_current;
 };
 
 const cancelEdit = () => {
@@ -91,14 +93,28 @@ const deleteTask = (task) => {
 };
 
 const setCurrentTask = (task) => {
-    router.patch(route('admin.groups.tasks.set-current', { task: task.id }), {}, { preserveScroll: true });
+    router.patch(route('admin.groups.tasks.set-current', { task: task.id }), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            task.is_current = true; // Update the task's status locally
+        },
+    });
+};
+
+const unsetCurrentTask = (task) => {
+    router.patch(route('admin.groups.tasks.unset-current', { task: task.id }), {}, {
+        preserveScroll: true,
+        onSuccess: () => {
+            task.is_current = false; // Update the task's status locally
+        },
+    });
 };
 </script>
 
 <template>
     <div class="p-4 border border-gray-700 rounded-lg">
         <div class="mb-4 border-b border-gray-600">
-            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+            <nav class="-mb-px flex space-x-6 flex-wrap" aria-label="Tabs">
                 <button @click="activeTab = 'members'" :class="[activeTab === 'members' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Members</button>
                 <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Posts</button>
                 <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Comments</button>
@@ -109,7 +125,7 @@ const setCurrentTask = (task) => {
         </div>
 
         <!-- Members Table -->
-        <div v-if="activeTab === 'members'">
+        <div v-if="activeTab === 'members'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-600">
                 <thead class="bg-gray-700/50">
                     <tr>
@@ -135,7 +151,7 @@ const setCurrentTask = (task) => {
         </div>
 
         <!-- Posts Table -->
-        <div v-if="activeTab === 'posts'">
+        <div v-if="activeTab === 'posts'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-600">
                 <thead class="bg-gray-700/50">
                     <tr>
@@ -148,7 +164,10 @@ const setCurrentTask = (task) => {
                 <tbody class="divide-y divide-gray-700">
                     <tr v-for="post in group.posts" :key="post.id">
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">{{ post.user.name }}</td>
-                        <td class="px-3 py-4 text-sm text-gray-300 max-w-md truncate">{{ post.content }}</td>
+                        <td class="px-3 py-4 text-sm text-gray-300 max-w-md truncate">
+                            {{ post.content }}
+                            <p v-if="post.group_task" class="text-xs text-indigo-400">Task: {{ post.group_task.title }}</p>
+                        </td>
                         <td class="whitespace-nowrap px-3 py-4 text-center text-sm">
                             <input type="checkbox" v-model="post.is_blog_post" @change="updateBlogPostStatus(post)" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600" />
                         </td>
@@ -161,7 +180,7 @@ const setCurrentTask = (task) => {
         </div>
 
         <!-- Comments Table -->
-        <div v-if="activeTab === 'comments'">
+        <div v-if="activeTab === 'comments'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-600">
                 <thead class="bg-gray-700/50">
                     <tr>
@@ -185,7 +204,7 @@ const setCurrentTask = (task) => {
         </div>
 
         <!-- Likes Table -->
-        <div v-if="activeTab === 'likes'">
+        <div v-if="activeTab === 'likes'" class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-600">
                 <thead class="bg-gray-700/50">
                     <tr>
@@ -217,6 +236,10 @@ const setCurrentTask = (task) => {
                     <div class="space-y-3">
                         <input v-model="taskForm.title" placeholder="Task Title" class="w-full bg-gray-800 border-gray-700 rounded-md" required />
                         <textarea v-model="taskForm.description" placeholder="Task Description" class="w-full bg-gray-800 border-gray-700 rounded-md"></textarea>
+                        <div v-if="editingTask" class="flex items-center">
+                            <input type="checkbox" v-model="taskForm.is_current" id="is_current_task" class="h-4 w-4 rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-600" />
+                            <label for="is_current_task" class="ml-2 text-sm font-medium">Current Task</label>
+                        </div>
                     </div>
                     <div class="mt-4 flex items-center space-x-2">
                         <button type="submit" class="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-700 rounded-md">{{ editingTask ? 'Update Task' : 'Create Task' }}</button>
@@ -234,6 +257,7 @@ const setCurrentTask = (task) => {
                     </div>
                     <div class="flex items-center space-x-2">
                         <button @click="setCurrentTask(task)" v-if="!task.is_current" class="text-xs text-green-400 hover:text-green-300">Set Current</button>
+                        <button @click="unsetCurrentTask(task)" v-if="task.is_current" class="text-xs text-yellow-400 hover:text-yellow-300">Unset Current</button>
                         <button @click="editTask(task)" class="text-xs text-blue-400 hover:text-blue-300">Edit</button>
                         <button @click="deleteTask(task)" class="text-xs text-red-500 hover:text-red-700">Delete</button>
                     </div>

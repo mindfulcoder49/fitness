@@ -7,7 +7,7 @@ import UserMetrics from '@/Components/UserMetrics.vue';
 import TodoListPanel from '@/Components/TodoListPanel.vue';
 import NotificationsPanel from '@/Components/NotificationsPanel.vue';
 import { Head, usePage, useForm, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const user = computed(() => usePage().props.auth.user);
 
@@ -18,13 +18,21 @@ const props = defineProps({
     posts: Array,
     featuredPost: Object,
     leaderboard: Array,
-    currentTask: Object,
+    currentTasks: Array,
     userMetrics: Object,
     todos: Array,
     hasPostedToday: Boolean,
     notifications: Object,
     notificationsLastCheckedAt: String,
     newChatMessageCount: Number,
+});
+
+onMounted(() => {
+    console.log('Group/Show.vue: Received currentTasks prop:', props.currentTasks);
+    // Set default task for non-admins if tasks are available
+    if (props.currentTasks.length > 0 && !props.isGroupAdmin && !user.value.is_admin) {
+        form.group_task_id = props.currentTasks[0].id;
+    }
 });
 
 const displayFeaturedPost = computed(() => {
@@ -69,13 +77,18 @@ const form = useForm({
     image: null,
     video: null,
     group_id: props.group.id,
-    is_for_task: false,
+    group_task_id: null,
 });
 
 const submit = () => {
+    // If there's only one task, and the user hasn't selected one, auto-select it.
+    if (props.currentTasks.length === 1 && !form.group_task_id) {
+        form.group_task_id = props.currentTasks[0].id;
+    }
+
     form.post(route('posts.store'), {
         preserveScroll: true,
-        onSuccess: () => form.reset('content', 'image', 'video', 'is_for_task'),
+        onSuccess: () => form.reset('content', 'image', 'video', 'group_task_id'),
     });
 };
 
@@ -144,14 +157,6 @@ const submit = () => {
                         <Post :post="displayFeaturedPost" />
                     </div>
 
-                    <!-- Display Group Task -->
-                    <div v-if="currentTask" class="bg-gray-800 p-6 shadow-sm sm:rounded-lg">
-                        <div>
-                            <h3 class="text-lg font-semibold text-indigo-400">{{ currentTask.title }}</h3>
-                            <p class="mt-2 text-xl text-white">{{ currentTask.description }}</p>
-                        </div>
-                    </div>
-
                     <!-- Post Creation Form -->
                     <div id="post-form" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
                         <div class="p-6">
@@ -165,11 +170,15 @@ const submit = () => {
                                     class="w-full border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100 dark:focus:border-indigo-600 dark:focus:ring-indigo-600"
                                     :disabled="membership?.role === 'prospective' && hasPostedToday"
                                 ></textarea>
-                                <div v-if="currentTask" class="mt-4">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" v-model="form.is_for_task" class="rounded border-gray-600 bg-gray-800 text-indigo-600 shadow-sm focus:ring-indigo-600" />
-                                        <span class="ms-2 text-sm text-gray-400">This post is for today's task: <span class="font-semibold text-gray-300">{{ currentTask.title }}</span></span>
-                                    </label>
+                                <div v-if="currentTasks && currentTasks.length > 0" class="mt-4">
+                                    <label for="task-select" class="block text-sm font-medium text-gray-300">Select a task</label>
+                                    <select id="task-select" v-model="form.group_task_id" class="mt-1 block w-full rounded-md border-gray-600 bg-gray-900 py-2 pl-3 pr-10 text-white focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
+                                        <option v-if="isGroupAdmin || user.is_admin" :value="null">No specific task</option>
+                                        <option v-for="task in currentTasks" :key="task.id" :value="task.id">
+                                            {{ task.title }}
+                                        </option>
+                                    </select>
+                                    <p v-if="form.errors.group_task_id" class="mt-2 text-sm text-red-400">{{ form.errors.group_task_id }}</p>
                                 </div>
                                 <div class="mt-4 flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
@@ -214,7 +223,7 @@ const submit = () => {
                             </svg>
                         </button>
                         <div class="p-6 lg:p-0 lg:mt-0 space-y-6">
-                            <GroupInfoPanel :current-task="currentTask" />
+                            <GroupInfoPanel :current-tasks="currentTasks" />
                             <Leaderboard :users="leaderboard" />
                             <UserMetrics v-if="userMetrics" :metrics="userMetrics" />
                         </div>

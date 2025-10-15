@@ -1,5 +1,5 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 
 defineProps({
     todos: Array,
@@ -32,41 +32,42 @@ const getActionLink = (todo) => {
 const isAnchorTag = (todo) => {
     return todo.id === 'post_today';
 };
+
+const markChangelogAsRead = (changelogId) => {
+    router.post(route('changelogs.mark-as-read', changelogId), {}, {
+        preserveScroll: true,
+    });
+};
+
+const likePost = (postId) => {
+    router.post(route('posts.like', postId), {}, {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
-    <div class="fixed top-16 right-4 w-80 bg-gray-800 border border-gray-700 rounded-lg shadow-lg p-4 z-50 max-h-[80vh] overflow-y-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-white">To-Do List</h3>
-            <button @click="emit('close')" class="text-gray-400 hover:text-white">
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+    <div class="fixed inset-0 z-30 bg-black/50" @click="$emit('close')"></div>
+    <div class="fixed top-16 right-4 z-40 w-full max-w-sm bg-gray-800 rounded-lg shadow-lg p-4 text-white">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="font-semibold text-lg">To-Do List</h3>
+            <button @click="$emit('close')" class="text-gray-400 hover:text-white">&times;</button>
         </div>
-        <div v-if="todos.length > 0" class="space-y-3">
-            <div v-for="todo in todos" :key="todo.id">
-                <component
-                    :is="isAnchorTag(todo) ? 'a' : Link"
-                    :href="getActionLink(todo)"
-                    @click="emit('close')"
-                    class="block p-3 bg-gray-700 rounded-md text-sm hover:bg-gray-600 w-full text-left"
-                >
-                    <div class="flex justify-between items-center">
-                        <p class="font-bold text-amber-400">{{ todo.type }}</p>
-                    </div>
-                    <div class="mt-1 text-gray-300">
-                        <p>{{ todo.description }}</p>
-                        <p v-if="todo.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ todo.content.substring(0, 100) }}..."</p>
-                    </div>
-                    <div class="text-right mt-2 text-sm text-indigo-400">
-                        Go &rarr;
-                    </div>
-                </component>
-            </div>
-        </div>
-        <div v-else>
-            <p class="text-gray-400">You're all caught up!</p>
-        </div>
+        <ul v-if="todos.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
+            <li v-for="todo in todos" :key="todo.id" class="p-3 bg-gray-700/50 rounded-md flex items-center justify-between">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-indigo-300">{{ todo.type }}</p>
+                    <Link v-if="todo.type === 'Daily Task'" :href="route('groups.show', todo.group_id)" class="text-gray-200 hover:underline">
+                        {{ todo.description }}
+                    </Link>
+                    <p v-else class="text-gray-200">{{ todo.description }}</p>
+                </div>
+                <div class="ml-2">
+                    <button v-if="todo.type === 'Read Update'" @click="markChangelogAsRead(todo.changelog_id)" class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 rounded">Done</button>
+                    <Link v-if="todo.type === 'Like a Post' || todo.type === 'Like a Blog Post'" :href="route('groups.show', { group: todo.group_id, post: todo.post_id })" @click="likePost(todo.post_id)" class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded">Like</Link>
+                </div>
+            </li>
+        </ul>
+        <p v-else class="text-gray-400 text-center py-4">Your to-do list is empty. Great job!</p>
     </div>
 </template>

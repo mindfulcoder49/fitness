@@ -10,6 +10,7 @@ use App\Models\Changelog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
@@ -58,17 +59,38 @@ class DashboardController extends Controller
         // To-Do List Data
         $todos = [];
 
-        // 2. Post daily update
-        $hasPostedToday = $user->posts()->where('created_at', '>=', now('America/New_York')->startOfDay())->exists();
-        if (!$hasPostedToday) {
-            $todos[] = [
-                'id' => 'post_today',
-                'type' => 'Daily Update',
-                'description' => 'Post your daily update.',
-            ];
+        // 1. Group tasks to-dos
+        Log::info("Dashboard: Fetching group tasks for user ID: {$user->id}");
+        $userGroupsWithTasks = $user->groups()->with(['tasks' => function ($query) {
+            $query->where('is_current', true);
+        }])->get();
+
+        foreach ($userGroupsWithTasks as $group) {
+            Log::info("Dashboard: Checking group '{$group->name}' (ID: {$group->id}) for current tasks.");
+            if ($group->tasks->isNotEmpty()) {
+                Log::info("Dashboard: Found {$group->tasks->count()} current tasks for group ID: {$group->id}", $group->tasks->pluck('id', 'title')->all());
+                $postedTaskIdsToday = $user->posts()
+                    ->where('group_id', $group->id)
+                    ->whereNotNull('group_task_id')
+                    ->where('created_at', '>=', now('America/New_York')->startOfDay())
+                    ->pluck('group_task_id');
+
+                foreach ($group->tasks as $task) {
+                    if (!$postedTaskIdsToday->contains($task->id)) {
+                        $newTodo = [
+                            'id' => 'post_today_task_' . $task->id,
+                            'type' => 'Daily Task',
+                            'description' => "{$task->title} ({$group->name})",
+                            'group_id' => $group->id,
+                        ];
+                        $todos[] = $newTodo;
+                        Log::info("Dashboard: Added to-do for task ID {$task->id}.", $newTodo);
+                    }
+                }
+            }
         }
 
-        // 3. Unread changelogs
+        // 2. Unread changelogs
         foreach ($unreadChangelogs as $changelog) {
             $todos[] = [
                 'id' => 'read_changelog_' . $changelog->id,
@@ -78,7 +100,7 @@ class DashboardController extends Controller
             ];
         }
 
-        // 4. Posts not liked
+        // 3. Posts not liked
         $likedPostIds = $user->likes()->where('likeable_type', Post::class)->pluck('likeable_id');
         
         $postsToLike = Post::with('user:id,username')
@@ -99,6 +121,7 @@ class DashboardController extends Controller
             });
 
         $todos = array_merge($todos, $postsToLike->all());
+        Log::info("Dashboard: Final to-do list for user ID: {$user->id}", $todos);
 
         return Inertia::render('Dashboard', [
             'groups' => $groups,

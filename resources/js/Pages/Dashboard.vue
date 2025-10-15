@@ -1,7 +1,7 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, usePage, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import NotificationsPanel from '@/Components/NotificationsPanel.vue';
 import TodoListPanel from '@/Components/TodoListPanel.vue';
 import CreateGroupForm from '@/Components/CreateGroupForm.vue';
@@ -11,6 +11,10 @@ const props = defineProps({
     notifications: Object,
     notificationsLastCheckedAt: String,
     todos: Array,
+});
+
+onMounted(() => {
+    console.log('Dashboard.vue: Received todos prop:', props.todos);
 });
 
 const showNotifications = ref(false);
