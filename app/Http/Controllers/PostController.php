@@ -44,9 +44,13 @@ class PostController extends Controller
             $today = today('America/New_York');
             Log::info("Checking for existing post for task_id: {$task->id} on date: " . $today->toDateString());
 
+            $startOfDay = $today->copy()->startOfDay();
+            $endOfDay = $today->copy()->endOfDay();
+
             $existingPost = $user->posts()
                 ->where('group_task_id', $task->id)
-                ->whereDate('created_at', $today)
+                ->where('created_at', '>=', $startOfDay)
+                ->where('created_at', '<=', $endOfDay)
                 ->first();
 
             if ($existingPost) {
@@ -61,9 +65,13 @@ class PostController extends Controller
             $today = today('America/New_York');
             Log::info("Checking for existing post for prospective user in group_id: {$group->id} on date: " . $today->toDateString());
 
+            $startOfDay = $today->copy()->startOfDay();
+            $endOfDay = $today->copy()->endOfDay();
+
             $existingPost = $user->posts()
                 ->where('group_id', $group->id)
-                ->whereDate('created_at', $today)
+                ->where('created_at', '>=', $startOfDay)
+                ->where('created_at', '<=', $endOfDay)
                 ->first();
 
             if ($existingPost) {
