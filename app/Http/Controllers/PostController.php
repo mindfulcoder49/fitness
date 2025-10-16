@@ -41,19 +41,35 @@ class PostController extends Controller
         if ($groupTaskId) {
             $task = $group->tasks()->findOrFail($groupTaskId);
             // Check if user has already posted for this task today
-            $hasPostedForTaskToday = $user->posts()
-                ->where('group_task_id', $task->id)
-                ->whereDate('created_at', today('America/New_York'))
-                ->exists();
+            $today = today('America/New_York');
+            Log::info("Checking for existing post for task_id: {$task->id} on date: " . $today->toDateString());
 
-            if ($hasPostedForTaskToday) {
+            $existingPost = $user->posts()
+                ->where('group_task_id', $task->id)
+                ->whereDate('created_at', $today)
+                ->first();
+
+            if ($existingPost) {
+                Log::info("Existing post found for task_id: {$task->id}. Post created_at (UTC): " . $existingPost->created_at);
+                Log::info("Existing post created_at converted to America/New_York: " . $existingPost->created_at->setTimezone('America/New_York'));
+                Log::info("Comparison date (America/New_York): " . $today);
                 return back()->withErrors(['daily_limit' => 'You have already posted for this task today.']);
             }
         }
 
         if ($group->pivot->role === 'prospective') {
-            $hasPostedToday = $user->posts()->where('group_id', $group->id)->whereDate('created_at', today('America/New_York'))->exists();
-            if ($hasPostedToday) {
+            $today = today('America/New_York');
+            Log::info("Checking for existing post for prospective user in group_id: {$group->id} on date: " . $today->toDateString());
+
+            $existingPost = $user->posts()
+                ->where('group_id', $group->id)
+                ->whereDate('created_at', $today)
+                ->first();
+
+            if ($existingPost) {
+                Log::info("Existing post found for prospective user in group_id: {$group->id}. Post created_at (UTC): " . $existingPost->created_at);
+                Log::info("Existing post created_at converted to America/New_York: " . $existingPost->created_at->setTimezone('America/New_York'));
+                Log::info("Comparison date (America/New_York): " . $today);
                 throw ValidationException::withMessages([
                     'daily_limit' => 'You have already posted your update for today in this group.',
                 ]);
