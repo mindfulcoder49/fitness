@@ -43,7 +43,7 @@ class PostController extends Controller
             // Check if user has already posted for this task today
             $hasPostedForTaskToday = $user->posts()
                 ->where('group_task_id', $task->id)
-                ->whereDate('created_at', today())
+                ->whereDate('created_at', today('America/New_York'))
                 ->exists();
 
             if ($hasPostedForTaskToday) {
@@ -52,7 +52,7 @@ class PostController extends Controller
         }
 
         if ($group->pivot->role === 'prospective') {
-            $hasPostedToday = $user->posts()->where('group_id', $group->id)->whereDate('created_at', today())->exists();
+            $hasPostedToday = $user->posts()->where('group_id', $group->id)->whereDate('created_at', today('America/New_York'))->exists();
             if ($hasPostedToday) {
                 throw ValidationException::withMessages([
                     'daily_limit' => 'You have already posted your update for today in this group.',

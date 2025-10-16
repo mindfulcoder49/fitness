@@ -97,5 +97,14 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-16'],
+            [
+                'changes' => [
+                    '**Fix: Timezone Regression!** Re-fixed an issue where daily post limits were not correctly using the Boston timezone, which could prevent users from posting when they should be able to.',
+                ],
+            ]
+        );
     }
 }
