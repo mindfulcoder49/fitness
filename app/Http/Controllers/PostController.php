@@ -54,8 +54,8 @@ class PostController extends Controller
 
             $existingPost = $user->posts()
                 ->where('group_task_id', $task->id)
-                ->where('created_at', '>=', $startOfDay)
-                ->where('created_at', '<=', $endOfDay)
+                ->where('created_at', '>=', $startOfDay->copy()->utc())
+                ->where('created_at', '<=', $endOfDay->copy()->utc())
                 ->first();
 
             if ($existingPost) {
@@ -80,8 +80,8 @@ class PostController extends Controller
 
             $existingPost = $user->posts()
                 ->where('group_id', $group->id)
-                ->where('created_at', '>=', $startOfDay)
-                ->where('created_at', '<=', $endOfDay)
+                ->where('created_at', '>=', $startOfDay->copy()->utc())
+                ->where('created_at', '<=', $endOfDay->copy()->utc())
                 ->first();
 
             if ($existingPost) {
