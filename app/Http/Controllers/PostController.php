@@ -47,6 +47,11 @@ class PostController extends Controller
             $startOfDay = $today->copy()->startOfDay();
             $endOfDay = $today->copy()->endOfDay();
 
+            Log::info("Start of day (America/New_York): " . $startOfDay->toDateTimeString());
+            Log::info("End of day (America/New_York): " . $endOfDay->toDateTimeString());
+            Log::info("Start of day (UTC): " . $startOfDay->copy()->utc()->toDateTimeString());
+            Log::info("End of day (UTC): " . $endOfDay->copy()->utc()->toDateTimeString());
+
             $existingPost = $user->posts()
                 ->where('group_task_id', $task->id)
                 ->where('created_at', '>=', $startOfDay)
@@ -67,6 +72,11 @@ class PostController extends Controller
 
             $startOfDay = $today->copy()->startOfDay();
             $endOfDay = $today->copy()->endOfDay();
+
+            Log::info("Start of day (America/New_York): " . $startOfDay->toDateTimeString());
+            Log::info("End of day (America/New_York): " . $endOfDay->toDateTimeString());
+            Log::info("Start of day (UTC): " . $startOfDay->copy()->utc()->toDateTimeString());
+            Log::info("End of day (UTC): " . $endOfDay->copy()->utc()->toDateTimeString());
 
             $existingPost = $user->posts()
                 ->where('group_id', $group->id)
