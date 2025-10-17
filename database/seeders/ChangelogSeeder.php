@@ -115,24 +115,6 @@ class ChangelogSeeder extends Seeder
                     '**Fix: To-Do List!** Resolved multiple issues with the to-do list, including crashes on group pages, non-functional "Like" and "Done" buttons, and database query errors causing internal server errors.',
                     '**Major Refactor: To-Do List & Notifications!** Both systems have been overhauled with dedicated controllers, dynamic data fetching, and fully clickable items, improving performance, maintainability, and user experience.',
                     '**Improvement: Better Context!** Notifications and to-do items now include the name of the group they belong to, making navigation easier on the main dashboard.',
-                ],
-            ]
-        );
-
-        Changelog::updateOrCreate(
-            ['release_date' => '2025-10-20'],
-            [
-                'changes' => [
-                    '**Major Refactor: Notifications!** The notification system has been refactored to use a dedicated controller, similar to the recent to-do list update. This improves performance and code maintainability.',
-                    '**Improvement: Better Context!** Notifications and to-do items for posts now include the name of the group they belong to, making it easier to navigate on the main dashboard.',
-                ],
-            ]
-        );
-
-        Changelog::updateOrCreate(
-            ['release_date' => '2025-10-21'],
-            [
-                'changes' => [
                     '**Fix: Liking Posts!** Standardized the "like" functionality across the application. Liking a post from the to-do list now works correctly.',
                     '**Refactor: Like Routes!** Removed a redundant and confusing route for liking posts to improve code clarity and maintainability.',
                 ],
