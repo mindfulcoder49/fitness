@@ -5,33 +5,54 @@ import { ref, computed, onMounted } from 'vue';
 import NotificationsPanel from '@/Components/NotificationsPanel.vue';
 import TodoListPanel from '@/Components/TodoListPanel.vue';
 import CreateGroupForm from '@/Components/CreateGroupForm.vue';
+import axios from 'axios';
 
 const props = defineProps({
     groups: Array,
-    notifications: Object,
-    notificationsLastCheckedAt: String,
-    todos: Array,
 });
 
-onMounted(() => {
-    console.log('Dashboard.vue: Received todos prop:', props.todos);
-});
-
+const todos = ref([]);
+const notifications = ref({});
+const notificationsLastChecked = ref(null);
 const showNotifications = ref(false);
 const showTodos = ref(false);
 const showCreateGroupForm = ref(false);
 
 const newNotificationCount = computed(() => {
-    if (!props.notifications) return 0;
-    const lastChecked = props.notificationsLastCheckedAt;
-    const newPosts = (props.notifications.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
-    const newComments = (props.notifications.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
-    const newLikes = (props.notifications.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
-    const newChangelogs = (props.notifications.changelogs || []).length;
+    if (!notifications.value) return 0;
+    const lastChecked = notificationsLastChecked.value;
+    const newPosts = (notifications.value.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
+    const newComments = (notifications.value.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
+    const newLikes = (notifications.value.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
+    const newChangelogs = (notifications.value.changelogs || []).length;
     return newPosts + newComments + newLikes + newChangelogs;
 });
 
-const todoCount = computed(() => props.todos?.length || 0);
+const todoCount = computed(() => todos.value?.length || 0);
+
+const fetchTodos = async () => {
+    try {
+        const response = await axios.get(route('todos.index'));
+        todos.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch todos:', error);
+    }
+};
+
+const fetchNotifications = async () => {
+    try {
+        const response = await axios.get(route('notifications.index'));
+        notifications.value = response.data;
+        notificationsLastChecked.value = response.data.lastChecked;
+    } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+    }
+};
+
+onMounted(() => {
+    fetchTodos();
+    fetchNotifications();
+});
 
 const toggleNotifications = () => {
     showTodos.value = false;
@@ -40,7 +61,7 @@ const toggleNotifications = () => {
         router.post(route('notifications.mark-as-read'), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                usePage().props.notificationsLastCheckedAt = new Date().toISOString();
+                notificationsLastChecked.value = new Date().toISOString();
             }
         });
     }
@@ -82,8 +103,8 @@ const toggleTodos = () => {
             </div>
         </template>
 
-        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastCheckedAt" @close="showNotifications = false" />
-        <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" />
+        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastChecked" @close="showNotifications = false" />
+        <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" @refresh="fetchTodos" />
         <CreateGroupForm :show="showCreateGroupForm" @close="showCreateGroupForm = false" />
 
         <div class="py-12">

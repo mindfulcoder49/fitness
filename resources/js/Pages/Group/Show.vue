@@ -8,6 +8,7 @@ import TodoListPanel from '@/Components/TodoListPanel.vue';
 import NotificationsPanel from '@/Components/NotificationsPanel.vue';
 import { Head, usePage, useForm, Link, router } from '@inertiajs/vue3';
 import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 
 const user = computed(() => usePage().props.auth.user);
 
@@ -20,12 +21,32 @@ const props = defineProps({
     leaderboard: Array,
     currentTasks: Array,
     userMetrics: Object,
-    todos: Array,
     hasPostedToday: Boolean,
-    notifications: Object,
-    notificationsLastCheckedAt: String,
     newChatMessageCount: Number,
 });
+
+const todos = ref([]);
+const notifications = ref({});
+const notificationsLastChecked = ref(null);
+
+const fetchTodos = async () => {
+    try {
+        const response = await axios.get(route('todos.index', { group_id: props.group.id }));
+        todos.value = response.data;
+    } catch (error) {
+        console.error('Failed to fetch todos:', error);
+    }
+};
+
+const fetchNotifications = async () => {
+    try {
+        const response = await axios.get(route('notifications.index', { group_id: props.group.id }));
+        notifications.value = response.data;
+        notificationsLastChecked.value = response.data.lastChecked;
+    } catch (error) {
+        console.error('Failed to fetch notifications:', error);
+    }
+};
 
 onMounted(() => {
     console.log('Group/Show.vue: Received currentTasks prop:', props.currentTasks);
@@ -33,6 +54,8 @@ onMounted(() => {
     if (props.currentTasks.length > 0 && !props.isGroupAdmin && !user.value.is_admin) {
         form.group_task_id = props.currentTasks[0].id;
     }
+    fetchTodos();
+    fetchNotifications();
 });
 
 const displayFeaturedPost = computed(() => {
@@ -43,14 +66,14 @@ const showTodos = ref(false);
 const showNotifications = ref(false);
 const showMobileSidebar = ref(false);
 
-const todoCount = computed(() => props.todos?.length || 0);
+const todoCount = computed(() => todos.value?.length || 0);
 
 const newNotificationCount = computed(() => {
-    if (!props.notifications) return 0;
-    const lastChecked = props.notificationsLastCheckedAt;
-    const newPosts = (props.notifications.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
-    const newComments = (props.notifications.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
-    const newLikes = (props.notifications.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
+    if (!notifications.value) return 0;
+    const lastChecked = notificationsLastChecked.value;
+    const newPosts = (notifications.value.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
+    const newComments = (notifications.value.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
+    const newLikes = (notifications.value.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
     return newPosts + newComments + newLikes;
 });
 
@@ -66,7 +89,7 @@ const toggleNotifications = () => {
         router.post(route('notifications.mark-as-read'), {}, {
             preserveScroll: true,
             onSuccess: () => {
-                usePage().props.auth.user.notifications_last_checked_at = new Date().toISOString();
+                notificationsLastChecked.value = new Date().toISOString();
             }
         });
     }
@@ -142,8 +165,8 @@ const submit = () => {
             </div>
         </template>
 
-        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastCheckedAt" :group-id="group.id" @close="showNotifications = false" />
-        <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" />
+        <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastChecked" :group-id="group.id" @close="showNotifications = false" />
+        <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" @refresh="fetchTodos" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">

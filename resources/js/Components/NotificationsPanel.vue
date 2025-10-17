@@ -73,15 +73,15 @@ const getNotificationLink = (item) => {
                 </div>
                 <div class="mt-1 text-gray-300">
                     <template v-if="item.type === 'New Post' || item.type === 'New Blog Post'">
-                        <p><span class="font-semibold">{{ item.user.username }}</span> created a new {{ item.type === 'New Blog Post' ? 'blog post' : 'post' }}.</p>
+                        <p><span class="font-semibold">{{ item.user.username }}</span> posted in <span class="font-semibold">{{ item.group.name }}</span>.</p>
                         <p v-if="item.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'New Comment'">
-                        <p><span class="font-semibold">{{ item.user.username }}</span> commented on your post: <span class="italic">"{{ item.post.content.substring(0, 30) }}..."</span></p>
+                        <p><span class="font-semibold">{{ item.user.username }}</span> commented on your post in <span class="font-semibold">{{ item.post.group.name }}</span>.</p>
                         <p v-if="item.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'New Like'">
-                        <p><span class="font-semibold">{{ item.user.username }}</span> liked your {{ item.likeable_type.split('\\').pop().toLowerCase() }}.</p>
+                        <p><span class="font-semibold">{{ item.user.username }}</span> liked your {{ item.likeable_type.split('\\').pop().toLowerCase() }} in <span class="font-semibold">{{ item.likeable.group.name }}</span>.</p>
                         <p v-if="item.likeable && item.likeable.content" class="mt-1 text-xs italic bg-gray-900/50 p-2 rounded">"{{ item.likeable.content.substring(0, 100) }}..."</p>
                     </template>
                     <template v-if="item.type === 'App Update'">

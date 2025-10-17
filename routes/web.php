@@ -11,6 +11,7 @@ use App\Http\Controllers\LikeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TodoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\UserGoalController;
 use Illuminate\Foundation\Application;
@@ -36,12 +37,15 @@ Route::get('/users/{user:username}', [UserController::class, 'show'])->middlewar
 Route::get('/groups', [GroupController::class, 'index'])->middleware(['auth', 'verified'])->name('groups.index');
 Route::post('/groups', [GroupController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.store');
 Route::post('/groups/{group}/join', [GroupController::class, 'join'])->middleware(['auth', 'verified'])->name('groups.join');
-Route::get('/groups/{group}', [GroupController::class, 'show'])->middleware(['auth', 'verified'])->name('groups.show');
-Route::get('/groups/{group}/blog/{post?}', [GroupController::class, 'blog'])->middleware(['auth', 'verified'])->name('groups.blog');
-Route::get('/groups/{group}/admin', [GroupController::class, 'admin'])->middleware(['auth', 'verified'])->name('groups.admin');
-Route::get('/groups/{group}/chat', [GroupMessageController::class, 'show'])->middleware(['auth', 'verified'])->name('groups.chat');
-Route::get('/groups/{group}/messages', [GroupMessageController::class, 'index'])->middleware(['auth', 'verified'])->name('groups.messages.index');
-Route::post('/groups/{group}/messages', [GroupMessageController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.messages.store');
+
+Route::middleware(['auth', 'verified', 'group.member'])->group(function () {
+    Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
+    Route::get('/groups/{group}/blog/{post?}', [GroupController::class, 'blog'])->name('groups.blog');
+    Route::get('/groups/{group}/admin', [GroupController::class, 'admin'])->name('groups.admin');
+    Route::get('/groups/{group}/chat', [GroupMessageController::class, 'show'])->name('groups.chat');
+    Route::get('/groups/{group}/messages', [GroupMessageController::class, 'index'])->name('groups.messages.index');
+    Route::post('/groups/{group}/messages', [GroupMessageController::class, 'store'])->name('groups.messages.store');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -55,6 +59,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
     Route::post('/changelog/{changelog:id}/read', [ChangelogController::class, 'markAsRead'])->name('changelog.read');
+    Route::get('/todos', [TodoController::class, 'getTodos'])->name('todos.index');
+    Route::get('/notifications', [NotificationController::class, 'getNotifications'])->name('notifications.index');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

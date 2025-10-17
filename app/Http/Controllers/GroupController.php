@@ -74,11 +74,8 @@ class GroupController extends Controller
         $user = Auth::user();
         $weekAgo = now()->subWeek();
 
-        // Ensure user is a member of the group to view it, unless it's public
+        // Membership check is now handled by 'group.member' middleware
         $isMember = $user->groups()->where('group_id', $group->id)->exists();
-        if (!$group->is_public && !$isMember) {
-            abort(403);
-        }
 
         $group->load('creator');
         $membership = $user->groups()->where('group_id', $group->id)->first();
@@ -195,28 +192,8 @@ class GroupController extends Controller
             ];
         })->sortByDesc('score')->values()->take(20);
 
-        // Group-specific tasks (To-Do List)
-        Log::info("GroupShow: Fetching current tasks for group ID: {$group->id}");
+        // Get current tasks for the post form dropdown. To-do list is fetched client-side.
         $currentTasks = $group->tasks()->where('is_current', true)->get();
-        Log::info("GroupShow: Found {$currentTasks->count()} current tasks.", $currentTasks->pluck('id', 'title')->all());
-        $todos = [];
-        if ($currentTasks->isNotEmpty()) {
-            $postedTaskIdsToday = $user->posts()
-                ->where('group_id', $group->id)
-                ->whereNotNull('group_task_id')
-                ->where('created_at', '>=', now('America/New_York')->startOfDay())
-                ->pluck('group_task_id');
-
-            foreach ($currentTasks as $task) {
-                if (!$postedTaskIdsToday->contains($task->id)) {
-                    $todos[] = [
-                        'id' => 'post_today_task_' . $task->id,
-                        'type' => 'Daily Task',
-                        'description' => $task->title,
-                    ];
-                }
-            }
-        }
 
         // Check if prospective member has posted today for the UI lock
         $hasPostedToday = false;
@@ -226,46 +203,7 @@ class GroupController extends Controller
                 ->exists();
         }
 
-        // Group-specific notifications
-        $postsForNotifications = $group->posts()
-            ->with('user:id,username')
-            ->where('created_at', '>=', $weekAgo)
-            ->where('user_id', '!=', $user->id)
-            ->get();
-
-        $userPostIdsInGroup = $user->posts()->where('group_id', $group->id)->pluck('id');
-        $commentsOnUserPosts = Comment::with('user:id,username', 'post:id,content,group_id')
-            ->whereIn('post_id', $userPostIdsInGroup)
-            ->where('user_id', '!=', $user->id)
-            ->where('created_at', '>=', $weekAgo)
-            ->get();
-
-        $userCommentIdsInGroup = $user->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id))->pluck('id');
-        $likesOnUserContent = Like::with([
-            'user:id,username',
-            'likeable' => function ($morphTo) {
-                $morphTo->morphWith([
-                    \App\Models\Comment::class => ['post:id,group_id'],
-                ]);
-            }
-        ])
-            ->where(function ($query) use ($userPostIdsInGroup, $userCommentIdsInGroup) {
-                $query->where(function ($q) use ($userPostIdsInGroup) {
-                    $q->where('likeable_type', Post::class)->whereIn('likeable_id', $userPostIdsInGroup);
-                })->orWhere(function ($q) use ($userCommentIdsInGroup) {
-                    $q->where('likeable_type', Comment::class)->whereIn('likeable_id', $userCommentIdsInGroup);
-                });
-            })
-            ->where('user_id', '!=', $user->id)
-            ->where('created_at', '>=', $weekAgo)
-            ->get();
-
-        $notifications = [
-            'posts' => $postsForNotifications,
-            'commentsOnUserPosts' => $commentsOnUserPosts,
-            'likesOnUserContent' => $likesOnUserContent,
-            'changelogs' => [], // No app-level changelogs on group page
-        ];
+        // Group-specific notifications are now fetched client-side
 
         $viewData = [
             'group' => $group,
@@ -276,10 +214,8 @@ class GroupController extends Controller
             'leaderboard' => $leaderboard,
             'currentTasks' => $currentTasks,
             'userMetrics' => $groupUserMetrics,
-            'todos' => $todos,
             'hasPostedToday' => $hasPostedToday,
-            'notifications' => $notifications,
-            'notificationsLastCheckedAt' => $user->notifications_last_checked_at,
+            // 'notifications' and 'notificationsLastCheckedAt' props are removed
             'newChatMessageCount' => $newChatMessageCount,
         ];
 

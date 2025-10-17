@@ -15,11 +15,9 @@ class GroupPolicy
      */
     public function view(User $user, Group $group): bool
     {
-        if ($group->is_public) {
-            return true;
-        }
-
-        return $user->groups()->where('group_id', $group->id)->exists();
+        // The 'group.member' middleware already ensures the user is a member of private groups.
+        // So, we just need to allow access if it's public or if they are a member.
+        return $group->is_public || $user->groups()->where('group_id', $group->id)->exists();
     }
 
     /**

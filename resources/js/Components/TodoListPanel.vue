@@ -5,44 +5,23 @@ defineProps({
     todos: Array,
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'refresh']);
 
-const getActionLink = (todo) => {
-    if (todo.id === 'set_goal') {
-        return route('profile.edit');
+const handleAction = (todo) => {
+    if (todo.action_meta && todo.action_meta.method === 'post') {
+        router.post(todo.action_meta.route, todo.action_meta.data || {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                emit('refresh');
+                // After the action is successful, navigate to the link.
+                router.visit(todo.link, { preserveScroll: true });
+            },
+        });
+    } else {
+        // If there's no special action, just navigate.
+        router.visit(todo.link);
     }
-    if (todo.id === 'post_today') {
-        return '#post-form'; // Assuming you have an element with id="post-form"
-    }
-    if (todo.post_id && todo.group_id) {
-        if (todo.type === 'Like a Blog Post') {
-            return route('groups.blog', { group: todo.group_id, post: todo.post_id });
-        }
-        return route('groups.show', { group: todo.group_id, post: todo.post_id });
-    }
-    if (todo.post_id) {
-        return route('dashboard', { post: todo.post_id });
-    }
-    if (todo.changelog_id) {
-        return route('changelog.index');
-    }
-    return '#';
-};
-
-const isAnchorTag = (todo) => {
-    return todo.id === 'post_today';
-};
-
-const markChangelogAsRead = (changelogId) => {
-    router.post(route('changelogs.mark-as-read', changelogId), {}, {
-        preserveScroll: true,
-    });
-};
-
-const likePost = (postId) => {
-    router.post(route('posts.like', postId), {}, {
-        preserveScroll: true,
-    });
+    emit('close');
 };
 </script>
 
@@ -54,18 +33,14 @@ const likePost = (postId) => {
             <button @click="$emit('close')" class="text-gray-400 hover:text-white">&times;</button>
         </div>
         <ul v-if="todos.length > 0" class="space-y-2 max-h-96 overflow-y-auto">
-            <li v-for="todo in todos" :key="todo.id" class="p-3 bg-gray-700/50 rounded-md flex items-center justify-between">
-                <div class="flex-1">
+            <li v-for="todo in todos" :key="todo.id">
+                <Link :href="todo.link" @click.prevent="handleAction(todo)" class="block p-3 bg-gray-700/50 rounded-md hover:bg-gray-700/80 transition-colors duration-150">
                     <p class="text-sm font-semibold text-indigo-300">{{ todo.type }}</p>
-                    <Link v-if="todo.type === 'Daily Task'" :href="route('groups.show', todo.group_id)" class="text-gray-200 hover:underline">
-                        {{ todo.description }}
-                    </Link>
-                    <p v-else class="text-gray-200">{{ todo.description }}</p>
-                </div>
-                <div class="ml-2">
-                    <button v-if="todo.type === 'Read Update'" @click="markChangelogAsRead(todo.changelog_id)" class="px-2 py-1 text-xs bg-green-600 hover:bg-green-700 rounded">Done</button>
-                    <Link v-if="todo.type === 'Like a Post' || todo.type === 'Like a Blog Post'" :href="route('groups.show', { group: todo.group_id, post: todo.post_id })" @click="likePost(todo.post_id)" class="px-2 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded">Like</Link>
-                </div>
+                    <p class="text-gray-200 mt-1">{{ todo.description }}</p>
+                    <p v-if="todo.details" class="mt-2 text-xs italic bg-gray-900/30 p-2 rounded">
+                        {{ todo.details }}
+                    </p>
+                </Link>
             </li>
         </ul>
         <p v-else class="text-gray-400 text-center py-4">Your to-do list is empty. Great job!</p>

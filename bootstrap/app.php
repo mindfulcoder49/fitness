@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\IsAdmin::class,
+            'group.member' => \App\Http\Middleware\EnsureUserIsGroupMember::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
