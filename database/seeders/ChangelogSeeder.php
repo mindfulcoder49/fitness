@@ -122,6 +122,7 @@ class ChangelogSeeder extends Seeder
             ['release_date' => '2025-10-18'],
             [
                 'changes' => [
+                    '**New Feature: Group Availability!** A new "Availability" page has been added to groups. Members can mark their available days for the next 30 days. Group admins can view a summary of member availability on the group\'s admin page to help coordinate events.',
                     '**Fix: Notification Count!** Corrected an issue where unread changelogs were always counted as new notifications on the dashboard. The count now accurately reflects only changelogs released since you last checked your notifications.',
                     '**Fix: Inactive tabs showing json when reopened!** Fixed an issue where inactive tabs would display raw JSON data when reopened instead of the proper UI.',
                 ],

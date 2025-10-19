@@ -133,6 +133,9 @@ const submit = () => {
                             {{ newChatMessageCount > 9 ? '9+' : newChatMessageCount }}
                         </span>
                     </Link>
+                    <Link :href="route('groups.availability.index', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
+                        Availability
+                    </Link>
                     <Link :href="route('groups.blog', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
                         Blog
                     </Link>

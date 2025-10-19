@@ -5,6 +5,7 @@ import { Head } from '@inertiajs/vue3';
 
 const props = defineProps({
     group: Object,
+    availabilitySummary: Array,
 });
 </script>
 
@@ -21,7 +22,7 @@ const props = defineProps({
         <div class="py-12">
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg dark:bg-gray-800">
-                    <GroupAdminPanel :group="group" />
+                    <GroupAdminPanel :group="group" :availability-summary="availabilitySummary" />
                 </div>
             </div>
         </div>

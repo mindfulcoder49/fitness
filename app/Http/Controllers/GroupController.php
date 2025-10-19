@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class GroupController extends Controller
 {
@@ -281,8 +282,42 @@ class GroupController extends Controller
             'posts.comments.likes' => fn($q) => $q->with('user')->latest(),
         ]);
 
+        // Availability Data for Admin
+        $allAvailabilities = $group->userAvailabilities()->with('user:id,name,username')->get();
+        $availabilityByDate = [];
+        $startDate = Carbon::today();
+
+        for ($i = 0; $i < 30; $i++) {
+            $date = $startDate->copy()->addDays($i)->toDateString();
+            $availabilityByDate[$date] = [];
+        }
+
+        foreach ($allAvailabilities as $availability) {
+            if (is_array($availability->availability)) {
+                foreach ($availability->availability as $date) {
+                    if (array_key_exists($date, $availabilityByDate)) {
+                        $availabilityByDate[$date][] = $availability->user;
+                    }
+                }
+            }
+        }
+
+        $availabilitySummary = collect($availabilityByDate)
+            ->map(function ($users, $date) {
+                return [
+                    'date' => $date,
+                    'count' => count($users),
+                    'users' => $users,
+                ];
+            })
+            ->filter(fn ($item) => $item['count'] > 0)
+            ->sortByDesc('count')
+            ->values();
+
+
         return Inertia::render('Group/Admin', [
             'group' => $group,
+            'availabilitySummary' => $availabilitySummary,
         ]);
     }
 

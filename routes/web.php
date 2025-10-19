@@ -13,6 +13,7 @@ use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TodoController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserAvailabilityController;
 use App\Http\Controllers\UserGoalController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +46,9 @@ Route::middleware(['auth', 'verified', 'group.member'])->group(function () {
     Route::get('/groups/{group}/chat', [GroupMessageController::class, 'show'])->name('groups.chat');
     Route::get('/groups/{group}/messages', [GroupMessageController::class, 'index'])->name('groups.messages.index');
     Route::post('/groups/{group}/messages', [GroupMessageController::class, 'store'])->name('groups.messages.store');
+    Route::get('/groups/{group}/availability', [UserAvailabilityController::class, 'index'])->name('groups.availability.index');
+    Route::get('/groups/{group}/availability/data', [UserAvailabilityController::class, 'getData'])->name('groups.availability.data');
+    Route::post('/groups/{group}/availability', [UserAvailabilityController::class, 'update'])->name('groups.availability.update');
 });
 
 Route::middleware('auth')->group(function () {
