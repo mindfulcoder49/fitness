@@ -114,19 +114,21 @@ const unsetCurrentTask = (task) => {
 </script>
 
 <template>
-    <div class="p-6">
+    <div class="p-2 sm:p-6">
         <div class="mb-4 border-b border-gray-700">
-            <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-                <button @click="activeTab = 'availability'" :class="['whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm', activeTab === 'availability' ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500']">
-                    Availability
-                </button>
-                <button @click="activeTab = 'members'" :class="[activeTab === 'members' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Members</button>
-                <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Posts</button>
-                <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Comments</button>
-                <button @click="activeTab = 'likes'" :class="[activeTab === 'likes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Likes</button>
-                <button @click="activeTab = 'tasks'" :class="[activeTab === 'tasks' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Tasks</button>
-                <button v-if="user.is_admin" @click="activeTab = 'settings'" :class="[activeTab === 'settings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Settings</button>
-            </nav>
+            <div class="overflow-x-auto">
+                <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button @click="activeTab = 'availability'" :class="['whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm', activeTab === 'availability' ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500']">
+                        Availability
+                    </button>
+                    <button @click="activeTab = 'members'" :class="[activeTab === 'members' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Members</button>
+                    <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Posts</button>
+                    <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Comments</button>
+                    <button @click="activeTab = 'likes'" :class="[activeTab === 'likes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Likes</button>
+                    <button @click="activeTab = 'tasks'" :class="[activeTab === 'tasks' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Tasks</button>
+                    <button v-if="user.is_admin" @click="activeTab = 'settings'" :class="[activeTab === 'settings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Settings</button>
+                </nav>
+            </div>
         </div>
 
         <div>
