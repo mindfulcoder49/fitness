@@ -111,13 +111,17 @@ class ChangelogSeeder extends Seeder
             ['release_date' => '2025-10-17'],
             [
                 'changes' => [
-                    '**New: Group Membership Middleware!** Implemented backend logic to restrict access to private group content (feeds, chats, blogs) to members only, enhancing security and privacy.',
-                    '**Fix: To-Do List!** Resolved multiple issues with the to-do list, including crashes on group pages, non-functional "Like" and "Done" buttons, and database query errors causing internal server errors.',
-                    '**Major Refactor: To-Do List & Notifications!** Both systems have been overhauled with dedicated controllers, dynamic data fetching, and fully clickable items, improving performance, maintainability, and user experience.',
-                    '**Improvement: Better Context!** Notifications and to-do items now include the name of the group they belong to, making navigation easier on the main dashboard.',
-                    '**Fix: Liking Posts!** Standardized the "like" functionality across the application. Liking a post from the to-do list now works correctly.',
-                    '**Refactor: Like Routes!** Removed a redundant and confusing route for liking posts to improve code clarity and maintainability.',
+                    '**New: Group Membership Middleware!** Implemented new backend logic to restrict access to group content (feeds, chats, blogs) to members only for private groups, improving security and data privacy. This also correctly grants access to site admins and group creators.',
+                    '**Fix: To-Do List Actions!** Corrected a bug that prevented "Like Post" actions in the to-do list from working. Clicking the item now correctly likes the post and navigates you to it.',
+                    '**Fix: Joining Groups!** Resolved a critical routing issue that prevented users from joining public groups.',
                 ],
+            ]
+        );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-18'],
+            [
+                'changes' => [],
             ]
         );
     }

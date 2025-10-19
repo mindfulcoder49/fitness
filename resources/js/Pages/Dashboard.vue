@@ -24,7 +24,7 @@ const newNotificationCount = computed(() => {
     const newPosts = (notifications.value.posts || []).filter(p => !lastChecked || new Date(p.created_at) > new Date(lastChecked)).length;
     const newComments = (notifications.value.commentsOnUserPosts || []).filter(c => !lastChecked || new Date(c.created_at) > new Date(lastChecked)).length;
     const newLikes = (notifications.value.likesOnUserContent || []).filter(l => !lastChecked || new Date(l.created_at) > new Date(lastChecked)).length;
-    const newChangelogs = (notifications.value.changelogs || []).length;
+    const newChangelogs = (notifications.value.changelogs || []).filter(c => !lastChecked || new Date(c.release_date) > new Date(lastChecked)).length;
     return newPosts + newComments + newLikes + newChangelogs;
 });
 
