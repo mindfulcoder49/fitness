@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Middleware;
@@ -14,6 +15,28 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /**
+     * Handle the incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
+    public function handle(Request $request, Closure $next)
+    {
+        $response = parent::handle($request, $next);
+
+        if (! $response->headers->has('Vary')) {
+            $response->headers->set('Vary', 'Accept');
+        }
+
+        if ($response->headers->get('Vary') !== 'Accept, X-Inertia') {
+            $response->headers->set('Vary', trim($response->headers->get('Vary').', X-Inertia'), true);
+        }
+
+        return $response;
+    }
 
     /**
      * Determine the current asset version.

@@ -121,7 +121,10 @@ class ChangelogSeeder extends Seeder
         Changelog::updateOrCreate(
             ['release_date' => '2025-10-18'],
             [
-                'changes' => [],
+                'changes' => [
+                    '**Fix: Notification Count!** Corrected an issue where unread changelogs were always counted as new notifications on the dashboard. The count now accurately reflects only changelogs released since you last checked your notifications.',
+                    '**Fix: Inactive tabs showing json when reopened!** Fixed an issue where inactive tabs would display raw JSON data when reopened instead of the proper UI.',
+                ],
             ]
         );
     }
