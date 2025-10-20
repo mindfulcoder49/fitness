@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { router, Link, usePage, useForm } from '@inertiajs/vue3';
 import GroupAvailabilityPanel from '@/Components/Admin/GroupAvailabilityPanel.vue';
 import GroupMeetupPanel from '@/Components/Admin/GroupMeetupPanel.vue';
+import GroupLikeStatsPanel from '@/Components/Admin/GroupLikeStatsPanel.vue';
 
 const props = defineProps({
     group: Object,
@@ -127,6 +128,7 @@ const unsetCurrentTask = (task) => {
                     <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Posts</button>
                     <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Comments</button>
                     <button @click="activeTab = 'likes'" :class="[activeTab === 'likes' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Likes</button>
+                    <button @click="activeTab = 'like-stats'" :class="[activeTab === 'like-stats' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Like Stats</button>
                     <button @click="activeTab = 'tasks'" :class="[activeTab === 'tasks' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Tasks</button>
                     <button v-if="user.is_admin" @click="activeTab = 'settings'" :class="[activeTab === 'settings' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Settings</button>
                 </nav>
@@ -241,6 +243,11 @@ const unsetCurrentTask = (task) => {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Like Stats Tab -->
+            <div v-if="activeTab === 'like-stats'">
+                <GroupLikeStatsPanel :group="group" />
             </div>
 
             <!-- Tasks Tab -->

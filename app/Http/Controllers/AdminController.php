@@ -26,7 +26,7 @@ class AdminController extends Controller
                 'creator',
                 'tasks',
                 'posts' => fn($q) => $q->with(['user', 'groupTask'])->latest(),
-                'posts.comments' => fn($q) => $q->with('user')->latest(),
+                'posts.comments' => fn($q) => $q->with(['user', 'likes.user'])->latest(),
                 'posts.likes' => fn($q) => $q->with('user')->latest(),
                 'posts.comments.likes' => fn($q) => $q->with('user')->latest(),
             ])->get(),
