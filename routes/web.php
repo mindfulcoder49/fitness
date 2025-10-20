@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupMessageController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\MeetupController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'verified', 'group.member'])->group(function () {
     Route::get('/groups/{group}/availability', [UserAvailabilityController::class, 'index'])->name('groups.availability.index');
     Route::get('/groups/{group}/availability/data', [UserAvailabilityController::class, 'getData'])->name('groups.availability.data');
     Route::post('/groups/{group}/availability', [UserAvailabilityController::class, 'update'])->name('groups.availability.update');
+    Route::get('/groups/{group}/meetups', [MeetupController::class, 'index'])->name('groups.meetups.index');
 });
 
 Route::middleware('auth')->group(function () {
@@ -63,6 +65,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
     Route::post('/changelog/{changelog:id}/read', [ChangelogController::class, 'markAsRead'])->name('changelog.read');
+    Route::post('/meetups/{meetup}/rsvp', [MeetupController::class, 'rsvp'])->name('meetups.rsvp');
     Route::get('/todos', [TodoController::class, 'getTodos'])->name('todos.index');
     Route::get('/notifications', [NotificationController::class, 'getNotifications'])->name('notifications.index');
 });
@@ -72,6 +75,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/users/{user}/media-permissions', [AdminController::class, 'updateUserMediaPermissions'])->name('users.update-media-permissions');
     Route::patch('/groups/{group}/members/{user}/role', [AdminController::class, 'updateGroupMemberRole'])->name('groups.members.update-role');
     Route::patch('/groups/{group}/toggle-public', [AdminController::class, 'toggleGroupPublicStatus'])->name('groups.toggle-public');
+    Route::post('/groups/{group}/meetups', [MeetupController::class, 'store'])->name('groups.meetups.store');
+    Route::patch('/meetups/{meetup}', [MeetupController::class, 'update'])->name('meetups.update');
+    Route::delete('/meetups/{meetup}', [MeetupController::class, 'destroy'])->name('meetups.destroy');
     Route::post('/groups/{group}/tasks', [AdminController::class, 'storeTask'])->name('groups.tasks.store');
     Route::patch('/groups/tasks/{task}', [AdminController::class, 'updateTask'])->name('groups.tasks.update');
     Route::delete('/groups/tasks/{task}', [AdminController::class, 'destroyTask'])->name('groups.tasks.destroy');

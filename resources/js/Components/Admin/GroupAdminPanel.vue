@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue';
 import { router, Link, usePage, useForm } from '@inertiajs/vue3';
 import GroupAvailabilityPanel from '@/Components/Admin/GroupAvailabilityPanel.vue';
+import GroupMeetupPanel from '@/Components/Admin/GroupMeetupPanel.vue';
 
 const props = defineProps({
     group: Object,
@@ -121,6 +122,7 @@ const unsetCurrentTask = (task) => {
                     <button @click="activeTab = 'availability'" :class="['whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm', activeTab === 'availability' ? 'border-indigo-400 text-indigo-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-500']">
                         Availability
                     </button>
+                    <button @click="activeTab = 'meetups'" :class="[activeTab === 'meetups' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Meetups</button>
                     <button @click="activeTab = 'members'" :class="[activeTab === 'members' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Members</button>
                     <button @click="activeTab = 'posts'" :class="[activeTab === 'posts' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Posts</button>
                     <button @click="activeTab = 'comments'" :class="[activeTab === 'comments' ? 'border-indigo-500 text-indigo-400' : 'border-transparent text-gray-400 hover:border-gray-500 hover:text-gray-300', 'whitespace-nowrap border-b-2 py-3 px-1 text-sm font-medium']">Comments</button>
@@ -134,6 +136,9 @@ const unsetCurrentTask = (task) => {
         <div>
             <div v-if="activeTab === 'availability'">
                 <GroupAvailabilityPanel :availability-summary="availabilitySummary" />
+            </div>
+            <div v-if="activeTab === 'meetups'">
+                <GroupMeetupPanel :group="group" />
             </div>
             <!-- Members Table -->
             <div v-if="activeTab === 'members'" class="overflow-x-auto">

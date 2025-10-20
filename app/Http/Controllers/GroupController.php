@@ -7,6 +7,7 @@ use App\Models\Post;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\GroupTask;
+use App\Models\Changelog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -204,6 +205,12 @@ class GroupController extends Controller
                 ->exists();
         }
 
+        // Data for GroupInfoPanel
+        $latestMeetup = $group->meetups()->where('scheduled_at', '>=', now())->orderBy('scheduled_at', 'asc')->first();
+        $latestChangelog = Changelog::latest('release_date')->first();
+        $latestGroupBlogPost = $group->posts()->where('is_blog_post', true)->latest()->first();
+        $latestGroupMessages = $group->messages()->with('user:id,name')->latest()->take(2)->get()->reverse();
+
         // Group-specific notifications are now fetched client-side
 
         $viewData = [
@@ -216,8 +223,11 @@ class GroupController extends Controller
             'currentTasks' => $currentTasks,
             'userMetrics' => $groupUserMetrics,
             'hasPostedToday' => $hasPostedToday,
-            // 'notifications' and 'notificationsLastCheckedAt' props are removed
             'newChatMessageCount' => $newChatMessageCount,
+            'latestMeetup' => $latestMeetup,
+            'latestChangelog' => $latestChangelog,
+            'latestGroupBlogPost' => $latestGroupBlogPost,
+            'latestGroupMessages' => $latestGroupMessages,
         ];
 
         Log::info("GroupShow: Data being passed to view for group ID: {$group->id}", ['currentTasks_count' => $currentTasks->count()]);
@@ -280,6 +290,9 @@ class GroupController extends Controller
             'posts.comments' => fn($q) => $q->with('user')->latest(),
             'posts.likes' => fn($q) => $q->with('user')->latest(),
             'posts.comments.likes' => fn($q) => $q->with('user')->latest(),
+            'meetups' => function ($query) {
+                $query->orderBy('scheduled_at', 'desc');
+            },
         ]);
 
         // Availability Data for Admin

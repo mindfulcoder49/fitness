@@ -128,5 +128,16 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-19'],
+            [
+                'changes' => [
+                    '**Improvement: Group Info Panel!** The info panel on group pages has been enhanced to show the latest upcoming meetup, the newest group blog post, recent chat messages, and the latest site-wide changelog update, providing a better at-a-glance dashboard.',
+                    '**Fix: Toolbar Menu!** Tweaked the toolbar menu display to allow for better display on mobile.',
+                    '**New Feature: Meetups!** A new "Meetups" page has been added to groups where admins can schedule events and members can RSVP, helping to foster community engagement.',
+                ],
+            ]
+        );
     }
 }

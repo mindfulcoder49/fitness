@@ -56,4 +56,14 @@ class Group extends Model
     {
         return $this->hasMany(GroupMessage::class);
     }
+
+    public function isUserAdmin(User $user): bool
+    {
+        if ($user->is_admin) {
+            return true;
+        }
+
+        $membership = $this->users()->where('user_id', $user->id)->first();
+        return $membership && $membership->pivot->role === 'admin';
+    }
 }

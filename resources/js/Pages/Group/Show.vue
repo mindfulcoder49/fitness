@@ -23,6 +23,10 @@ const props = defineProps({
     userMetrics: Object,
     hasPostedToday: Boolean,
     newChatMessageCount: Number,
+    latestMeetup: Object,
+    latestChangelog: Object,
+    latestGroupBlogPost: Object,
+    latestGroupMessages: Array,
 });
 
 const todos = ref([]);
@@ -122,16 +126,16 @@ const submit = () => {
 
     <AuthenticatedLayout>
         <template #header>
-            <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                    {{ group.name }}
-                </h2>
-                <div class="flex items-center space-x-2 sm:space-x-4">
+            <div class="flex justify-end items-center">
+                <div class="flex items-center space-x-2 sm:space-x-4 flex-wrap justify-end">
                     <Link :href="route('groups.chat', { group: group.id })" class="relative text-sm font-medium text-gray-300 hover:text-white">
                         Chat
                         <span v-if="newChatMessageCount > 0" class="absolute -top-2 -right-2 block h-4 w-4 transform rounded-full text-white bg-red-500 text-xs flex items-center justify-center">
                             {{ newChatMessageCount > 9 ? '9+' : newChatMessageCount }}
                         </span>
+                    </Link>
+                    <Link :href="route('groups.meetups.index', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
+                        Meetups
                     </Link>
                     <Link :href="route('groups.availability.index', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
                         Availability
@@ -172,6 +176,11 @@ const submit = () => {
         <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" @refresh="fetchTodos" />
 
         <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <h2 class="font-semibold text-2xl text-gray-800 dark:text-gray-200 leading-tight mb-6">
+                    {{ group.name }}
+                </h2>
+            </div>
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main content -->
                 <div class="lg:col-span-2 space-y-6">
@@ -249,7 +258,14 @@ const submit = () => {
                             </svg>
                         </button>
                         <div class="p-6 lg:p-0 lg:mt-0 space-y-6">
-                            <GroupInfoPanel :current-tasks="currentTasks" />
+                            <GroupInfoPanel
+                                :current-tasks="currentTasks"
+                                :latest-meetup="latestMeetup"
+                                :latest-changelog="latestChangelog"
+                                :latest-group-blog-post="latestGroupBlogPost"
+                                :latest-group-messages="latestGroupMessages"
+                                :group-id="group.id"
+                            />
                             <Leaderboard :users="leaderboard" />
                             <UserMetrics v-if="userMetrics" :metrics="userMetrics" />
                         </div>

@@ -5,9 +5,11 @@ namespace App\Providers;
 // use Illuminate\Support\Facades\Gate;
 use App\Models\Comment;
 use App\Models\Group;
+use App\Models\Meetup;
 use App\Models\Post;
 use App\Policies\CommentPolicy;
 use App\Policies\GroupPolicy;
+use App\Policies\MeetupPolicy;
 use App\Policies\PostPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
@@ -22,6 +24,7 @@ class AuthServiceProvider extends ServiceProvider
         Post::class => PostPolicy::class,
         Comment::class => CommentPolicy::class,
         Group::class => GroupPolicy::class,
+        Meetup::class => MeetupPolicy::class,
     ];
 
     /**
