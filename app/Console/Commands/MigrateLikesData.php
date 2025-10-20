@@ -74,14 +74,34 @@ class MigrateLikesData extends Command
 
         $likesData = json_decode(File::get($this->filePath), true);
 
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->error('Error decoding JSON from migration file: ' . json_last_error_msg());
+            $this->error('Import failed. The migration file has been preserved.');
+            return;
+        }
+
+        if (empty($likesData)) {
+            $this->info('Migration file is empty. Nothing to import.');
+            File::delete($this->filePath);
+            $this->info('Empty migration file deleted.');
+            return;
+        }
+
+        $this->info('Found ' . count($likesData) . ' records to import.');
+
         try {
             DB::transaction(function () use ($likesData) {
-                // Truncate before import to prevent duplicates if run multiple times.
-                DB::table('likes')->truncate();
+                $this->info('Deleting existing likes from the table...');
+                // Use delete() instead of truncate() to stay within the transaction
+                DB::table('likes')->delete();
+                $this->info('Existing likes deleted.');
 
+                $this->info('Inserting new likes...');
                 DB::table('likes')->insert($likesData);
+                $this->info('New likes inserted successfully.');
             });
 
+            $this->info('Database transaction committed.');
             File::delete($this->filePath);
             $this->info('Import complete and migration file deleted.');
 
