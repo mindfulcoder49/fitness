@@ -32,6 +32,6 @@ class CommentController extends Controller
 
         $comment->delete();
 
-        return back();
+        return back()->with('success', 'Comment deleted.');
     }
 }

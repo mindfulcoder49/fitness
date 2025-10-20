@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/likes', [LikeController::class, 'store'])->name('likes.store');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
     Route::post('/changelog/{changelog:id}/read', [ChangelogController::class, 'markAsRead'])->name('changelog.read');
     Route::post('/meetups/{meetup}/rsvp', [MeetupController::class, 'rsvp'])->name('meetups.rsvp');

@@ -139,5 +139,14 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-10-20'],
+            [
+                'changes' => [
+                    '**Fix: Liking Comments!** Resolved an issue that prevented users from liking comments on posts. The like functionality is now fully operational.',
+                ],
+            ]
+        );
     }
 }

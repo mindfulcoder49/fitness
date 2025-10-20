@@ -15,7 +15,9 @@ class LikeController extends Controller
                 'likeable_id' => 'required|integer',
                 'likeable_type' => 'required|string|in:App\Models\Post,App\Models\Comment',
             ]);
-            $likeable = $request->likeable_type::findOrFail($request->likeable_id);
+
+            $likeableType = str_replace('\\\\', '\\', $request->likeable_type);
+            $likeable = $likeableType::findOrFail($request->likeable_id);
         } elseif ($post) {
             $likeable = $post;
         } else {
