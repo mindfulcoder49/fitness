@@ -51,13 +51,12 @@ class MigrateLikesData extends Command
     {
         $this->info('Exporting likes data...');
 
-        // Assuming old structure has post_id
-        if (!DB::getSchemaBuilder()->hasColumn('likes', 'post_id')) {
-            $this->error('The likes table does not have a post_id column. No export needed or already migrated.');
+        if (!DB::getSchemaBuilder()->hasTable('likes')) {
+            $this->error('The likes table does not exist. Nothing to export.');
             return;
         }
 
-        $likes = DB::table('likes')->select('user_id', 'post_id', 'created_at', 'updated_at')->get();
+        $likes = DB::table('likes')->select('user_id', 'likeable_id', 'likeable_type', 'created_at', 'updated_at')->get();
 
         File::put($this->filePath, $likes->toJson(JSON_PRETTY_PRINT));
 
@@ -80,21 +79,11 @@ class MigrateLikesData extends Command
                 // Truncate before import to prevent duplicates if run multiple times.
                 DB::table('likes')->truncate();
 
-                $likesToInsert = [];
-                foreach ($likesData as $like) {
-                    $likesToInsert[] = [
-                        'user_id' => $like['user_id'],
-                        'likeable_id' => $like['post_id'],
-                        'likeable_type' => Post::class,
-                        'created_at' => $like['created_at'],
-                        'updated_at' => $like['updated_at'],
-                    ];
-                }
-
-                DB::table('likes')->insert($likesToInsert);
+                DB::table('likes')->insert($likesData);
             });
 
-            $this->info('Import complete');
+            File::delete($this->filePath);
+            $this->info('Import complete and migration file deleted.');
 
         } catch (\Exception $e) {
             $this->error('An error occurred during import: ' . $e->getMessage());

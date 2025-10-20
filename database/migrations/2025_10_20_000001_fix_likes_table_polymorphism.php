@@ -31,15 +31,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('likes');
-
-        // This is a recreation of what might have been the old structure.
-        // A simple drop on 'down' is often sufficient for corrective migrations.
-        Schema::create('likes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('post_id')->constrained()->onDelete('cascade');
-            $table->timestamps();
-            $table->unique(['user_id', 'post_id']);
-        });
     }
 };
