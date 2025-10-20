@@ -159,11 +159,12 @@ class GroupController extends Controller
             // Comments in this group (on non-blog posts)
             $commentsCount = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id)->where('is_blog_post', false))->count();
 
-            // Likes given in this group (on non-blog posts/comments)
+            // Likes given in this group (on non-blog posts/comments), excluding self-likes
             $likesGivenCount = $u->likes()->whereHasMorph(
                 'likeable',
                 [Post::class, Comment::class],
-                function ($query, $type) use ($group) {
+                function ($query, $type) use ($group, $u) {
+                    $query->where('user_id', '!=', $u->id); // Exclude likes on own content
                     if ($type === Post::class) {
                         $query->where('group_id', $group->id)->where('is_blog_post', false);
                     } elseif ($type === Comment::class) {
@@ -174,11 +175,19 @@ class GroupController extends Controller
                 }
             )->count();
 
-            // Likes received on posts in this group (non-blog posts)
-            $likesOnPosts = $u->posts()->where('group_id', $group->id)->where('is_blog_post', false)->withCount('likes')->get()->sum('likes_count');
+            // Likes received on posts in this group (non-blog posts), excluding self-likes
+            $likesOnPosts = $u->posts()->where('group_id', $group->id)->where('is_blog_post', false)
+                ->withCount(['likes' => function ($query) use ($u) {
+                    $query->where('user_id', '!=', $u->id);
+                }])
+                ->get()->sum('likes_count');
 
-            // Likes received on comments in this group (on non-blog posts)
-            $likesOnComments = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id)->where('is_blog_post', false))->withCount('likes')->get()->sum('likes_count');
+            // Likes received on comments in this group (on non-blog posts), excluding self-likes
+            $likesOnComments = $u->comments()->whereHas('post', fn($q) => $q->where('group_id', $group->id)->where('is_blog_post', false))
+                ->withCount(['likes' => function ($query) use ($u) {
+                    $query->where('user_id', '!=', $u->id);
+                }])
+                ->get()->sum('likes_count');
 
             // Scoring: distinct post days=3, comments=1, likes given=0.5, likes received=1
             $score = ($distinctPostDays * 3) +
