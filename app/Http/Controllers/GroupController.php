@@ -69,6 +69,21 @@ class GroupController extends Controller
         return redirect()->route('groups.show', $group);
     }
 
+    public function leave(Group $group)
+    {
+        $user = Auth::user();
+
+        if ($group->creator_id === $user->id) {
+            //log attempt
+            Log::warning("GroupLeave: User ID {$user->id} attempted to leave their own group ID {$group->id}.");
+            return back()->with('error', 'As the group creator, you cannot leave the group. You can delete it from the admin panel.');
+        }
+
+        $group->users()->detach($user->id);
+
+        return redirect()->route('dashboard')->with('success', 'You have left the group.');
+    }
+
     public function show(Request $request, Group $group)
     {
         Gate::authorize('view', $group);

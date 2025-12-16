@@ -7,6 +7,8 @@ import TodoListPanel from '@/Components/TodoListPanel.vue';
 import CreateGroupForm from '@/Components/CreateGroupForm.vue';
 import axios from 'axios';
 
+const page = usePage();
+
 const props = defineProps({
     groups: Array,
 });
@@ -71,6 +73,14 @@ const toggleTodos = () => {
     showNotifications.value = false;
     showTodos.value = !showTodos.value;
 };
+
+const leaveGroup = (group) => {
+    if (confirm(`Are you sure you want to leave the group "${group.name}"?`)) {
+        router.post(route('groups.leave', group.id), {}, {
+            preserveScroll: true,
+        });
+    }
+};
 </script>
 
 <template>
@@ -109,6 +119,14 @@ const toggleTodos = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div v-if="page.props.flash?.success" class="mb-4 flex items-center justify-between bg-green-100 border-l-4 border-green-500 text-green-700 p-4 dark:bg-green-900 dark:border-green-600 dark:text-green-200" role="alert">
+                    <p>{{ page.props.flash.success }}</p>
+                    <button @click="page.props.flash.success = null" class="text-xl font-bold leading-none">&times;</button>
+                </div>
+                <div v-if="page.props.flash?.error" class="mb-4 flex items-center justify-between bg-red-100 border-l-4 border-red-500 text-red-700 p-4 dark:bg-red-900 dark:border-red-600 dark:text-red-200" role="alert">
+                    <p>{{ page.props.flash.error }}</p>
+                    <button @click="page.props.flash.error = null" class="text-xl font-bold leading-none">&times;</button>
+                </div>
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900 dark:text-gray-100">
                         <h3 class="text-2xl font-bold">Select a Group</h3>
@@ -116,13 +134,23 @@ const toggleTodos = () => {
                             Choose a group to view its feed and participate, or create your own.
                         </p>
                         <div class="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <Link v-for="group in groups" :key="group.id" :href="route('groups.show', group.id)" class="block p-6 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
-                                <h4 class="text-xl font-semibold text-white">{{ group.name }}</h4>
-                                <p class="mt-2 text-gray-300">{{ group.description }}</p>
-                                <div class="mt-4 text-sm text-gray-400">
-                                    Created by: {{ group.creator.name }}
+                            <div v-for="group in groups" :key="group.id" class="flex flex-col justify-between p-6 bg-gray-700 rounded-lg">
+                                <div>
+                                    <h4 class="text-xl font-semibold text-white">{{ group.name }}</h4>
+                                    <p class="mt-2 text-gray-300">{{ group.description }}</p>
+                                    <div class="mt-4 text-sm text-gray-400">
+                                        Created by: {{ group.creator.name }}
+                                    </div>
                                 </div>
-                            </Link>
+                                <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <Link :href="route('groups.show', group.id)" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                                        View
+                                    </Link>
+                                    <button @click="leaveGroup(group)" class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">
+                                        Leave
+                                    </button>
+                                </div>
+                            </div>
                             <!-- Add a card for creating/joining groups -->
                              <div class="flex items-center justify-center p-6 bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-lg">
                                 <div class="text-center">

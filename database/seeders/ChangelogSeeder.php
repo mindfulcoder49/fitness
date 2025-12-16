@@ -148,5 +148,14 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2025-12-16'],
+            [
+                'changes' => [
+                    '**Leave Group Functionality** Users can now leave groups they are a member of. A "Leave Group" button has been added to the dashboard and the public groups list. Group creators cannot leave their own groups.',
+                ],
+            ]
+        );
     }
 }

@@ -16,7 +16,6 @@ class HandleInertiaRequests extends Middleware
      */
     protected $rootView = 'app';
 
-
     /**
      * Determine the current asset version.
      */
@@ -45,6 +44,10 @@ class HandleInertiaRequests extends Middleware
                     'can_post_images' => $user->can_post_images,
                     'can_post_videos' => $user->can_post_videos,
                 ] : null,
+            ],
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
             ],
         ]);
     }
