@@ -50,6 +50,20 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's theme preference.
+     */
+    public function updateTheme(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'theme' => ['required', 'string', 'in:dark,light,rose,ocean,forest,sunset,lavender,sky,sakura'],
+        ]);
+
+        $request->user()->update(['theme' => $request->theme]);
+
+        return Redirect::back();
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

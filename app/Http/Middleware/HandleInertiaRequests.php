@@ -43,8 +43,10 @@ class HandleInertiaRequests extends Middleware
                     'is_admin' => $user->is_admin,
                     'can_post_images' => $user->can_post_images,
                     'can_post_videos' => $user->can_post_videos,
+                    'theme' => $user->theme ?? 'dark',
                 ] : null,
             ],
+            'appUrl' => config('app.url'),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

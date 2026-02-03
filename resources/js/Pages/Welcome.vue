@@ -1,6 +1,7 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import ThemeToggle from '@/Components/ThemeToggle.vue';
 
 defineProps({
     canLogin: {
@@ -71,7 +72,7 @@ const faqs = [
 
 <template>
     <Head title="Welcome to AI Survival Magazine" />
-    <div class="bg-gray-900 text-white">
+    <div class="bg-theme-page text-theme-text-primary">
         <!-- Header -->
         <header class="absolute inset-x-0 top-0 z-50">
             <nav class="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
@@ -89,7 +90,7 @@ const faqs = [
                         <Link :href="route('login')" class="text-sm font-semibold leading-6">
                             Log in <span aria-hidden="true">&rarr;</span>
                         </Link>
-                        <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+                        <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-theme-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-accent">
                             Register
                         </Link>
                     </template>
@@ -107,9 +108,9 @@ const faqs = [
                     <div class="mx-auto max-w-7xl px-6 lg:px-8">
                         <div class="mx-auto max-w-2xl text-center">
                             <h1 class="text-4xl font-bold tracking-tight sm:text-6xl">Build Your Community. Go From Online to IRL.</h1>
-                            <p class="mt-6 text-lg leading-8 text-gray-300">A platform designed to turn shared interests into real-life connections. We provide the structure to help you build a thriving social group and motivate members to show up.</p>
+                            <p class="mt-6 text-lg leading-8 text-theme-text-secondary">A platform designed to turn shared interests into real-life connections. We provide the structure to help you build a thriving social group and motivate members to show up.</p>
                             <div class="mt-10 flex items-center justify-center gap-x-6">
-                                <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Get started</Link>
+                                <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-theme-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-accent">Get started</Link>
                                 <a href="#how-it-works" class="text-sm font-semibold leading-6">Learn more <span aria-hidden="true">→</span></a>
                             </div>
                         </div>
@@ -120,22 +121,22 @@ const faqs = [
             <!-- Feature section -->
             <div id="why-us" class="mx-auto mt-32 max-w-7xl px-6 sm:mt-56 lg:px-8">
                 <div class="mx-auto max-w-2xl lg:text-center">
-                    <h2 class="text-base font-semibold leading-7 text-indigo-400">A Better Way to Connect</h2>
+                    <h2 class="text-base font-semibold leading-7 text-theme-accent-text">A Better Way to Connect</h2>
                     <p class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Why This Platform Works</p>
-                    <p class="mt-6 text-lg leading-8 text-gray-300">We solve the hardest part of building a community: creating the social cohesion needed to overcome the anxiety and inertia of doing new things with new people.</p>
+                    <p class="mt-6 text-lg leading-8 text-theme-text-secondary">We solve the hardest part of building a community: creating the social cohesion needed to overcome the anxiety and inertia of doing new things with new people.</p>
                 </div>
                 <div class="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-4xl">
                     <dl class="grid max-w-xl grid-cols-1 gap-x-8 gap-y-10 lg:max-w-none lg:grid-cols-2 lg:gap-y-16">
                         <div v-for="feature in features" :key="feature.name" class="relative pl-16">
                             <dt class="text-base font-semibold leading-7">
-                                <div class="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500">
+                                <div class="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-lg bg-theme-accent">
                                     <svg class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                     </svg>
                                 </div>
                                 {{ feature.name }}
                             </dt>
-                            <dd class="mt-2 text-base leading-7 text-gray-300">{{ feature.description }}</dd>
+                            <dd class="mt-2 text-base leading-7 text-theme-text-secondary">{{ feature.description }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -145,9 +146,9 @@ const faqs = [
             <div id="how-it-works" class="mt-32 sm:mt-56 py-24 sm:py-32 bg-white/5">
                 <div class="mx-auto max-w-7xl px-6 lg:px-8">
                     <div class="mx-auto max-w-2xl lg:text-center">
-                        <h2 class="text-base font-semibold leading-7 text-indigo-400">The Path to Connection</h2>
+                        <h2 class="text-base font-semibold leading-7 text-theme-accent-text">The Path to Connection</h2>
                         <p class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">How It Works</p>
-                        <p class="mt-6 text-lg leading-8 text-gray-300">A simple, four-step process to build an active and engaged community.</p>
+                        <p class="mt-6 text-lg leading-8 text-theme-text-secondary">A simple, four-step process to build an active and engaged community.</p>
                     </div>
                     <div class="mx-auto mt-16 max-w-5xl">
                         <ol class="space-y-10">
@@ -155,7 +156,7 @@ const faqs = [
                                 <h3 class="text-lg font-semibold">
                                     {{ item.name }}
                                 </h3>
-                                <p class="mt-1 text-base font-normal text-gray-400">{{ item.description }}</p>
+                                <p class="mt-1 text-base font-normal text-theme-text-muted">{{ item.description }}</p>
                             </li>
                         </ol>
                     </div>
@@ -174,7 +175,7 @@ const faqs = [
                                 </div>
                             </dt>
                             <dd class="mt-2 pr-12">
-                                <p class="text-base leading-7 text-gray-300">{{ faq.answer }}</p>
+                                <p class="text-base leading-7 text-theme-text-secondary">{{ faq.answer }}</p>
                             </dd>
                         </div>
                     </dl>
@@ -188,25 +189,27 @@ const faqs = [
                 </div>
                 <div class="mx-auto max-w-2xl text-center">
                     <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">Ready to build your tribe?</h2>
-                    <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-gray-300">Join an existing group or start your own. Your community is waiting.</p>
+                    <p class="mx-auto mt-6 max-w-xl text-lg leading-8 text-theme-text-secondary">Join an existing group or start your own. Your community is waiting.</p>
                     <div class="mt-10 flex items-center justify-center gap-x-6">
-                         <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-indigo-500 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Register Now</Link>
+                         <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-theme-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-accent">Register Now</Link>
                     </div>
                 </div>
             </div>
         </main>
 
         <!-- Footer -->
-        <footer class="mt-32 bg-gray-900 sm:mt-56" aria-labelledby="footer-heading">
+        <footer class="mt-32 bg-theme-page sm:mt-56" aria-labelledby="footer-heading">
             <h2 id="footer-heading" class="sr-only">Footer</h2>
             <div class="mx-auto max-w-7xl px-6 py-16 sm:py-24 lg:px-8 lg:py-32">
                 <div class="xl:grid xl:grid-cols-3 xl:gap-8">
                     <div class="space-y-8">
                         <ApplicationLogo class="h-16 w-auto" />
-                        <p class="text-sm leading-6 text-gray-300">A platform for building pro-social communities that bridge the online-offline gap.</p>
+                        <p class="text-sm leading-6 text-theme-text-secondary">A platform for building pro-social communities that bridge the online-offline gap.</p>
                     </div>
                 </div>
             </div>
         </footer>
+
+        <ThemeToggle />
     </div>
 </template>

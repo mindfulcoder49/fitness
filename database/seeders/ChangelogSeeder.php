@@ -157,5 +157,17 @@ class ChangelogSeeder extends Seeder
                 ],
             ]
         );
+
+        Changelog::updateOrCreate(
+            ['release_date' => '2026-02-03'],
+            [
+                'changes' => [
+                    '**New Feature: Member Launch Limits!** Groups can now set a minimum member threshold before launching. While gathering members, the group page shows a progress counter. Once the threshold is reached, the group launches automatically and all members receive a launch email. Admins can also manually launch or unlaunch groups from the admin panel.',
+                    '**New Feature: Multiple Themes!** The site now supports 9 selectable themes: Dark, Light, Rose, Ocean, Forest, Sunset, Lavender, Sky, and Sakura. Switch themes from the toggle in the bottom-right corner of the page. Your preference is saved to your profile.',
+                    '**New Feature: Group Invitation Links!** Admins can now generate and share a registration invitation link from the group admin panel. Anyone who registers through the link is automatically added to the group.',
+                    '**New Feature: Professional Launch Emails!** The group launch email has been redesigned with a branded template showing group info, member count, current task, and a direct link to the group.',
+                ],
+            ]
+        );
     }
 }

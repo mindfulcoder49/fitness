@@ -24,19 +24,19 @@ const markAsRead = (changelog) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            <h2 class="font-semibold text-xl text-theme-text-primary leading-tight">
                 Changelog
             </h2>
         </template>
 
         <div class="py-12">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-gray-800 shadow-sm sm:rounded-lg p-6">
-                    <div class="space-y-8 text-gray-300">
+                <div class="bg-theme-card shadow-sm sm:rounded-lg p-6">
+                    <div class="space-y-8 text-theme-text-secondary">
                         <div v-for="changelog in changelogs" :key="changelog.id">
                             <div class="flex justify-between items-center">
-                                <h3 class="text-lg font-bold text-white">{{ new Date(Date.parse(changelog.release_date)).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
-                                <button v-if="!isRead(changelog.id)" @click="markAsRead(changelog)" class="text-sm text-indigo-400 hover:text-indigo-300 flex items-center space-x-1">
+                                <h3 class="text-lg font-bold text-theme-text-primary">{{ new Date(Date.parse(changelog.release_date)).toLocaleDateString('en-US', { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
+                                <button v-if="!isRead(changelog.id)" @click="markAsRead(changelog)" class="text-sm text-theme-accent-text hover:text-theme-accent-text flex items-center space-x-1">
                                     <span>Mark as Read</span>
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -49,7 +49,7 @@ const markAsRead = (changelog) => {
                                     </svg>
                                 </span>
                             </div>
-                            <ul class="list-disc list-inside mt-2 pl-2 space-y-1 prose dark:prose-invert max-w-none">
+                            <ul class="list-disc list-inside mt-2 pl-2 space-y-1 prose prose-invert max-w-none">
                                 <p v-for="(change, index) in changelog.changes" :key="index" v-html="marked.parse(change, { breaks: true })"></p>
                             </ul>
                         </div>

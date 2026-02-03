@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\GroupLaunched;
 use App\Models\Group;
 use App\Models\Post;
 use App\Models\Comment;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -41,6 +43,7 @@ class GroupController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'is_public' => 'required|boolean',
+            'min_members' => 'nullable|integer|min:1',
         ]);
 
         $user = Auth::user();
@@ -50,6 +53,7 @@ class GroupController extends Controller
             'name' => $validated['name'],
             'description' => $validated['description'],
             'is_public' => $user->is_admin ? $validated['is_public'] : false,
+            'min_members' => $validated['min_members'] ?? null,
         ]);
 
         // Add creator as admin member
@@ -65,6 +69,35 @@ class GroupController extends Controller
         }
 
         $group->users()->syncWithoutDetaching([Auth::id() => ['role' => 'member']]);
+
+        if (!$group->isLaunched() && $group->users()->count() >= $group->min_members) {
+            Log::info('GroupJoin: Min members reached, launching group', [
+                'group_id' => $group->id,
+                'group_name' => $group->name,
+                'min_members' => $group->min_members,
+                'current_count' => $group->users()->count(),
+            ]);
+
+            $group->update(['launched_at' => now()]);
+            $group->load('users');
+
+            foreach ($group->users as $member) {
+                try {
+                    Log::info('GroupJoin: Sending launch email', [
+                        'member_email' => $member->email,
+                    ]);
+                    Mail::to($member->email)->send(new GroupLaunched($group));
+                    Log::info('GroupJoin: Launch email sent', [
+                        'member_email' => $member->email,
+                    ]);
+                } catch (\Exception $e) {
+                    Log::error('GroupJoin: Failed to send launch email', [
+                        'member_email' => $member->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('groups.show', $group);
     }
@@ -95,6 +128,27 @@ class GroupController extends Controller
         $isMember = $user->groups()->where('group_id', $group->id)->exists();
 
         $group->load('creator');
+        $group->loadCount('users');
+
+        // Safety check: launch group if threshold reached but not yet launched
+        if (!$group->isLaunched() && $group->min_members && $group->users()->count() >= $group->min_members) {
+            $group->update(['launched_at' => now()]);
+            $group->load('users');
+
+            foreach ($group->users as $member) {
+                try {
+                    Mail::to($member->email)->send(new GroupLaunched($group));
+                } catch (\Exception $e) {
+                    Log::error('GroupShow: Failed to send launch email', [
+                        'member_email' => $member->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $group->loadCount('users');
+        }
+
         $membership = $user->groups()->where('group_id', $group->id)->first();
         $isGroupAdmin = $membership?->pivot->role === 'admin' || $group->creator_id === $user->id;
 
@@ -241,6 +295,7 @@ class GroupController extends Controller
             'group' => $group,
             'membership' => $membership,
             'isGroupAdmin' => $isGroupAdmin,
+            'isLaunched' => $group->isLaunched(),
             'posts' => $posts,
             'featuredPost' => $featuredPost,
             'leaderboard' => $leaderboard,

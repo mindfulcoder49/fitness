@@ -10,9 +10,11 @@ use App\Models\User;
 use App\Models\Comment;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\DB;
 use App\Mail\ApplicationInvitation;
+use App\Mail\GroupLaunched;
 use Inertia\Inertia;
 
 class AdminController extends Controller
@@ -136,5 +138,99 @@ class AdminController extends Controller
             $task->update(['is_current' => true]);
         });
         return back();
+    }
+
+    public function updateGroupMinMembers(Request $request, Group $group)
+    {
+        $request->validate([
+            'min_members' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $group->update(['min_members' => $request->min_members]);
+
+        return back();
+    }
+
+    public function destroyGroup(Group $group)
+    {
+        $group->delete();
+
+        return redirect()->route('dashboard')->with('success', 'Group has been deleted.');
+    }
+
+    public function launchGroup(Group $group)
+    {
+        if ($group->launched_at) {
+            return back()->with('error', 'Group is already launched.');
+        }
+
+        $group->update(['launched_at' => now()]);
+
+        return back()->with('success', 'Group has been launched.');
+    }
+
+    public function unlaunchGroup(Group $group)
+    {
+        $group->update(['launched_at' => null]);
+
+        return back()->with('success', 'Group has been unlaunched.');
+    }
+
+    public function sendGroupEmail(Group $group)
+    {
+        Log::info('sendGroupEmail: Starting for group', [
+            'group_id' => $group->id,
+            'group_name' => $group->name,
+        ]);
+
+        $group->load('users');
+
+        Log::info('sendGroupEmail: Loaded members', [
+            'member_count' => $group->users->count(),
+            'member_emails' => $group->users->pluck('email')->toArray(),
+        ]);
+
+        if (!$group->launched_at) {
+            $group->update(['launched_at' => now()]);
+            Log::info('sendGroupEmail: Set launched_at for group', ['group_id' => $group->id]);
+        }
+
+        $sent = 0;
+        $failed = 0;
+
+        foreach ($group->users as $member) {
+            try {
+                Log::info('sendGroupEmail: Sending email to member', [
+                    'member_id' => $member->id,
+                    'member_email' => $member->email,
+                ]);
+
+                Mail::to($member->email)->send(new GroupLaunched($group));
+
+                $sent++;
+                Log::info('sendGroupEmail: Email sent successfully', [
+                    'member_email' => $member->email,
+                ]);
+            } catch (\Exception $e) {
+                $failed++;
+                Log::error('sendGroupEmail: Failed to send email', [
+                    'member_email' => $member->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
+        }
+
+        Log::info('sendGroupEmail: Completed', [
+            'group_id' => $group->id,
+            'sent' => $sent,
+            'failed' => $failed,
+        ]);
+
+        if ($failed > 0) {
+            return back()->with('error', "Launch email sent to {$sent} members, but {$failed} failed. Check logs for details.");
+        }
+
+        return back()->with('success', "Launch email sent to all {$sent} group members.");
     }
 }

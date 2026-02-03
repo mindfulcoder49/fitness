@@ -22,7 +22,7 @@ const applyFormat = (prefix, suffix = '') => {
     const selectedText = textarea.value.substring(start, end);
     const newText = `${prefix}${selectedText}${suffix}`;
     const updatedContent = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
-    
+
     emit('update:modelValue', updatedContent);
 
     // Focus and re-select for better UX
@@ -55,19 +55,19 @@ const buttons = [
 </script>
 
 <template>
-    <div class="border border-gray-600 rounded-md">
+    <div class="border border-theme-border rounded-md">
         <!-- Toolbar -->
-        <div class="flex items-center justify-between p-2 bg-gray-700 border-b border-gray-600">
+        <div class="flex items-center justify-between p-2 bg-theme-elevated border-b border-theme-border">
             <div class="flex items-center space-x-2">
                 <button v-for="button in buttons" :key="button.label" @click="button.action" :title="button.title"
-                    class="px-3 py-1 text-sm font-semibold text-gray-200 bg-gray-800 rounded hover:bg-gray-600">
+                    class="px-3 py-1 text-sm font-semibold text-theme-text-primary bg-theme-card rounded hover:bg-theme-elevated">
                     {{ button.label }}
                 </button>
             </div>
             <div class="flex items-center space-x-2">
-                <button @click="viewMode = 'edit'" :class="{'bg-indigo-500': viewMode === 'edit'}" class="px-2 py-1 text-xs rounded hover:bg-indigo-400">Edit</button>
-                <button @click="viewMode = 'split'" :class="{'bg-indigo-500': viewMode === 'split'}" class="px-2 py-1 text-xs rounded hover:bg-indigo-400">Split</button>
-                <button @click="viewMode = 'preview'" :class="{'bg-indigo-500': viewMode === 'preview'}" class="px-2 py-1 text-xs rounded hover:bg-indigo-400">Preview</button>
+                <button @click="viewMode = 'edit'" :class="{'bg-theme-accent': viewMode === 'edit'}" class="px-2 py-1 text-xs rounded hover:bg-theme-accent-hover">Edit</button>
+                <button @click="viewMode = 'split'" :class="{'bg-theme-accent': viewMode === 'split'}" class="px-2 py-1 text-xs rounded hover:bg-theme-accent-hover">Split</button>
+                <button @click="viewMode = 'preview'" :class="{'bg-theme-accent': viewMode === 'preview'}" class="px-2 py-1 text-xs rounded hover:bg-theme-accent-hover">Preview</button>
             </div>
         </div>
 
@@ -82,14 +82,14 @@ const buttons = [
                     ref="editorRef"
                     :value="modelValue"
                     @input="$emit('update:modelValue', $event.target.value)"
-                    class="w-full h-64 p-4 bg-gray-900 text-gray-100 border-0 focus:ring-0 resize-y"
+                    class="w-full h-64 p-4 bg-theme-page text-theme-text-primary border-0 focus:ring-0 resize-y"
                     placeholder="Write your post content here..."
                 ></textarea>
             </div>
 
             <!-- Preview -->
-            <div v-if="viewMode !== 'edit'" class="p-4 bg-gray-800 h-64 overflow-y-auto">
-                <div class="prose dark:prose-invert max-w-none" v-html="parsedContent"></div>
+            <div v-if="viewMode !== 'edit'" class="p-4 bg-theme-card h-64 overflow-y-auto">
+                <div class="prose prose-invert max-w-none" v-html="parsedContent"></div>
             </div>
         </div>
     </div>

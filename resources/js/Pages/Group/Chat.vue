@@ -77,10 +77,10 @@ onUnmounted(() => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                <h2 class="font-semibold text-xl text-theme-text-primary leading-tight">
                     {{ group.name }} Chat
                 </h2>
-                <Link :href="route('groups.show', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
+                <Link :href="route('groups.show', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
                     Back to Group
                 </Link>
             </div>
@@ -88,7 +88,7 @@ onUnmounted(() => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg flex flex-col" style="height: 70vh;">
+                <div class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg flex flex-col" style="height: 70vh;">
                     <!-- Chat Messages -->
                     <div ref="chatContainer" class="flex-1 p-6 space-y-4 overflow-y-auto">
                         <div v-for="message in messages" :key="message.id" class="flex" :class="{ 'justify-end': message.user_id === user.id }">
@@ -96,7 +96,7 @@ onUnmounted(() => {
                                 <div v-if="message.user_id !== user.id" class="flex-shrink-0">
                                     <img class="h-8 w-8 rounded-full" :src="message.user.profile_photo_url" :alt="message.user.username">
                                 </div>
-                                <div class="rounded-lg px-4 py-2" :class="message.user_id === user.id ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-200'">
+                                <div class="rounded-lg px-4 py-2" :class="message.user_id === user.id ? 'bg-blue-600 text-white' : 'bg-theme-elevated text-theme-text-primary'">
                                     <p class="text-sm font-semibold" v-if="message.user_id !== user.id">{{ message.user.username }}</p>
                                     <p>{{ message.content }}</p>
                                     <p class="text-xs opacity-70 mt-1 text-right">{{ new Date(message.created_at).toLocaleTimeString() }}</p>
@@ -106,14 +106,14 @@ onUnmounted(() => {
                     </div>
 
                     <!-- Message Input -->
-                    <div class="p-6 border-t border-gray-200 dark:border-gray-700">
+                    <div class="p-6 border-t border-theme-border">
                         <form @submit.prevent="submitMessage">
                             <div class="flex items-center">
                                 <textarea
                                     v-model="form.content"
                                     @keydown.enter.prevent="submitMessage"
                                     placeholder="Type a message..."
-                                    class="w-full border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100 dark:focus:border-indigo-600 dark:focus:ring-indigo-600"
+                                    class="w-full border-theme-border bg-theme-page text-theme-text-primary focus:border-theme-accent focus:ring-theme-accent-ring rounded-md shadow-sm"
                                 ></textarea>
                                 <button type="submit" class="ml-4 px-4 py-2 bg-blue-600 text-white rounded-md" :disabled="processing">Send</button>
                             </div>

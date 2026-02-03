@@ -82,10 +82,10 @@ const formattedDate = (date) => {
     <AuthenticatedLayout>
         <template #header>
             <div class="flex justify-between items-center">
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                <h2 class="font-semibold text-xl text-theme-text-primary leading-tight">
                     <span v-if="group">{{ group.name }} &mdash; </span>Availability
                 </h2>
-                <Link :href="route('groups.show', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
+                <Link :href="route('groups.show', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
                     &larr; Back to Group
                 </Link>
             </div>
@@ -93,17 +93,17 @@ const formattedDate = (date) => {
 
         <div class="py-12">
             <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-                <div class="bg-gray-800 shadow-sm sm:rounded-lg p-6">
+                <div class="bg-theme-card shadow-sm sm:rounded-lg p-6">
                     <!-- My Availability View -->
                     <div>
-                        <h3 class="text-lg font-medium text-white mb-4">Set Your Availability</h3>
-                        <p class="text-sm text-gray-400 mb-6">Click on a date to mark it as a day you are available. Your changes are saved automatically.</p>
+                        <h3 class="text-lg font-medium text-theme-text-primary mb-4">Set Your Availability</h3>
+                        <p class="text-sm text-theme-text-muted mb-6">Click on a date to mark it as a day you are available. Your changes are saved automatically.</p>
                         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             <div v-for="date in dates" :key="date.toISOString()"
                                 @click="toggleAvailability(date)"
                                 :class="[
                                     'p-4 rounded-lg cursor-pointer transition-colors text-center',
-                                    isAvailable(date) ? 'bg-green-500 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                                    isAvailable(date) ? 'bg-green-500 text-white' : 'bg-theme-elevated hover:bg-theme-elevated text-theme-text-secondary'
                                 ]">
                                 <div class="font-bold text-lg">{{ date.toLocaleDateString('en-US', { day: 'numeric' }) }}</div>
                                 <div class="text-sm">{{ date.toLocaleDateString('en-US', { month: 'short' }) }}</div>

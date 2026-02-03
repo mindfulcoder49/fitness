@@ -56,6 +56,7 @@ Route::middleware(['auth', 'verified', 'group.member'])->group(function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile/theme', [ProfileController::class, 'updateTheme'])->name('profile.theme');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
@@ -78,6 +79,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/users/{user}/media-permissions', [AdminController::class, 'updateUserMediaPermissions'])->name('users.update-media-permissions');
     Route::patch('/groups/{group}/members/{user}/role', [AdminController::class, 'updateGroupMemberRole'])->name('groups.members.update-role');
     Route::patch('/groups/{group}/toggle-public', [AdminController::class, 'toggleGroupPublicStatus'])->name('groups.toggle-public');
+    Route::patch('/groups/{group}/min-members', [AdminController::class, 'updateGroupMinMembers'])->name('groups.update-min-members');
     Route::post('/groups/{group}/meetups', [MeetupController::class, 'store'])->name('groups.meetups.store');
     Route::patch('/meetups/{meetup}', [MeetupController::class, 'update'])->name('meetups.update');
     Route::delete('/meetups/{meetup}', [MeetupController::class, 'destroy'])->name('meetups.destroy');
@@ -91,6 +93,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/posts/{post}/toggle-blog', [AdminController::class, 'toggleBlogPost'])->name('posts.toggle-blog');
     Route::delete('/likes/{like}', [AdminController::class, 'destroyLike'])->name('likes.destroy');
     Route::delete('/comments/{comment}', [AdminController::class, 'destroyComment'])->name('comments.destroy');
+    Route::post('/groups/{group}/send-launch-email', [AdminController::class, 'sendGroupEmail'])->name('groups.send-launch-email');
+    Route::patch('/groups/{group}/launch', [AdminController::class, 'launchGroup'])->name('groups.launch');
+    Route::patch('/groups/{group}/unlaunch', [AdminController::class, 'unlaunchGroup'])->name('groups.unlaunch');
+    Route::delete('/groups/{group}', [AdminController::class, 'destroyGroup'])->name('groups.destroy');
 });
 
 require __DIR__.'/auth.php';

@@ -17,7 +17,18 @@ class Group extends Model
         'name',
         'description',
         'is_public',
+        'min_members',
+        'launched_at',
     ];
+
+    protected $casts = [
+        'launched_at' => 'datetime',
+    ];
+
+    public function isLaunched(): bool
+    {
+        return $this->launched_at !== null || $this->min_members === null;
+    }
 
     public function creator(): BelongsTo
     {

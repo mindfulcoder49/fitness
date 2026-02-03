@@ -28,6 +28,7 @@ class User extends Authenticatable
         'can_post_images',
         'can_post_videos',
         'notifications_last_checked_at',
+        'theme',
     ];
 
     /**

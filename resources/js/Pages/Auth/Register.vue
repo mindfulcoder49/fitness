@@ -6,12 +6,20 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
+const props = defineProps({
+    group: {
+        type: Object,
+        default: null,
+    },
+});
+
 const form = useForm({
     name: '',
     username: '',
     email: '',
     password: '',
     password_confirmation: '',
+    group: props.group?.id ?? null,
 });
 
 const submit = () => {
@@ -24,6 +32,12 @@ const submit = () => {
 <template>
     <GuestLayout>
         <Head title="Register" />
+
+        <div v-if="group" class="mb-4 rounded-md bg-theme-accent/10 border border-theme-accent/30 p-4 text-center">
+            <p class="text-sm text-theme-text-secondary">
+                You've been invited to join <strong class="text-theme-accent-text">{{ group.name }}</strong>!
+            </p>
+        </div>
 
         <form @submit.prevent="submit">
             <div>
@@ -111,7 +125,7 @@ const submit = () => {
             <div class="mt-4 flex items-center justify-end">
                 <Link
                     :href="route('login')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:text-gray-400 dark:hover:text-gray-100 dark:focus:ring-offset-gray-800"
+                    class="rounded-md text-sm text-theme-text-muted underline hover:text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring focus:ring-offset-2"
                 >
                     Already registered?
                 </Link>

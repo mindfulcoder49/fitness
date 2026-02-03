@@ -1,3 +1,293 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    /* Dark theme (default) */
+    :root, [data-theme="dark"] {
+        --color-bg-page: 17 24 39;         /* gray-900 */
+        --color-bg-card: 31 41 55;         /* gray-800 */
+        --color-bg-elevated: 55 65 81;     /* gray-700 */
+        --color-bg-input: 17 24 39;        /* gray-900 */
+        --color-bg-nav: 31 41 55;          /* gray-800 */
+        --color-bg-header: 31 41 55;       /* gray-800 */
+        --color-text-primary: 229 231 235; /* gray-200 */
+        --color-text-secondary: 209 213 219; /* gray-300 */
+        --color-text-muted: 156 163 175;   /* gray-400 */
+        --color-text-faint: 107 114 128;   /* gray-500 */
+        --color-border: 75 85 99;          /* gray-600 */
+        --color-border-subtle: 55 65 81;   /* gray-700 */
+        --color-accent: 99 102 241;        /* indigo-500 */
+        --color-accent-hover: 79 70 229;   /* indigo-600 */
+        --color-accent-text: 129 140 248;  /* indigo-400 */
+        --color-accent-ring: 99 102 241;   /* indigo-500 */
+        --color-btn-primary-bg: 31 41 55;  /* gray-800 */
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 55 65 81; /* gray-700 */
+        --color-btn-secondary-bg: 55 65 81;  /* gray-700 */
+        --color-btn-secondary-text: 209 213 219; /* gray-300 */
+        --color-btn-secondary-hover: 75 85 99; /* gray-600 */
+        --color-danger: 220 38 38;         /* red-600 */
+        --color-danger-hover: 239 68 68;   /* red-500 */
+        --color-success: 34 197 94;        /* green-500 */
+        --color-warning: 245 158 11;       /* amber-500 */
+        --color-link: 156 163 175;         /* gray-400 */
+        --color-link-hover: 229 231 235;   /* gray-200 */
+    }
+
+    /* Light theme */
+    [data-theme="light"] {
+        --color-bg-page: 243 244 246;      /* gray-100 */
+        --color-bg-card: 255 255 255;      /* white */
+        --color-bg-elevated: 243 244 246;  /* gray-100 */
+        --color-bg-input: 255 255 255;     /* white */
+        --color-bg-nav: 255 255 255;       /* white */
+        --color-bg-header: 255 255 255;    /* white */
+        --color-text-primary: 17 24 39;    /* gray-900 */
+        --color-text-secondary: 55 65 81;  /* gray-700 */
+        --color-text-muted: 107 114 128;   /* gray-500 */
+        --color-text-faint: 156 163 175;   /* gray-400 */
+        --color-border: 209 213 219;       /* gray-300 */
+        --color-border-subtle: 229 231 235; /* gray-200 */
+        --color-accent: 99 102 241;        /* indigo-500 */
+        --color-accent-hover: 79 70 229;   /* indigo-600 */
+        --color-accent-text: 79 70 229;    /* indigo-600 */
+        --color-accent-ring: 99 102 241;   /* indigo-500 */
+        --color-btn-primary-bg: 99 102 241; /* indigo-500 */
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 79 70 229; /* indigo-600 */
+        --color-btn-secondary-bg: 255 255 255;
+        --color-btn-secondary-text: 55 65 81; /* gray-700 */
+        --color-btn-secondary-hover: 243 244 246; /* gray-100 */
+        --color-danger: 220 38 38;
+        --color-danger-hover: 185 28 28;   /* red-700 */
+        --color-success: 22 163 74;        /* green-600 */
+        --color-warning: 217 119 6;        /* amber-600 */
+        --color-link: 107 114 128;         /* gray-500 */
+        --color-link-hover: 17 24 39;      /* gray-900 */
+    }
+
+    /* Rose theme */
+    [data-theme="rose"] {
+        --color-bg-page: 31 12 24;
+        --color-bg-card: 45 20 36;
+        --color-bg-elevated: 63 30 50;
+        --color-bg-input: 31 12 24;
+        --color-bg-nav: 45 20 36;
+        --color-bg-header: 45 20 36;
+        --color-text-primary: 253 232 243;
+        --color-text-secondary: 251 207 232; /* pink-200 */
+        --color-text-muted: 244 114 182;   /* pink-400 */
+        --color-text-faint: 190 70 130;
+        --color-border: 120 50 90;
+        --color-border-subtle: 80 35 62;
+        --color-accent: 244 63 94;         /* rose-500 */
+        --color-accent-hover: 225 29 72;   /* rose-600 */
+        --color-accent-text: 251 113 133;  /* rose-400 */
+        --color-accent-ring: 244 63 94;
+        --color-btn-primary-bg: 244 63 94;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 225 29 72;
+        --color-btn-secondary-bg: 63 30 50;
+        --color-btn-secondary-text: 251 207 232;
+        --color-btn-secondary-hover: 80 40 65;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 239 68 68;
+        --color-success: 34 197 94;
+        --color-warning: 245 158 11;
+        --color-link: 244 114 182;
+        --color-link-hover: 253 232 243;
+    }
+
+    /* Ocean theme */
+    [data-theme="ocean"] {
+        --color-bg-page: 8 15 35;
+        --color-bg-card: 15 23 52;
+        --color-bg-elevated: 25 38 77;
+        --color-bg-input: 8 15 35;
+        --color-bg-nav: 15 23 52;
+        --color-bg-header: 15 23 52;
+        --color-text-primary: 224 242 254;
+        --color-text-secondary: 186 230 253; /* sky-200 */
+        --color-text-muted: 56 189 248;    /* sky-400 */
+        --color-text-faint: 14 116 200;
+        --color-border: 30 60 120;
+        --color-border-subtle: 20 40 85;
+        --color-accent: 6 182 212;         /* cyan-500 */
+        --color-accent-hover: 8 145 178;   /* cyan-600 */
+        --color-accent-text: 34 211 238;   /* cyan-400 */
+        --color-accent-ring: 6 182 212;
+        --color-btn-primary-bg: 6 182 212;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 8 145 178;
+        --color-btn-secondary-bg: 25 38 77;
+        --color-btn-secondary-text: 186 230 253;
+        --color-btn-secondary-hover: 35 50 95;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 239 68 68;
+        --color-success: 34 197 94;
+        --color-warning: 245 158 11;
+        --color-link: 56 189 248;
+        --color-link-hover: 224 242 254;
+    }
+
+    /* Forest theme */
+    [data-theme="forest"] {
+        --color-bg-page: 10 26 18;
+        --color-bg-card: 20 40 30;
+        --color-bg-elevated: 30 58 44;
+        --color-bg-input: 10 26 18;
+        --color-bg-nav: 20 40 30;
+        --color-bg-header: 20 40 30;
+        --color-text-primary: 220 252 231; /* emerald-100 */
+        --color-text-secondary: 167 243 208; /* emerald-200 */
+        --color-text-muted: 52 211 153;    /* emerald-400 */
+        --color-text-faint: 20 140 90;
+        --color-border: 40 80 60;
+        --color-border-subtle: 28 55 40;
+        --color-accent: 16 185 129;        /* emerald-500 */
+        --color-accent-hover: 5 150 105;   /* emerald-600 */
+        --color-accent-text: 52 211 153;   /* emerald-400 */
+        --color-accent-ring: 16 185 129;
+        --color-btn-primary-bg: 16 185 129;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 5 150 105;
+        --color-btn-secondary-bg: 30 58 44;
+        --color-btn-secondary-text: 167 243 208;
+        --color-btn-secondary-hover: 40 70 55;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 239 68 68;
+        --color-success: 34 197 94;
+        --color-warning: 245 158 11;
+        --color-link: 52 211 153;
+        --color-link-hover: 220 252 231;
+    }
+
+    /* Sunset theme */
+    [data-theme="sunset"] {
+        --color-bg-page: 255 247 237;      /* orange-50 */
+        --color-bg-card: 255 255 255;
+        --color-bg-elevated: 255 237 213;  /* orange-100 */
+        --color-bg-input: 255 255 255;
+        --color-bg-nav: 255 255 255;
+        --color-bg-header: 255 255 255;
+        --color-text-primary: 28 25 23;    /* stone-900 */
+        --color-text-secondary: 68 64 60;  /* stone-700 */
+        --color-text-muted: 120 113 108;   /* stone-500 */
+        --color-text-faint: 168 162 158;   /* stone-400 */
+        --color-border: 253 186 116;       /* orange-300 */
+        --color-border-subtle: 254 215 170; /* orange-200 */
+        --color-accent: 234 88 12;         /* orange-600 */
+        --color-accent-hover: 194 65 12;   /* orange-700 */
+        --color-accent-text: 234 88 12;    /* orange-600 */
+        --color-accent-ring: 234 88 12;
+        --color-btn-primary-bg: 234 88 12;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 194 65 12;
+        --color-btn-secondary-bg: 255 255 255;
+        --color-btn-secondary-text: 68 64 60;
+        --color-btn-secondary-hover: 255 237 213;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 185 28 28;
+        --color-success: 22 163 74;
+        --color-warning: 217 119 6;
+        --color-link: 120 113 108;
+        --color-link-hover: 28 25 23;
+    }
+
+    /* Lavender theme */
+    [data-theme="lavender"] {
+        --color-bg-page: 245 243 255;      /* violet-50 */
+        --color-bg-card: 255 255 255;
+        --color-bg-elevated: 237 233 254;  /* violet-100 */
+        --color-bg-input: 255 255 255;
+        --color-bg-nav: 255 255 255;
+        --color-bg-header: 255 255 255;
+        --color-text-primary: 30 27 75;    /* indigo-950 */
+        --color-text-secondary: 76 29 149; /* violet-900 */
+        --color-text-muted: 139 92 246;    /* violet-500 */
+        --color-text-faint: 167 139 250;   /* violet-400 */
+        --color-border: 196 181 253;       /* violet-300 */
+        --color-border-subtle: 221 214 254; /* violet-200 */
+        --color-accent: 124 58 237;        /* violet-600 */
+        --color-accent-hover: 109 40 217;  /* violet-700 */
+        --color-accent-text: 124 58 237;   /* violet-600 */
+        --color-accent-ring: 124 58 237;
+        --color-btn-primary-bg: 124 58 237;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 109 40 217;
+        --color-btn-secondary-bg: 255 255 255;
+        --color-btn-secondary-text: 76 29 149;
+        --color-btn-secondary-hover: 237 233 254;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 185 28 28;
+        --color-success: 22 163 74;
+        --color-warning: 217 119 6;
+        --color-link: 139 92 246;
+        --color-link-hover: 30 27 75;
+    }
+
+    /* Sky theme */
+    [data-theme="sky"] {
+        --color-bg-page: 240 249 255;      /* sky-50 */
+        --color-bg-card: 255 255 255;
+        --color-bg-elevated: 224 242 254;  /* sky-100 */
+        --color-bg-input: 255 255 255;
+        --color-bg-nav: 255 255 255;
+        --color-bg-header: 255 255 255;
+        --color-text-primary: 12 74 110;   /* sky-900 */
+        --color-text-secondary: 7 89 133;  /* sky-800 */
+        --color-text-muted: 2 132 199;     /* sky-600 */
+        --color-text-faint: 56 189 248;    /* sky-400 */
+        --color-border: 125 211 252;       /* sky-300 */
+        --color-border-subtle: 186 230 253; /* sky-200 */
+        --color-accent: 2 132 199;         /* sky-600 */
+        --color-accent-hover: 3 105 161;   /* sky-700 */
+        --color-accent-text: 2 132 199;    /* sky-600 */
+        --color-accent-ring: 2 132 199;
+        --color-btn-primary-bg: 2 132 199;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 3 105 161;
+        --color-btn-secondary-bg: 255 255 255;
+        --color-btn-secondary-text: 7 89 133;
+        --color-btn-secondary-hover: 224 242 254;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 185 28 28;
+        --color-success: 22 163 74;
+        --color-warning: 217 119 6;
+        --color-link: 2 132 199;
+        --color-link-hover: 12 74 110;
+    }
+
+    /* Sakura theme */
+    [data-theme="sakura"] {
+        --color-bg-page: 255 241 242;      /* rose-50 */
+        --color-bg-card: 255 255 255;
+        --color-bg-elevated: 255 228 230;  /* rose-100 */
+        --color-bg-input: 255 255 255;
+        --color-bg-nav: 255 255 255;
+        --color-bg-header: 255 255 255;
+        --color-text-primary: 28 25 23;    /* stone-900 */
+        --color-text-secondary: 68 64 60;  /* stone-700 */
+        --color-text-muted: 190 24 93;     /* pink-700 */
+        --color-text-faint: 168 162 158;   /* stone-400 */
+        --color-border: 253 164 175;       /* rose-300 */
+        --color-border-subtle: 254 205 211; /* rose-200 */
+        --color-accent: 236 72 153;        /* pink-500 */
+        --color-accent-hover: 219 39 119;  /* pink-600 */
+        --color-accent-text: 236 72 153;   /* pink-500 */
+        --color-accent-ring: 236 72 153;
+        --color-btn-primary-bg: 236 72 153;
+        --color-btn-primary-text: 255 255 255;
+        --color-btn-primary-hover: 219 39 119;
+        --color-btn-secondary-bg: 255 255 255;
+        --color-btn-secondary-text: 68 64 60;
+        --color-btn-secondary-hover: 255 228 230;
+        --color-danger: 220 38 38;
+        --color-danger-hover: 185 28 28;
+        --color-success: 22 163 74;
+        --color-warning: 217 119 6;
+        --color-link: 190 24 93;
+        --color-link-hover: 28 25 23;
+    }
+}

@@ -16,6 +16,7 @@ const props = defineProps({
     group: Object,
     membership: Object,
     isGroupAdmin: Boolean,
+    isLaunched: Boolean,
     posts: Array,
     featuredPost: Object,
     leaderboard: Array,
@@ -65,6 +66,16 @@ onMounted(() => {
 const displayFeaturedPost = computed(() => {
     return props.featuredPost || props.posts[0] || null;
 });
+
+const invitationLink = computed(() => `${usePage().props.appUrl}/register?group=${props.group.id}`);
+const invitationLinkCopied = ref(false);
+
+const copyInvitationLink = () => {
+    navigator.clipboard.writeText(invitationLink.value).then(() => {
+        invitationLinkCopied.value = true;
+        setTimeout(() => { invitationLinkCopied.value = false; }, 2000);
+    });
+};
 
 const showTodos = ref(false);
 const showNotifications = ref(false);
@@ -128,25 +139,28 @@ const submit = () => {
         <template #header>
             <div class="flex justify-end items-center">
                 <div class="flex items-center space-x-2 sm:space-x-4 flex-wrap justify-end">
-                    <Link :href="route('groups.chat', { group: group.id })" class="relative text-sm font-medium text-gray-300 hover:text-white">
-                        Chat
-                        <span v-if="newChatMessageCount > 0" class="absolute -top-2 -right-2 block h-4 w-4 transform rounded-full text-white bg-red-500 text-xs flex items-center justify-center">
-                            {{ newChatMessageCount > 9 ? '9+' : newChatMessageCount }}
-                        </span>
-                    </Link>
-                    <Link :href="route('groups.meetups.index', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
-                        Meetups
-                    </Link>
-                    <Link :href="route('groups.availability.index', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
-                        Availability
-                    </Link>
-                    <Link :href="route('groups.blog', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
-                        Blog
-                    </Link>
-                    <Link v-if="isGroupAdmin || user.is_admin" :href="route('groups.admin', { group: group.id })" class="text-sm font-medium text-gray-300 hover:text-white">
+                    <template v-if="isLaunched">
+                        <Link :href="route('groups.chat', { group: group.id })" class="relative text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
+                            Chat
+                            <span v-if="newChatMessageCount > 0" class="absolute -top-2 -right-2 block h-4 w-4 transform rounded-full text-white bg-red-500 text-xs flex items-center justify-center">
+                                {{ newChatMessageCount > 9 ? '9+' : newChatMessageCount }}
+                            </span>
+                        </Link>
+                        <Link :href="route('groups.meetups.index', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
+                            Meetups
+                        </Link>
+                        <Link :href="route('groups.availability.index', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
+                            Availability
+                        </Link>
+                        <Link :href="route('groups.blog', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
+                            Blog
+                        </Link>
+                    </template>
+                    <Link v-if="isGroupAdmin || user.is_admin" :href="route('groups.admin', { group: group.id })" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary">
                         Admin
                     </Link>
-                    <button @click="toggleTodos" class="relative p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
+                    <template v-if="isLaunched">
+                    <button @click="toggleTodos" class="relative p-2 bg-theme-elevated rounded-full text-theme-text-secondary hover:text-theme-text-primary focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                         </svg>
@@ -154,7 +168,7 @@ const submit = () => {
                             {{ todoCount }}
                         </span>
                     </button>
-                    <button @click="toggleNotifications" class="relative p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
+                    <button @click="toggleNotifications" class="relative p-2 bg-theme-elevated rounded-full text-theme-text-secondary hover:text-theme-text-primary focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
@@ -163,11 +177,12 @@ const submit = () => {
                         </span>
                     </button>
                     <!-- Hamburger menu for mobile sidebar -->
-                    <button @click="showMobileSidebar = !showMobileSidebar" class="lg:hidden p-2 bg-gray-700 rounded-full text-gray-300 hover:text-white focus:outline-none">
+                    <button @click="showMobileSidebar = !showMobileSidebar" class="lg:hidden p-2 bg-theme-elevated rounded-full text-theme-text-secondary hover:text-theme-text-primary focus:outline-none">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                         </svg>
                     </button>
+                    </template>
                 </div>
             </div>
         </template>
@@ -177,37 +192,53 @@ const submit = () => {
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                <h2 class="font-semibold text-2xl text-gray-800 dark:text-gray-200 leading-tight mb-6">
+                <h2 class="font-semibold text-2xl text-theme-text-primary leading-tight mb-6">
                     {{ group.name }}
                 </h2>
             </div>
-            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            <!-- Pre-launch Banner -->
+            <div v-if="!isLaunched" class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-8">
+                <div class="bg-theme-accent/10 border border-theme-accent/30 rounded-lg p-8 text-center">
+                    <h3 class="text-2xl font-bold text-theme-accent-text mb-2">Gathering Members</h3>
+                    <p class="text-4xl font-bold text-theme-text-primary mb-2">{{ group.users_count }} / {{ group.min_members }}</p>
+                    <p class="text-theme-text-muted">This group will launch once the minimum member threshold is reached. Share the invitation link to invite more members!</p>
+                    <button @click="copyInvitationLink" class="mt-4 px-4 py-2 bg-theme-accent hover:bg-theme-accent-hover text-white rounded-md text-sm font-medium">
+                        {{ invitationLinkCopied ? 'Copied!' : 'Copy Invitation Registration Link' }}
+                    </button>
+                    <p class="mt-2">
+                        <a :href="invitationLink" class="text-sm text-theme-link hover:text-theme-link-hover underline break-all">{{ invitationLink }}</a>
+                    </p>
+                </div>
+            </div>
+
+            <div v-if="isLaunched" class="max-w-7xl mx-auto sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Main content -->
                 <div class="lg:col-span-2 space-y-6">
                     <!-- Featured Post -->
-                    <div v-if="displayFeaturedPost" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
-                        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
-                            <h3 class="text-lg font-semibold text-indigo-400">Featured Post</h3>
+                    <div v-if="displayFeaturedPost" class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg">
+                        <div class="p-6 border-b border-theme-border">
+                            <h3 class="text-lg font-semibold text-theme-accent-text">Featured Post</h3>
                         </div>
                         <Post :post="displayFeaturedPost" />
                     </div>
 
                     <!-- Post Creation Form -->
-                    <div id="post-form" class="bg-white overflow-hidden shadow-sm sm:rounded-lg dark:bg-gray-800">
+                    <div id="post-form" class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg">
                         <div class="p-6">
-                            <div v-if="membership?.role === 'prospective' && hasPostedToday" class="text-center text-gray-500 dark:text-gray-400">
+                            <div v-if="membership?.role === 'prospective' && hasPostedToday" class="text-center text-theme-text-muted">
                                 You have posted your update for today. Come back tomorrow!
                             </div>
                             <form v-else @submit.prevent="submit">
                                 <textarea
                                     v-model="form.content"
                                     placeholder="Post an update for the group..."
-                                    class="w-full border-gray-300 bg-white text-gray-900 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100 dark:focus:border-indigo-600 dark:focus:ring-indigo-600"
+                                    class="w-full border-theme-border bg-theme-page text-theme-text-primary focus:border-theme-accent focus:ring-theme-accent-ring rounded-md shadow-sm"
                                     :disabled="membership?.role === 'prospective' && hasPostedToday"
                                 ></textarea>
                                 <div v-if="currentTasks && currentTasks.length > 0" class="mt-4">
-                                    <label for="task-select" class="block text-sm font-medium text-gray-300">Select a task</label>
-                                    <select id="task-select" v-model="form.group_task_id" class="mt-1 block w-full rounded-md border-gray-600 bg-gray-900 py-2 pl-3 pr-10 text-white focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
+                                    <label for="task-select" class="block text-sm font-medium text-theme-text-secondary">Select a task</label>
+                                    <select id="task-select" v-model="form.group_task_id" class="mt-1 block w-full rounded-md border-theme-border bg-theme-page py-2 pl-3 pr-10 text-theme-text-primary focus:border-theme-accent focus:outline-none focus:ring-theme-accent-ring sm:text-sm">
                                         <option v-if="isGroupAdmin || user.is_admin" :value="null">No specific task</option>
                                         <option v-for="task in currentTasks" :key="task.id" :value="task.id">
                                             {{ task.title }}
@@ -218,29 +249,29 @@ const submit = () => {
                                 <div class="mt-4 flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
                                         <div v-if="user.can_post_images">
-                                            <label for="image-upload" class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">Add Image</label>
+                                            <label for="image-upload" class="cursor-pointer text-sm text-theme-text-muted hover:text-theme-text-primary">Add Image</label>
                                             <input id="image-upload" type="file" class="hidden" @input="form.image = $event.target.files[0]" accept="image/*" />
                                         </div>
                                          <div v-if="user.can_post_videos">
-                                            <label for="video-upload" class="cursor-pointer text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">Add Video</label>
+                                            <label for="video-upload" class="cursor-pointer text-sm text-theme-text-muted hover:text-theme-text-primary">Add Video</label>
                                             <input id="video-upload" type="file" class="hidden" @input="form.video = $event.target.files[0]" accept="video/*" />
                                         </div>
                                     </div>
-                                    <button type="submit" class="px-4 py-2 bg-gray-800 text-white rounded-md dark:bg-gray-200 dark:text-gray-800" :disabled="form.processing || (membership?.role === 'prospective' && hasPostedToday)">Post</button>
+                                    <button type="submit" class="px-4 py-2 bg-theme-accent text-white rounded-md" :disabled="form.processing || (membership?.role === 'prospective' && hasPostedToday)">Post</button>
                                 </div>
-                                 <div v-if="form.progress" class="mt-2 w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                                 <div v-if="form.progress" class="mt-2 w-full bg-theme-elevated rounded-full h-2.5">
                                     <div class="bg-blue-600 h-2.5 rounded-full" :style="{ width: form.progress.percentage + '%' }"></div>
                                 </div>
-                                <div v-if="form.image" class="mt-2 text-sm text-gray-500">Image selected: {{ form.image.name }}</div>
-                                <div v-if="form.video" class="mt-2 text-sm text-gray-500">Video selected: {{ form.video.name }}</div>
-                                <p v-if="form.errors.daily_limit" class="mt-2 text-sm text-red-600 dark:text-red-400">{{ form.errors.daily_limit }}</p>
+                                <div v-if="form.image" class="mt-2 text-sm text-theme-text-faint">Image selected: {{ form.image.name }}</div>
+                                <div v-if="form.video" class="mt-2 text-sm text-theme-text-faint">Video selected: {{ form.video.name }}</div>
+                                <p v-if="form.errors.daily_limit" class="mt-2 text-sm text-red-400">{{ form.errors.daily_limit }}</p>
                             </form>
                         </div>
                     </div>
 
                     <!-- Posts Feed -->
                     <div class="space-y-6">
-                        <h3 v-if="posts.length > 0" class="text-lg font-semibold text-gray-300">Recent Activity</h3>
+                        <h3 v-if="posts.length > 0" class="text-lg font-semibold text-theme-text-secondary">Recent Activity</h3>
                         <Post v-for="post in posts" :key="post.id" :post="post" />
                     </div>
                 </div>
@@ -248,11 +279,11 @@ const submit = () => {
                 <!-- Sidebar -->
                 <div :class="[
                     'lg:col-span-1 lg:order-none',
-                    'fixed top-0 right-0 h-full w-80 bg-gray-900 z-40 transform transition-transform lg:relative lg:translate-x-0 lg:bg-transparent lg:p-0 lg:z-auto',
+                    'fixed top-0 right-0 h-full w-80 bg-theme-page z-40 transform transition-transform lg:relative lg:translate-x-0 lg:bg-transparent lg:p-0 lg:z-auto',
                     showMobileSidebar ? 'translate-x-0' : 'translate-x-full'
                 ]">
                     <div class="h-full overflow-y-auto">
-                         <button @click="showMobileSidebar = false" class="lg:hidden absolute top-4 right-4 text-gray-300 hover:text-white z-50">
+                         <button @click="showMobileSidebar = false" class="lg:hidden absolute top-4 right-4 text-theme-text-secondary hover:text-theme-text-primary z-50">
                              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                             </svg>
