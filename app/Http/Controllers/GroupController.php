@@ -28,7 +28,7 @@ class GroupController extends Controller
             ->withCount('users')
             ->get()
             ->map(function ($group) use ($user) {
-                $group->is_member = $user->groups()->where('group_id', $group->id)->exists();
+                $group->is_member = $user ? $user->groups()->where('group_id', $group->id)->exists() : false;
                 return $group;
             });
 
@@ -115,6 +115,20 @@ class GroupController extends Controller
         $group->users()->detach($user->id);
 
         return redirect()->route('dashboard')->with('success', 'You have left the group.');
+    }
+
+    public function showPublic(Group $group)
+    {
+        if (!$group->is_public) {
+            abort(404);
+        }
+
+        $group->load('creator');
+        $group->loadCount('users');
+
+        return Inertia::render('Group/Preview', [
+            'group' => $group,
+        ]);
     }
 
     public function show(Request $request, Group $group)

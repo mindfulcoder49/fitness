@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Section;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -47,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                 ] : null,
             ],
             'appUrl' => config('app.url'),
+            'magazineSections' => fn () => Section::active()->get(['id', 'name', 'slug']),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

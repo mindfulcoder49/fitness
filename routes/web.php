@@ -1,6 +1,11 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\Admin\MagazineArticleController;
+use App\Http\Controllers\Admin\MagazineContributorController;
+use App\Http\Controllers\Admin\MagazineSectionController;
+use App\Http\Controllers\Admin\MagazineTagController;
+use App\Http\Controllers\Admin\MagazineVerticalController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CommentController;
@@ -8,6 +13,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\GroupMessageController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\Magazine\ArticleController;
+use App\Http\Controllers\Magazine\ContributorController;
+use App\Http\Controllers\Magazine\HomepageController;
+use App\Http\Controllers\Magazine\SectionController;
+use App\Http\Controllers\Magazine\TagController;
 use App\Http\Controllers\MeetupController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PostController;
@@ -22,21 +32,33 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Post;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
+// Magazine homepage
+Route::get('/', HomepageController::class)->name('magazine.home');
+
+// Community welcome (old homepage)
+Route::get('/community', function () {
+    return Inertia::render('Community/Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-});
+})->name('community.welcome');
+
+// Public magazine routes
+Route::get('/section/{section:slug}', [SectionController::class, 'show'])->name('magazine.section');
+Route::get('/section/{section:slug}/{vertical:slug}', [SectionController::class, 'vertical'])->name('magazine.vertical');
+Route::get('/tag/{tag:slug}', [TagController::class, 'show'])->name('magazine.tag');
+Route::get('/article/{article:slug}', [ArticleController::class, 'show'])->name('magazine.article');
+Route::get('/contributor/{contributor:slug}', [ContributorController::class, 'show'])->name('magazine.contributor');
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
 Route::get('/blog', [BlogController::class, 'index'])->middleware(['auth', 'verified'])->name('blog.index');
 Route::get('/changelog', [ChangelogController::class, 'index'])->middleware(['auth', 'verified'])->name('changelog.index');
 Route::get('/users/{user:username}', [UserController::class, 'show'])->middleware(['auth', 'verified'])->name('users.show');
 
-Route::get('/groups', [GroupController::class, 'index'])->middleware(['auth', 'verified'])->name('groups.index');
+Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
+Route::get('/groups/{group}/preview', [GroupController::class, 'showPublic'])->name('groups.preview');
 Route::post('/groups', [GroupController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.store');
 Route::post('/groups/{group}/join', [GroupController::class, 'join'])->middleware(['auth', 'verified'])->name('groups.join');
 
@@ -97,6 +119,39 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/groups/{group}/launch', [AdminController::class, 'launchGroup'])->name('groups.launch');
     Route::patch('/groups/{group}/unlaunch', [AdminController::class, 'unlaunchGroup'])->name('groups.unlaunch');
     Route::delete('/groups/{group}', [AdminController::class, 'destroyGroup'])->name('groups.destroy');
+
+    // Magazine admin routes
+    Route::prefix('magazine')->name('magazine.')->group(function () {
+        Route::get('/sections', [MagazineSectionController::class, 'index'])->name('sections.index');
+        Route::post('/sections', [MagazineSectionController::class, 'store'])->name('sections.store');
+        Route::patch('/sections/{section}', [MagazineSectionController::class, 'update'])->name('sections.update');
+        Route::delete('/sections/{section}', [MagazineSectionController::class, 'destroy'])->name('sections.destroy');
+        Route::post('/sections/reorder', [MagazineSectionController::class, 'reorder'])->name('sections.reorder');
+
+        Route::post('/verticals', [MagazineVerticalController::class, 'store'])->name('verticals.store');
+        Route::patch('/verticals/{vertical}', [MagazineVerticalController::class, 'update'])->name('verticals.update');
+        Route::delete('/verticals/{vertical}', [MagazineVerticalController::class, 'destroy'])->name('verticals.destroy');
+
+        Route::get('/tags', [MagazineTagController::class, 'index'])->name('tags.index');
+        Route::post('/tags', [MagazineTagController::class, 'store'])->name('tags.store');
+        Route::patch('/tags/{tag}', [MagazineTagController::class, 'update'])->name('tags.update');
+        Route::delete('/tags/{tag}', [MagazineTagController::class, 'destroy'])->name('tags.destroy');
+
+        Route::get('/contributors', [MagazineContributorController::class, 'index'])->name('contributors.index');
+        Route::post('/contributors', [MagazineContributorController::class, 'store'])->name('contributors.store');
+        Route::patch('/contributors/{contributor}', [MagazineContributorController::class, 'update'])->name('contributors.update');
+        Route::delete('/contributors/{contributor}', [MagazineContributorController::class, 'destroy'])->name('contributors.destroy');
+
+        Route::get('/articles', [MagazineArticleController::class, 'index'])->name('articles.index');
+        Route::get('/articles/create', [MagazineArticleController::class, 'create'])->name('articles.create');
+        Route::post('/articles', [MagazineArticleController::class, 'store'])->name('articles.store');
+        Route::get('/articles/{article}/edit', [MagazineArticleController::class, 'edit'])->name('articles.edit');
+        Route::patch('/articles/{article}', [MagazineArticleController::class, 'update'])->name('articles.update');
+        Route::delete('/articles/{article}', [MagazineArticleController::class, 'destroy'])->name('articles.destroy');
+        Route::post('/articles/{article}/upload-image', [MagazineArticleController::class, 'uploadImage'])->name('articles.upload-image');
+        Route::post('/articles/{article}/upload-video', [MagazineArticleController::class, 'uploadVideo'])->name('articles.upload-video');
+        Route::post('/articles/{article}/upload-audio', [MagazineArticleController::class, 'uploadAudio'])->name('articles.upload-audio');
+    });
 });
 
 require __DIR__.'/auth.php';

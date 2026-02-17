@@ -69,6 +69,13 @@ console.log('User object in AuthenticatedLayout:', user);
                                 >
                                     Admin
                                 </NavLink>
+                                <NavLink
+                                    v-if="user.is_admin"
+                                    :href="route('admin.magazine.articles.index')"
+                                    :active="route().current('admin.magazine.*')"
+                                >
+                                    Magazine
+                                </NavLink>
                             </div>
                         </div>
 
@@ -200,6 +207,13 @@ console.log('User object in AuthenticatedLayout:', user);
                             :active="route().current('admin.dashboard')"
                         >
                             Admin
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="user.is_admin"
+                            :href="route('admin.magazine.articles.index')"
+                            :active="route().current('admin.magazine.*')"
+                        >
+                            Magazine
                         </ResponsiveNavLink>
                     </div>
 
