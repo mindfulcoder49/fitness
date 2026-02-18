@@ -25,7 +25,7 @@ const formattedDate = (date) => {
             <div v-for="item in availabilitySummary" :key="item.date" class="bg-theme-elevated p-4 rounded-lg">
                 <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center">
                     <h4 class="font-bold text-theme-text-primary">{{ formattedDate(item.date) }}</h4>
-                    <span class="px-3 py-1 text-sm font-semibold rounded-full w-fit" :class="item.count > 1 ? 'bg-green-500 text-white' : 'bg-yellow-500 text-gray-900'">
+                    <span class="px-3 py-1 text-sm font-semibold rounded-full w-fit" :class="item.count > 1 ? 'bg-theme-success text-white' : 'bg-theme-warning text-theme-text-primary'">
                         {{ item.count }} {{ item.count > 1 ? 'members' : 'member' }} available
                     </span>
                 </div>

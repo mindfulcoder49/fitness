@@ -185,7 +185,7 @@ const unsetCurrentTask = (task) => {
 </script>
 
 <template>
-    <div class="p-2 sm:p-6">
+    <div class="p-2 sm:p-6 text-theme-text-primary">
         <div class="mb-4 border-b border-theme-border">
             <div class="overflow-x-auto">
                 <nav class="-mb-px flex space-x-8" aria-label="Tabs">
@@ -259,7 +259,7 @@ const unsetCurrentTask = (task) => {
                                 <input type="checkbox" v-model="post.is_blog_post" @change="updateBlogPostStatus(post)" class="h-4 w-4 rounded border-theme-border bg-theme-card text-theme-accent focus:ring-theme-accent-ring" />
                             </td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <button @click="deleteItem('post', post.id)" class="text-red-500 hover:text-red-700">Delete</button>
+                                <button @click="deleteItem('post', post.id)" class="text-theme-danger hover:text-theme-danger-hover">Delete</button>
                             </td>
                         </tr>
                     </tbody>
@@ -283,7 +283,7 @@ const unsetCurrentTask = (task) => {
                             <td class="px-3 py-4 text-sm text-theme-text-secondary max-w-md truncate">{{ comment.content }}</td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-theme-text-muted">{{ new Date(comment.created_at).toLocaleDateString() }}</td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <button @click="deleteItem('comment', comment.id)" class="text-red-500 hover:text-red-700">Delete</button>
+                                <button @click="deleteItem('comment', comment.id)" class="text-theme-danger hover:text-theme-danger-hover">Delete</button>
                             </td>
                         </tr>
                     </tbody>
@@ -307,7 +307,7 @@ const unsetCurrentTask = (task) => {
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-theme-text-secondary">{{ like.on }}</td>
                             <td class="whitespace-nowrap px-3 py-4 text-sm text-theme-text-muted">{{ new Date(like.created_at).toLocaleDateString() }}</td>
                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                <button @click="deleteItem('like', like.id)" class="text-red-500 hover:text-red-700">Delete</button>
+                                <button @click="deleteItem('like', like.id)" class="text-theme-danger hover:text-theme-danger-hover">Delete</button>
                             </td>
                         </tr>
                     </tbody>
@@ -321,37 +321,37 @@ const unsetCurrentTask = (task) => {
 
             <!-- Tasks Tab -->
             <div v-if="activeTab === 'tasks'">
-                <h4 class="text-lg font-semibold mb-4">Manage Group Tasks</h4>
+                <h4 class="text-lg font-semibold mb-4 text-theme-text-primary">Manage Group Tasks</h4>
                 <div class="bg-theme-page/50 p-4 rounded-lg mb-6">
                     <form @submit.prevent="submitTask">
-                        <h5 class="font-semibold mb-2">{{ editingTask ? 'Edit Task' : 'Create New Task' }}</h5>
+                        <h5 class="font-semibold mb-2 text-theme-text-primary">{{ editingTask ? 'Edit Task' : 'Create New Task' }}</h5>
                         <div class="space-y-3">
-                            <input v-model="taskForm.title" placeholder="Task Title" class="w-full bg-theme-card border-theme-border rounded-md" required />
-                            <textarea v-model="taskForm.description" placeholder="Task Description" class="w-full bg-theme-card border-theme-border rounded-md"></textarea>
+                            <input v-model="taskForm.title" placeholder="Task Title" class="w-full bg-theme-card border-theme-border text-theme-text-primary rounded-md" required />
+                            <textarea v-model="taskForm.description" placeholder="Task Description" class="w-full bg-theme-card border-theme-border text-theme-text-primary rounded-md"></textarea>
                             <div v-if="editingTask" class="flex items-center">
                                 <input type="checkbox" v-model="taskForm.is_current" id="is_current_task" class="h-4 w-4 rounded border-theme-border bg-theme-card text-theme-accent focus:ring-theme-accent-ring" />
-                                <label for="is_current_task" class="ml-2 text-sm font-medium">Current Task</label>
+                                <label for="is_current_task" class="ml-2 text-sm font-medium text-theme-text-primary">Current Task</label>
                             </div>
                         </div>
                         <div class="mt-4 flex items-center space-x-2">
-                            <button type="submit" class="px-3 py-1.5 text-sm bg-theme-accent hover:bg-theme-accent-hover rounded-md">{{ editingTask ? 'Update Task' : 'Create Task' }}</button>
-                            <button v-if="editingTask" @click="cancelEdit" type="button" class="px-3 py-1.5 text-sm bg-theme-elevated hover:bg-theme-elevated rounded-md">Cancel</button>
+                            <button type="submit" class="px-3 py-1.5 text-sm bg-theme-accent hover:bg-theme-accent-hover text-white rounded-md">{{ editingTask ? 'Update Task' : 'Create Task' }}</button>
+                            <button v-if="editingTask" @click="cancelEdit" type="button" class="px-3 py-1.5 text-sm bg-theme-elevated hover:bg-theme-elevated text-theme-text-primary rounded-md">Cancel</button>
                         </div>
                     </form>
                 </div>
 
-                <h5 class="font-semibold mb-2">Existing Tasks</h5>
+                <h5 class="font-semibold mb-2 text-theme-text-primary">Existing Tasks</h5>
                 <ul class="space-y-3">
                     <li v-for="task in group.tasks" :key="task.id" class="p-3 bg-theme-page/50 rounded-lg flex justify-between items-center">
                         <div>
-                            <p class="font-bold" :class="{'text-theme-accent-text': task.is_current}">{{ task.title }} <span v-if="task.is_current" class="text-xs font-normal">(Current)</span></p>
+                            <p class="font-bold text-theme-text-primary" :class="{'!text-theme-accent-text': task.is_current}">{{ task.title }} <span v-if="task.is_current" class="text-xs font-normal">(Current)</span></p>
                             <p class="text-sm text-theme-text-muted">{{ task.description }}</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button @click="setCurrentTask(task)" v-if="!task.is_current" class="text-xs text-green-400 hover:text-green-300">Set Current</button>
-                            <button @click="unsetCurrentTask(task)" v-if="task.is_current" class="text-xs text-yellow-400 hover:text-yellow-300">Unset Current</button>
-                            <button @click="editTask(task)" class="text-xs text-blue-400 hover:text-blue-300">Edit</button>
-                            <button @click="deleteTask(task)" class="text-xs text-red-500 hover:text-red-700">Delete</button>
+                            <button @click="setCurrentTask(task)" v-if="!task.is_current" class="text-xs text-theme-success hover:text-theme-success/80">Set Current</button>
+                            <button @click="unsetCurrentTask(task)" v-if="task.is_current" class="text-xs text-theme-warning hover:text-theme-warning/80">Unset Current</button>
+                            <button @click="editTask(task)" class="text-xs text-theme-link hover:text-theme-link-hover">Edit</button>
+                            <button @click="deleteTask(task)" class="text-xs text-theme-danger hover:text-theme-danger-hover">Delete</button>
                         </div>
                     </li>
                 </ul>
@@ -359,15 +359,15 @@ const unsetCurrentTask = (task) => {
 
             <!-- Settings Tab -->
             <div v-if="activeTab === 'settings' && user.is_admin">
-                <h4 class="text-lg font-semibold mb-4">Group Settings</h4>
+                <h4 class="text-lg font-semibold mb-4 text-theme-text-primary">Group Settings</h4>
                 <div class="flex items-center">
                     <input type="checkbox" :checked="!!group.is_public" @change="updateGroupPublicStatus(group, $event)" :id="`public-toggle-${group.id}`" class="h-4 w-4 rounded border-theme-border bg-theme-card text-theme-accent focus:ring-theme-accent-ring" />
-                    <label :for="`public-toggle-${group.id}`" class="ml-2 text-sm font-medium">Public Group</label>
+                    <label :for="`public-toggle-${group.id}`" class="ml-2 text-sm font-medium text-theme-text-primary">Public Group</label>
                 </div>
                 <p class="text-xs text-theme-text-faint mt-1">If checked, this group will be listed on the public groups page and anyone can join.</p>
 
                 <div class="mt-6 pt-6 border-t border-theme-border">
-                    <h5 class="text-sm font-semibold mb-2">Minimum Members to Launch</h5>
+                    <h5 class="text-sm font-semibold mb-2 text-theme-text-primary">Minimum Members to Launch</h5>
                     <p class="text-xs text-theme-text-muted mb-3">Set the minimum number of members required before the group launches. Leave empty for no minimum (group launches immediately).</p>
                     <div class="flex items-center space-x-3">
                         <input
@@ -407,7 +407,7 @@ const unsetCurrentTask = (task) => {
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-theme-border">
-                    <h5 class="text-sm font-semibold mb-2">Launch Email</h5>
+                    <h5 class="text-sm font-semibold mb-2 text-theme-text-primary">Launch Email</h5>
                     <p class="text-xs text-theme-text-muted mb-3">Send the group launch email to all members. This will also set the group as launched if it hasn't been already.</p>
                     <button
                         @click="sendLaunchEmail"
@@ -416,13 +416,13 @@ const unsetCurrentTask = (task) => {
                     >
                         {{ sendingEmail ? 'Sending...' : 'Send Launch Email to All Members' }}
                     </button>
-                    <div v-if="emailStatus" class="mt-3 p-3 rounded-md text-sm" :class="emailStatus.type === 'success' ? 'bg-green-900/30 text-green-400 border border-green-700' : 'bg-red-900/30 text-red-400 border border-red-700'">
+                    <div v-if="emailStatus" class="mt-3 p-3 rounded-md text-sm" :class="emailStatus.type === 'success' ? 'bg-theme-success/20 text-theme-success border border-theme-success' : 'bg-theme-danger/20 text-theme-danger border border-theme-danger'">
                         {{ emailStatus.message }}
                     </div>
                 </div>
 
                 <div class="mt-6 pt-6 border-t border-theme-border">
-                    <h5 class="text-sm font-semibold mb-2">Invitation Link</h5>
+                    <h5 class="text-sm font-semibold mb-2 text-theme-text-primary">Invitation Link</h5>
                     <p class="text-xs text-theme-text-muted mb-3">Share this link to invite people to register and automatically join this group.</p>
                     <div class="flex items-center space-x-3">
                         <input

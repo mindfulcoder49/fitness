@@ -100,7 +100,7 @@ const toggleLike = (likeableId, likeableType) => {
         <!-- View Mode -->
         <template v-if="!isEditing">
             <div v-if="post.content"
-                 class="mt-4 text-lg text-theme-text-primary prose prose-invert max-w-none relative post-content"
+                 class="mt-4 text-lg text-theme-text-primary prose dark:prose-invert max-w-none relative post-content"
                  :class="{ 'max-h-60 overflow-hidden': isLongPost && !isExpanded }">
                 <div v-html="parsedContent"></div>
                 <div v-if="isLongPost && !isExpanded" class="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-theme-card to-transparent pointer-events-none"></div>
@@ -125,7 +125,7 @@ const toggleLike = (likeableId, likeableType) => {
         <template v-else>
             <div class="mt-4">
                 <MarkdownEditor v-model="editForm.content" />
-                <div v-if="editForm.errors.content" class="mt-2 text-sm text-red-500">{{ editForm.errors.content }}</div>
+                <div v-if="editForm.errors.content" class="mt-2 text-sm text-theme-danger">{{ editForm.errors.content }}</div>
                 <div class="mt-4 flex justify-end space-x-2">
                     <button @click="isEditing = false; editForm.reset();" class="px-4 py-2 text-sm font-medium text-theme-text-secondary bg-theme-border rounded-md hover:bg-theme-border">
                         Cancel
@@ -138,13 +138,13 @@ const toggleLike = (likeableId, likeableType) => {
         </template>
 
         <div v-if="!isEditing" class="mt-4 flex items-center space-x-4">
-            <button @click="toggleLike(post.id, 'App\\Models\\Post')" class="flex items-center text-theme-text-muted hover:text-red-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" :class="post.is_liked ? 'text-red-500' : ''" viewBox="0 0 20 20" fill="currentColor">
+            <button @click="toggleLike(post.id, 'App\\Models\\Post')" class="flex items-center text-theme-text-muted hover:text-theme-danger transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" :class="post.is_liked ? 'text-theme-danger' : ''" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                 </svg>
                 <span>{{ post.likes_count }}</span>
             </button>
-            <button @click="showComments = !showComments" class="flex items-center text-theme-text-muted hover:text-blue-500 transition-colors">
+            <button @click="showComments = !showComments" class="flex items-center text-theme-text-muted hover:text-theme-link transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.839 8.839 0 01-4.083-.985L2 17l.93-2.685A8.973 8.973 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM4.416 14.584A6.973 6.973 0 0010 15c3.314 0 6-2.686 6-6s-2.686-6-6-6-6 2.686-6 6c0 1.31.378 2.522 1.034 3.536l-1.12 3.214 3.502-1.166z" clip-rule="evenodd" />
                 </svg>
@@ -158,8 +158,8 @@ const toggleLike = (likeableId, likeableType) => {
                         <p><Link :href="route('users.show', { user: comment.user.username })" class="font-bold text-theme-text-primary hover:underline">{{ comment.user.username }}</Link>: <span class="text-theme-text-secondary">{{ comment.content }}</span></p>
                         <div class="flex items-center space-x-2">
                             <p class="text-xs text-theme-text-faint">{{ new Date(comment.created_at).toLocaleString() }}</p>
-                            <button @click="toggleLike(comment.id, 'App\\Models\\Comment')" class="flex items-center text-xs text-theme-text-muted hover:text-red-500">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" :class="comment.is_liked ? 'text-red-500' : ''" viewBox="0 0 20 20" fill="currentColor">
+                            <button @click="toggleLike(comment.id, 'App\\Models\\Comment')" class="flex items-center text-xs text-theme-text-muted hover:text-theme-danger">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" :class="comment.is_liked ? 'text-theme-danger' : ''" viewBox="0 0 20 20" fill="currentColor">
                                     <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
                                 </svg>
                                 <span>{{ comment.likes.length }}</span>
@@ -184,7 +184,7 @@ const toggleLike = (likeableId, likeableType) => {
             </div>
             <form @submit.prevent="submitComment" class="mt-4">
                 <textarea v-model="commentForm.content" class="w-full border-theme-border bg-theme-input text-theme-text-primary focus:border-theme-accent focus:ring-theme-accent-ring rounded-md shadow-sm" placeholder="Add a comment..."></textarea>
-                <button type="submit" class="mt-2 px-4 py-2 bg-blue-600 text-theme-text-primary rounded-md hover:bg-blue-700 transition-colors">Comment</button>
+                <button type="submit" class="mt-2 px-4 py-2 bg-theme-accent text-white rounded-md hover:bg-theme-accent-hover transition-colors">Comment</button>
             </form>
         </div>
     </div>

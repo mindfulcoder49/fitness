@@ -94,7 +94,7 @@ const deleteUser = (user) => {
                                                 <input type="checkbox" v-model="user.can_post_videos" @change="updateMediaPermissions(user)" class="h-4 w-4 rounded border-theme-border bg-theme-card text-theme-accent focus:ring-theme-accent-ring" />
                                             </td>
                                             <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6 space-x-2">
-                                                <button @click="deleteUser(user)" class="text-red-500 hover:text-red-700">Delete</button>
+                                                <button @click="deleteUser(user)" class="text-theme-danger hover:text-theme-danger-hover">Delete</button>
                                             </td>
                                         </tr>
                                     </tbody>
