@@ -31,7 +31,7 @@ class MagazineSectionController extends Controller
             'is_active' => 'boolean',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['slug'] = $this->resolveUniqueSlug($validated['slug'] ?: $validated['name']);
 
         Section::create($validated);
 
@@ -71,5 +71,23 @@ class MagazineSectionController extends Controller
         }
 
         return back()->with('success', 'Sections reordered.');
+    }
+
+    private function resolveUniqueSlug(string $value): string
+    {
+        $base = Str::slug($value);
+        if ($base === '') {
+            $base = 'section';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (Section::where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

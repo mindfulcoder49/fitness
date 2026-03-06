@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Contributor;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -35,11 +36,15 @@ class MagazineContributorController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:contributors',
             'bio' => 'nullable|string',
-            'user_id' => 'nullable|exists:users,id',
+            'user_id' => [
+                'nullable',
+                'exists:users,id',
+                Rule::unique('contributors', 'user_id'),
+            ],
             'photo' => 'nullable|image|max:2048',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['slug'] = $this->resolveUniqueSlug($validated['slug'] ?: $validated['name']);
 
         if ($request->hasFile('photo')) {
             $validated['photo_path'] = $request->file('photo')->store('contributors', 'public');
@@ -57,7 +62,11 @@ class MagazineContributorController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:contributors,slug,' . $contributor->id,
             'bio' => 'nullable|string',
-            'user_id' => 'nullable|exists:users,id',
+            'user_id' => [
+                'nullable',
+                'exists:users,id',
+                Rule::unique('contributors', 'user_id')->ignore($contributor->id),
+            ],
             'photo' => 'nullable|image|max:2048',
         ]);
 
@@ -76,5 +85,23 @@ class MagazineContributorController extends Controller
         $contributor->delete();
 
         return back()->with('success', 'Contributor deleted.');
+    }
+
+    private function resolveUniqueSlug(string $value): string
+    {
+        $base = Str::slug($value);
+        if ($base === '') {
+            $base = 'contributor';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (Contributor::where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

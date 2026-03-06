@@ -84,6 +84,12 @@ class MeetupController extends Controller
         ]);
 
         $user = Auth::user();
+        $isMember = $user->groups()->where('group_id', $meetup->group_id)->exists();
+        $isGroupCreator = $meetup->group->creator_id === $user->id;
+
+        if (!$user->is_admin && !$isMember && !$isGroupCreator) {
+            abort(403, 'You are not a member of this group.');
+        }
 
         if ($request->status === 'not_attending') {
             $meetup->users()->detach($user->id);

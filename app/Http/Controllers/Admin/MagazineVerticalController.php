@@ -19,7 +19,7 @@ class MagazineVerticalController extends Controller
             'image' => 'nullable|image|max:2048',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['slug'] = $this->resolveUniqueSlug($validated['slug'] ?: $validated['name']);
 
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('verticals', 'public');
@@ -55,5 +55,23 @@ class MagazineVerticalController extends Controller
         $vertical->delete();
 
         return back()->with('success', 'Vertical deleted.');
+    }
+
+    private function resolveUniqueSlug(string $value): string
+    {
+        $base = Str::slug($value);
+        if ($base === '') {
+            $base = 'vertical';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (Vertical::where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 }

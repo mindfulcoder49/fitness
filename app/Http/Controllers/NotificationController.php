@@ -18,6 +18,15 @@ class NotificationController extends Controller
         $weekAgo = now()->subWeek();
         $group = $request->has('group_id') ? Group::find($request->group_id) : null;
 
+        if ($group) {
+            $isMember = $user->groups()->where('group_id', $group->id)->exists();
+            $isGroupCreator = $group->creator_id === $user->id;
+
+            if (!$user->is_admin && !$isMember && !$isGroupCreator) {
+                abort(403, 'You are not a member of this group.');
+            }
+        }
+
         $userGroupIds = $group ? collect([$group->id]) : $user->groups()->pluck('groups.id');
 
         // Posts

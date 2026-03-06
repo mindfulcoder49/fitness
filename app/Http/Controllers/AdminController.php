@@ -135,8 +135,17 @@ class AdminController extends Controller
     public function setCurrentTask(GroupTask $task)
     {
         DB::transaction(function () use ($task) {
+            GroupTask::where('group_id', $task->group_id)->update(['is_current' => false]);
             $task->update(['is_current' => true]);
         });
+
+        return back();
+    }
+
+    public function unsetCurrentTask(GroupTask $task)
+    {
+        $task->update(['is_current' => false]);
+
         return back();
     }
 

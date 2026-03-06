@@ -11,6 +11,10 @@ class SectionController extends Controller
 {
     public function show(Section $section)
     {
+        if (! $section->is_active) {
+            abort(404);
+        }
+
         $section->load('verticals');
 
         $articles = $section->articles()
@@ -27,6 +31,10 @@ class SectionController extends Controller
 
     public function vertical(Section $section, Vertical $vertical)
     {
+        if (! $section->is_active) {
+            abort(404);
+        }
+
         if ($vertical->section_id !== $section->id) {
             abort(404);
         }

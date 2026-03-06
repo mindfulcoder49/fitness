@@ -26,7 +26,7 @@ class MagazineTagController extends Controller
             'slug' => 'nullable|string|max:255|unique:tags',
         ]);
 
-        $validated['slug'] = $validated['slug'] ?: Str::slug($validated['name']);
+        $validated['slug'] = $this->resolveUniqueSlug($validated['slug'] ?: $validated['name']);
 
         Tag::create($validated);
 
@@ -50,5 +50,23 @@ class MagazineTagController extends Controller
         $tag->delete();
 
         return back()->with('success', 'Tag deleted.');
+    }
+
+    private function resolveUniqueSlug(string $value): string
+    {
+        $base = Str::slug($value);
+        if ($base === '') {
+            $base = 'tag';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (Tag::where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 }
