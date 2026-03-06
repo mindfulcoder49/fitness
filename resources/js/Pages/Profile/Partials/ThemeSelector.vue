@@ -3,7 +3,7 @@ import { usePage, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const user = usePage().props.auth.user;
-const currentTheme = ref(user.theme || 'dark');
+const currentTheme = ref(user.theme || 'light');
 
 const themes = [
     { id: 'dark', name: 'Dark', colors: ['#111827', '#1F2937', '#6366F1'] },

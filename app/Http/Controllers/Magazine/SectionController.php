@@ -27,6 +27,10 @@ class SectionController extends Controller
 
     public function vertical(Section $section, Vertical $vertical)
     {
+        if ($vertical->section_id !== $section->id) {
+            abort(404);
+        }
+
         $articles = $vertical->articles()
             ->published()
             ->with(['section', 'contributors'])

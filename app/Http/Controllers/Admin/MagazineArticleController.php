@@ -8,6 +8,8 @@ use App\Models\Contributor;
 use App\Models\Section;
 use App\Models\Tag;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
@@ -44,6 +46,7 @@ class MagazineArticleController extends Controller
     public function store(Request $request)
     {
         $validated = $this->validateArticle($request);
+        $validated = $this->normalizePublicationFields($validated);
 
         if ($request->hasFile('featured_image')) {
             $validated['featured_image_path'] = $request->file('featured_image')->store('articles/images', 'public');
@@ -79,6 +82,7 @@ class MagazineArticleController extends Controller
     public function update(Request $request, Article $article)
     {
         $validated = $this->validateArticle($request, $article);
+        $validated = $this->normalizePublicationFields($validated);
 
         if ($request->hasFile('featured_image')) {
             $validated['featured_image_path'] = $request->file('featured_image')->store('articles/images', 'public');
@@ -135,14 +139,22 @@ class MagazineArticleController extends Controller
 
     private function validateArticle(Request $request, ?Article $article = null): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:articles,slug,' . ($article?->id ?? 'NULL'),
+            'slug' => [
+                'nullable',
+                'string',
+                'max:255',
+                Rule::unique('articles', 'slug')->ignore($article?->id),
+            ],
             'excerpt' => 'nullable|string',
             'content' => 'required|string',
             'featured_image' => 'nullable|image|max:5120',
             'section_id' => 'required|exists:sections,id',
-            'vertical_id' => 'nullable|exists:verticals,id',
+            'vertical_id' => [
+                'nullable',
+                Rule::exists('verticals', 'id')->where(fn ($query) => $query->where('section_id', $request->input('section_id'))),
+            ],
             'status' => 'required|in:draft,scheduled,published,archived',
             'access' => 'required|in:public,members',
             'is_featured' => 'boolean',
@@ -150,6 +162,60 @@ class MagazineArticleController extends Controller
             'meta_description' => 'nullable|string|max:500',
             'published_at' => 'nullable|date',
         ]);
+
+        $validated['slug'] = $this->resolveUniqueSlug(
+            $validated['slug'] ?: $validated['title'],
+            $article?->id
+        );
+
+        return $validated;
+    }
+
+    private function normalizePublicationFields(array $validated): array
+    {
+        if ($validated['status'] === 'published' && empty($validated['published_at'])) {
+            $validated['published_at'] = now();
+        }
+
+        if ($validated['status'] === 'scheduled') {
+            if (empty($validated['published_at'])) {
+                throw ValidationException::withMessages([
+                    'published_at' => 'A publish date is required for scheduled articles.',
+                ]);
+            }
+
+            if (now()->greaterThanOrEqualTo($validated['published_at'])) {
+                throw ValidationException::withMessages([
+                    'published_at' => 'Scheduled publish date must be in the future.',
+                ]);
+            }
+        }
+
+        return $validated;
+    }
+
+    private function resolveUniqueSlug(string $value, ?int $ignoreId = null): string
+    {
+        $base = Str::slug($value);
+
+        if ($base === '') {
+            $base = 'article';
+        }
+
+        $slug = $base;
+        $suffix = 2;
+
+        while (
+            Article::query()
+                ->when($ignoreId, fn ($query) => $query->whereKeyNot($ignoreId))
+                ->where('slug', $slug)
+                ->exists()
+        ) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
     }
 
     private function syncContributors(Article $article, array $contributors): void

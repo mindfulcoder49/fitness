@@ -45,8 +45,7 @@ function startEdit(contributor) {
 }
 
 function updateContributor(contributor) {
-    editForm.post(route('admin.magazine.contributors.update', contributor.id), {
-        _method: 'patch',
+    editForm.patch(route('admin.magazine.contributors.update', contributor.id), {
         onSuccess: () => { editingContributor.value = null; },
     });
 }

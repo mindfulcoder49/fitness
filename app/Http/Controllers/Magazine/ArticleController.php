@@ -11,7 +11,11 @@ class ArticleController extends Controller
 {
     public function show(Article $article)
     {
-        if ($article->status !== 'published' || $article->published_at > now()) {
+        $isPublished = Article::published()
+            ->whereKey($article->id)
+            ->exists();
+
+        if (! $isPublished) {
             abort(404);
         }
 

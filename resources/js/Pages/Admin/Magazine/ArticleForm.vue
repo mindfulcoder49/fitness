@@ -60,6 +60,18 @@ watch(() => form.section_id, () => {
     }
 });
 
+function nowForDateTimeLocalInput() {
+    const now = new Date();
+    const tzOffsetMs = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 16);
+}
+
+watch(() => form.status, (status) => {
+    if (status === 'published' && !form.published_at) {
+        form.published_at = nowForDateTimeLocalInput();
+    }
+});
+
 function addContributor() {
     form.contributors.push({ contributor_id: '', role: '' });
 }
@@ -79,9 +91,7 @@ function toggleTag(tagId) {
 
 function submit() {
     if (isEditing.value) {
-        form.post(route('admin.magazine.articles.update', props.article.id), {
-            _method: 'patch',
-        });
+        form.patch(route('admin.magazine.articles.update', props.article.id));
     } else {
         form.post(route('admin.magazine.articles.store'));
     }

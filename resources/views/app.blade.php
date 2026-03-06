@@ -15,7 +15,7 @@
         @vite(['resources/js/app.js', "resources/js/Pages/{$page['component']}.vue"])
         @inertiaHead
     </head>
-    <body class="font-sans antialiased" data-theme="{{ $page['props']['auth']['user']['theme'] ?? 'dark' }}">
+    <body class="font-sans antialiased" data-theme="{{ $page['props']['auth']['user']['theme'] ?? 'light' }}">
         <script>
             (function() {
                 var t = localStorage.getItem('theme');

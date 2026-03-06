@@ -17,12 +17,12 @@ const themes = [
     { id: 'sakura', name: 'Sakura', colors: ['#FFF1F2', '#FFFFFF', '#EC4899'] },
 ];
 
-const currentTheme = ref('dark');
+const currentTheme = ref('light');
 
 const getUser = () => usePage().props.auth?.user;
 
 onMounted(() => {
-    currentTheme.value = document.body.getAttribute('data-theme') || 'dark';
+    currentTheme.value = document.body.getAttribute('data-theme') || 'light';
     document.addEventListener('click', handleClickOutside);
 });
 

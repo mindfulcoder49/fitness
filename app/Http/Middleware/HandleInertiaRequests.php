@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
                     'is_admin' => $user->is_admin,
                     'can_post_images' => $user->can_post_images,
                     'can_post_videos' => $user->can_post_videos,
-                    'theme' => $user->theme ?? 'dark',
+                    'theme' => $user->theme ?? 'light',
                 ] : null,
             ],
             'appUrl' => config('app.url'),
