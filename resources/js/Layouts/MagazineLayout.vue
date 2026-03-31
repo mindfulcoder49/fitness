@@ -20,7 +20,7 @@ const sections = page.props.magazineSections || [];
                     <div class="flex items-center">
                         <Link :href="route('magazine.home')" class="flex items-center gap-2">
                             <ApplicationLogo class="h-8 w-auto" />
-                            <span class="text-lg font-bold text-theme-text-primary hidden sm:block">AI Survival Magazine</span>
+                            <span class="text-lg font-bold text-theme-text-primary hidden sm:block">{{ $page.props.appName }}</span>
                         </Link>
                     </div>
 
@@ -151,7 +151,7 @@ const sections = page.props.magazineSections || [];
                 <div class="flex flex-col md:flex-row justify-between items-center gap-6">
                     <div class="flex items-center gap-3">
                         <ApplicationLogo class="h-8 w-auto" />
-                        <span class="text-sm text-theme-text-secondary">AI Survival Magazine</span>
+                        <span class="text-sm text-theme-text-secondary">{{ $page.props.appName }}</span>
                     </div>
                     <div class="flex flex-wrap gap-6 text-sm text-theme-text-muted">
                         <Link
@@ -171,7 +171,7 @@ const sections = page.props.magazineSections || [];
                     </div>
                 </div>
                 <div class="mt-8 text-center text-xs text-theme-text-faint">
-                    &copy; {{ new Date().getFullYear() }} AI Survival Magazine. All rights reserved.
+                    &copy; {{ new Date().getFullYear() }} {{ $page.props.appName }}. All rights reserved.
                 </div>
             </div>
         </footer>

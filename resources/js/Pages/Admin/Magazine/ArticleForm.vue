@@ -2,7 +2,7 @@
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TipTapEditor from '@/Components/Magazine/TipTapEditor.vue';
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 defineOptions({ layout: AuthenticatedLayout });
 
@@ -89,11 +89,144 @@ function toggleTag(tagId) {
     }
 }
 
+// --- Autosave ---
+
+const DRAFT_KEY = 'article-draft-new';
+const autosaveStatus = ref('idle'); // 'idle' | 'pending' | 'saving' | 'saved' | 'error'
+const lastSavedAt = ref(null);
+const showDraftBanner = ref(false);
+const savedDraft = ref(null);
+let autosaveTimer = null;
+
+const lastSavedTime = computed(() => {
+    if (!lastSavedAt.value) return '';
+    return lastSavedAt.value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+});
+
+const savedDraftTime = computed(() => {
+    if (!savedDraft.value?.savedAt) return '';
+    return new Date(savedDraft.value.savedAt).toLocaleString([], {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+});
+
+function getFormSnapshot() {
+    return {
+        title: form.title,
+        slug: form.slug,
+        excerpt: form.excerpt,
+        content: form.content,
+        section_id: form.section_id,
+        vertical_id: form.vertical_id,
+        status: form.status,
+        access: form.access,
+        is_featured: form.is_featured,
+        meta_title: form.meta_title,
+        meta_description: form.meta_description,
+        published_at: form.published_at,
+        tags: [...form.tags],
+        contributors: form.contributors.map(c => ({ ...c })),
+    };
+}
+
+async function performAutosave() {
+    if (isEditing.value) {
+        autosaveStatus.value = 'saving';
+        try {
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const response = await fetch(route('admin.magazine.articles.autosave', props.article.id), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(getFormSnapshot()),
+            });
+            if (response.ok) {
+                autosaveStatus.value = 'saved';
+                lastSavedAt.value = new Date();
+            } else {
+                autosaveStatus.value = 'error';
+            }
+        } catch {
+            autosaveStatus.value = 'error';
+        }
+    } else {
+        try {
+            localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                savedAt: new Date().toISOString(),
+                data: getFormSnapshot(),
+            }));
+            autosaveStatus.value = 'saved';
+            lastSavedAt.value = new Date();
+        } catch {
+            autosaveStatus.value = 'error';
+        }
+    }
+}
+
+function scheduleAutosave() {
+    if (form.processing) return;
+    if (autosaveStatus.value !== 'saving') autosaveStatus.value = 'pending';
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(performAutosave, 2000);
+}
+
+watch(form, scheduleAutosave, { deep: true });
+
+onMounted(() => {
+    if (!isEditing.value) {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed.data?.title || parsed.data?.content) {
+                    savedDraft.value = parsed;
+                    showDraftBanner.value = true;
+                }
+            }
+        } catch {
+            localStorage.removeItem(DRAFT_KEY);
+        }
+    }
+});
+
+onUnmounted(() => clearTimeout(autosaveTimer));
+
+function restoreDraft() {
+    const data = savedDraft.value.data;
+    form.title = data.title || '';
+    form.slug = data.slug || '';
+    form.excerpt = data.excerpt || '';
+    form.content = data.content || '';
+    form.section_id = data.section_id || '';
+    form.vertical_id = data.vertical_id || '';
+    form.status = data.status || 'draft';
+    form.access = data.access || 'public';
+    form.is_featured = data.is_featured || false;
+    form.meta_title = data.meta_title || '';
+    form.meta_description = data.meta_description || '';
+    form.published_at = data.published_at || '';
+    form.tags = data.tags || [];
+    form.contributors = data.contributors?.length ? data.contributors : [{ contributor_id: '', role: '' }];
+    showDraftBanner.value = false;
+}
+
+function discardDraft() {
+    localStorage.removeItem(DRAFT_KEY);
+    showDraftBanner.value = false;
+}
+
+// ---
+
 function submit() {
     if (isEditing.value) {
         form.patch(route('admin.magazine.articles.update', props.article.id));
     } else {
-        form.post(route('admin.magazine.articles.store'));
+        form.post(route('admin.magazine.articles.store'), {
+            onSuccess: () => localStorage.removeItem(DRAFT_KEY),
+        });
     }
 }
 </script>
@@ -109,6 +242,17 @@ function submit() {
             <Link :href="route('admin.magazine.articles.index')" class="text-sm text-theme-link hover:text-theme-link-hover">
                 &larr; Back to Articles
             </Link>
+        </div>
+
+        <!-- Draft restore banner (create mode only) -->
+        <div v-if="showDraftBanner" class="mb-4 p-4 bg-theme-elevated border border-theme-border rounded-lg flex items-center justify-between gap-4">
+            <p class="text-sm text-theme-text-secondary">
+                You have an unsaved draft from {{ savedDraftTime }}. Restore it?
+            </p>
+            <div class="flex items-center gap-3 shrink-0">
+                <button type="button" @click="restoreDraft" class="text-sm font-medium text-theme-accent hover:text-theme-accent-hover">Restore</button>
+                <button type="button" @click="discardDraft" class="text-sm text-theme-text-muted hover:text-theme-text-primary">Discard</button>
+            </div>
         </div>
 
         <form @submit.prevent="submit" class="space-y-6">
@@ -260,6 +404,9 @@ function submit() {
                     Cancel
                 </Link>
                 <p v-if="form.recentlySuccessful" class="text-sm text-theme-success">Saved.</p>
+                <span v-if="autosaveStatus === 'pending' || autosaveStatus === 'saving'" class="text-sm text-theme-text-muted">Saving draft...</span>
+                <span v-else-if="autosaveStatus === 'saved'" class="text-sm text-theme-text-muted">Draft autosaved at {{ lastSavedTime }}</span>
+                <span v-else-if="autosaveStatus === 'error'" class="text-sm text-theme-danger">Autosave failed</span>
             </div>
         </form>
     </div>

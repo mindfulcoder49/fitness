@@ -148,6 +148,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::get('/articles/{article}/edit', [MagazineArticleController::class, 'edit'])->name('articles.edit');
         Route::patch('/articles/{article}', [MagazineArticleController::class, 'update'])->name('articles.update');
         Route::delete('/articles/{article}', [MagazineArticleController::class, 'destroy'])->name('articles.destroy');
+        Route::patch('/articles/{article}/autosave', [MagazineArticleController::class, 'autosave'])->name('articles.autosave');
         Route::post('/articles/{article}/upload-image', [MagazineArticleController::class, 'uploadImage'])->name('articles.upload-image');
         Route::post('/articles/{article}/upload-video', [MagazineArticleController::class, 'uploadVideo'])->name('articles.upload-video');
         Route::post('/articles/{article}/upload-audio', [MagazineArticleController::class, 'uploadAudio'])->name('articles.upload-audio');

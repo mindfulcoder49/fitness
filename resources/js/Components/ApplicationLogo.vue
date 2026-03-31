@@ -1,7 +1,7 @@
 <template>
     <img
         src="/images/ai-survival-mag-logo.svg"
-        alt="AI Survival Magazine logo"
+        :alt="`${$page.props.appName} logo`"
         class="object-contain"
     >
 </template>

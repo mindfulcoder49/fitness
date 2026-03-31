@@ -71,14 +71,14 @@ const faqs = [
 </script>
 
 <template>
-    <Head title="Welcome to AI Survival Magazine" />
+    <Head :title="`Welcome to ${$page.props.appName}`" />
     <div class="bg-theme-page text-theme-text-primary">
         <!-- Header -->
         <header class="absolute inset-x-0 top-0 z-50">
             <nav class="flex items-center justify-between p-6 lg:px-8" aria-label="Global">
                 <div class="flex lg:flex-1">
                     <Link href="/" class="-m-1.5 p-1.5">
-                        <span class="sr-only">AI Survival Magazine</span>
+                        <span class="sr-only">{{ $page.props.appName }}</span>
                         <ApplicationLogo class="h-12 w-auto" />
                     </Link>
                 </div>

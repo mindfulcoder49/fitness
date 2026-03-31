@@ -24,7 +24,7 @@ function formatDate(dateStr) {
 
 <template>
     <Head>
-        <title>{{ article.meta_title || article.title }} - AI Survival Magazine</title>
+        <title>{{ article.meta_title || article.title }} - {{ $page.props.appName }}</title>
         <meta v-if="article.meta_description" name="description" :content="article.meta_description" />
     </Head>
 

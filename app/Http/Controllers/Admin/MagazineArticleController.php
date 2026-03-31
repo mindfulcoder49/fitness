@@ -110,6 +110,40 @@ class MagazineArticleController extends Controller
             ->with('success', 'Article deleted.');
     }
 
+    public function autosave(Request $request, Article $article)
+    {
+        $data = $request->validate([
+            'title'            => 'sometimes|nullable|string|max:255',
+            'slug'             => ['sometimes', 'nullable', 'string', 'max:255', Rule::unique('articles', 'slug')->ignore($article->id)],
+            'excerpt'          => 'sometimes|nullable|string',
+            'content'          => 'sometimes|nullable|string',
+            'section_id'       => 'sometimes|nullable|exists:sections,id',
+            'vertical_id'      => 'sometimes|nullable',
+            'status'           => 'sometimes|in:draft,scheduled,published,archived',
+            'access'           => 'sometimes|in:public,members',
+            'is_featured'      => 'sometimes|boolean',
+            'meta_title'       => 'sometimes|nullable|string|max:255',
+            'meta_description' => 'sometimes|nullable|string|max:500',
+            'published_at'     => 'sometimes|nullable|date',
+        ]);
+
+        if (!empty($data['slug'])) {
+            $data['slug'] = $this->resolveUniqueSlug($data['slug'], $article->id);
+        }
+
+        $article->update($data);
+
+        if ($request->has('tags')) {
+            $article->tags()->sync($request->input('tags', []));
+        }
+
+        if ($request->has('contributors')) {
+            $this->syncContributors($article, $request->input('contributors', []));
+        }
+
+        return response()->json(['saved_at' => now()->toISOString()]);
+    }
+
     public function uploadImage(Request $request, Article $article)
     {
         $request->validate(['image' => 'required|image|max:5120']);

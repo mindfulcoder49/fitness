@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-    <Head :title="`Tag: ${tag.name} - AI Survival Magazine`" />
+    <Head :title="`Tag: ${tag.name} - ${$page.props.appName}`" />
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">

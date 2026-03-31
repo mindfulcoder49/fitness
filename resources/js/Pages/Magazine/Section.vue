@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-    <Head :title="`${section.name} - AI Survival Magazine`" />
+    <Head :title="`${section.name} - ${$page.props.appName}`" />
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <!-- Section Header -->

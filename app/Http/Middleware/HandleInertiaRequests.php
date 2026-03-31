@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                     'theme' => $user->theme ?? 'light',
                 ] : null,
             ],
+            'appName' => config('app.name'),
             'appUrl' => config('app.url'),
             'magazineSections' => fn () => Section::active()->get(['id', 'name', 'slug']),
             'flash' => [
