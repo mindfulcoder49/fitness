@@ -45,6 +45,7 @@ console.log('User object in AuthenticatedLayout:', user);
                                     Dashboard
                                 </NavLink>
                                 <NavLink
+                                    v-if="$page.props.features.groups_enabled"
                                     :href="route('groups.index')"
                                     :active="route().current('groups.index')"
                                 >
@@ -184,6 +185,7 @@ console.log('User object in AuthenticatedLayout:', user);
                             Dashboard
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
+                            v-if="$page.props.features.groups_enabled"
                             :href="route('groups.index')"
                             :active="route().current('groups.index')"
                         >

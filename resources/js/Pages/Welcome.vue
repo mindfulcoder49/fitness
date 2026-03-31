@@ -90,7 +90,7 @@ const faqs = [
                         <Link :href="route('login')" class="text-sm font-semibold leading-6">
                             Log in <span aria-hidden="true">&rarr;</span>
                         </Link>
-                        <Link v-if="canRegister" :href="route('register')" class="rounded-md bg-theme-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-accent">
+                        <Link v-if="canRegister && $page.props.features.groups_enabled" :href="route('register')" class="rounded-md bg-theme-accent px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-theme-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-accent">
                             Register
                         </Link>
                     </template>

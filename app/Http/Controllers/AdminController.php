@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Group;
+use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rules;
 use App\Models\GroupTask;
 use App\Models\Like;
 use App\Models\Post;
@@ -21,9 +24,11 @@ class AdminController extends Controller
 {
     public function index()
     {
+        $groupsEnabled = filter_var(SiteSetting::get('groups_enabled', '1'), FILTER_VALIDATE_BOOLEAN);
+
         return Inertia::render('Admin/Dashboard', [
             'users' => User::all(),
-            'groups' => Group::with([
+            'groups' => $groupsEnabled ? Group::with([
                 'users',
                 'creator',
                 'tasks',
@@ -31,8 +36,39 @@ class AdminController extends Controller
                 'posts.comments' => fn($q) => $q->with(['user', 'likes.user'])->latest(),
                 'posts.likes' => fn($q) => $q->with('user')->latest(),
                 'posts.comments.likes' => fn($q) => $q->with('user')->latest(),
-            ])->get(),
+            ])->get() : [],
+            'groupsEnabled' => $groupsEnabled,
         ]);
+    }
+
+    public function storeUser(Request $request)
+    {
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
+            'email'    => 'required|string|lowercase|email|max:255|unique:users,email',
+            'password' => ['required', Rules\Password::defaults()],
+        ]);
+
+        User::create([
+            'name'     => $request->name,
+            'username' => $request->username,
+            'email'    => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+
+        return back()->with('success', 'User created.');
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $request->validate([
+            'groups_enabled' => 'required|boolean',
+        ]);
+
+        SiteSetting::set('groups_enabled', $request->boolean('groups_enabled') ? '1' : '0');
+
+        return back()->with('success', 'Settings updated.');
     }
 
     public function updateGroupMemberRole(Request $request, Group $group, User $user)

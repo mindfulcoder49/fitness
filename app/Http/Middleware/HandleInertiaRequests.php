@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Section;
+use App\Models\SiteSetting;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -53,6 +54,9 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+            ],
+            'features' => [
+                'groups_enabled' => fn () => filter_var(SiteSetting::get('groups_enabled', '1'), FILTER_VALIDATE_BOOLEAN),
             ],
         ]);
     }

@@ -43,7 +43,7 @@ Route::get('/community', function () {
         'laravelVersion' => Application::VERSION,
         'phpVersion' => PHP_VERSION,
     ]);
-})->name('community.welcome');
+})->middleware('groups.enabled')->name('community.welcome');
 
 // Public magazine routes
 Route::get('/section/{section:slug}', [SectionController::class, 'show'])->name('magazine.section');
@@ -57,12 +57,14 @@ Route::get('/blog', [BlogController::class, 'index'])->middleware(['auth', 'veri
 Route::get('/changelog', [ChangelogController::class, 'index'])->middleware(['auth', 'verified'])->name('changelog.index');
 Route::get('/users/{user:username}', [UserController::class, 'show'])->middleware(['auth', 'verified'])->name('users.show');
 
-Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
-Route::get('/groups/{group}/preview', [GroupController::class, 'showPublic'])->name('groups.preview');
-Route::post('/groups', [GroupController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.store');
-Route::post('/groups/{group}/join', [GroupController::class, 'join'])->middleware(['auth', 'verified'])->name('groups.join');
+Route::middleware('groups.enabled')->group(function () {
+    Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
+    Route::get('/groups/{group}/preview', [GroupController::class, 'showPublic'])->name('groups.preview');
+    Route::post('/groups', [GroupController::class, 'store'])->middleware(['auth', 'verified'])->name('groups.store');
+    Route::post('/groups/{group}/join', [GroupController::class, 'join'])->middleware(['auth', 'verified'])->name('groups.join');
+});
 
-Route::middleware(['auth', 'verified', 'group.member'])->group(function () {
+Route::middleware(['auth', 'verified', 'group.member', 'groups.enabled'])->group(function () {
     Route::get('/groups/{group}', [GroupController::class, 'show'])->name('groups.show');
     Route::get('/groups/{group}/blog/{post?}', [GroupController::class, 'blog'])->name('groups.blog');
     Route::get('/groups/{group}/admin', [GroupController::class, 'admin'])->name('groups.admin');
@@ -84,7 +86,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/posts/{post}', [PostController::class, 'update'])->name('posts.update');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])->name('posts.destroy');
 
-    Route::post('/groups/{group}/leave', [GroupController::class, 'leave'])->name('groups.leave');
+    Route::post('/groups/{group}/leave', [GroupController::class, 'leave'])->middleware('groups.enabled')->name('groups.leave');
 
     Route::post('/likes', [LikeController::class, 'store'])->name('likes.store');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->name('comments.store');
@@ -98,27 +100,32 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
+    Route::patch('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
     Route::patch('/users/{user}/media-permissions', [AdminController::class, 'updateUserMediaPermissions'])->name('users.update-media-permissions');
-    Route::patch('/groups/{group}/members/{user}/role', [AdminController::class, 'updateGroupMemberRole'])->name('groups.members.update-role');
-    Route::patch('/groups/{group}/toggle-public', [AdminController::class, 'toggleGroupPublicStatus'])->name('groups.toggle-public');
-    Route::patch('/groups/{group}/min-members', [AdminController::class, 'updateGroupMinMembers'])->name('groups.update-min-members');
-    Route::post('/groups/{group}/meetups', [MeetupController::class, 'store'])->name('groups.meetups.store');
-    Route::patch('/meetups/{meetup}', [MeetupController::class, 'update'])->name('meetups.update');
-    Route::delete('/meetups/{meetup}', [MeetupController::class, 'destroy'])->name('meetups.destroy');
-    Route::post('/groups/{group}/tasks', [AdminController::class, 'storeTask'])->name('groups.tasks.store');
-    Route::patch('/groups/tasks/{task}', [AdminController::class, 'updateTask'])->name('groups.tasks.update');
-    Route::delete('/groups/tasks/{task}', [AdminController::class, 'destroyTask'])->name('groups.tasks.destroy');
-    Route::patch('/groups/tasks/{task}/set-current', [AdminController::class, 'setCurrentTask'])->name('groups.tasks.set-current');
-    Route::patch('/groups/tasks/{task}/unset-current', [AdminController::class, 'unsetCurrentTask'])->name('groups.tasks.unset-current');
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::delete('/posts/{post}', [AdminController::class, 'destroyPost'])->name('posts.destroy');
     Route::patch('/posts/{post}/toggle-blog', [AdminController::class, 'toggleBlogPost'])->name('posts.toggle-blog');
     Route::delete('/likes/{like}', [AdminController::class, 'destroyLike'])->name('likes.destroy');
     Route::delete('/comments/{comment}', [AdminController::class, 'destroyComment'])->name('comments.destroy');
-    Route::post('/groups/{group}/send-launch-email', [AdminController::class, 'sendGroupEmail'])->name('groups.send-launch-email');
-    Route::patch('/groups/{group}/launch', [AdminController::class, 'launchGroup'])->name('groups.launch');
-    Route::patch('/groups/{group}/unlaunch', [AdminController::class, 'unlaunchGroup'])->name('groups.unlaunch');
-    Route::delete('/groups/{group}', [AdminController::class, 'destroyGroup'])->name('groups.destroy');
+
+    Route::middleware('groups.enabled')->group(function () {
+        Route::patch('/groups/{group}/members/{user}/role', [AdminController::class, 'updateGroupMemberRole'])->name('groups.members.update-role');
+        Route::patch('/groups/{group}/toggle-public', [AdminController::class, 'toggleGroupPublicStatus'])->name('groups.toggle-public');
+        Route::patch('/groups/{group}/min-members', [AdminController::class, 'updateGroupMinMembers'])->name('groups.update-min-members');
+        Route::post('/groups/{group}/meetups', [MeetupController::class, 'store'])->name('groups.meetups.store');
+        Route::patch('/meetups/{meetup}', [MeetupController::class, 'update'])->name('meetups.update');
+        Route::delete('/meetups/{meetup}', [MeetupController::class, 'destroy'])->name('meetups.destroy');
+        Route::post('/groups/{group}/tasks', [AdminController::class, 'storeTask'])->name('groups.tasks.store');
+        Route::patch('/groups/tasks/{task}', [AdminController::class, 'updateTask'])->name('groups.tasks.update');
+        Route::delete('/groups/tasks/{task}', [AdminController::class, 'destroyTask'])->name('groups.tasks.destroy');
+        Route::patch('/groups/tasks/{task}/set-current', [AdminController::class, 'setCurrentTask'])->name('groups.tasks.set-current');
+        Route::patch('/groups/tasks/{task}/unset-current', [AdminController::class, 'unsetCurrentTask'])->name('groups.tasks.unset-current');
+        Route::post('/groups/{group}/send-launch-email', [AdminController::class, 'sendGroupEmail'])->name('groups.send-launch-email');
+        Route::patch('/groups/{group}/launch', [AdminController::class, 'launchGroup'])->name('groups.launch');
+        Route::patch('/groups/{group}/unlaunch', [AdminController::class, 'unlaunchGroup'])->name('groups.unlaunch');
+        Route::delete('/groups/{group}', [AdminController::class, 'destroyGroup'])->name('groups.destroy');
+    });
 
     // Magazine admin routes
     Route::prefix('magazine')->name('magazine.')->group(function () {

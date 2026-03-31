@@ -90,7 +90,7 @@ const leaveGroup = (group) => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-theme-text-primary leading-tight">
-                    Your Groups
+                    {{ page.props.features.groups_enabled ? 'Your Groups' : 'Dashboard' }}
                 </h2>
                 <div class="flex items-center space-x-2 sm:space-x-4">
                     <button @click="toggleTodos" class="relative p-2 bg-theme-elevated rounded-full text-theme-text-secondary hover:text-theme-text-primary focus:outline-none">
@@ -115,7 +115,7 @@ const leaveGroup = (group) => {
 
         <NotificationsPanel v-if="showNotifications" :notifications="notifications" :last-checked="notificationsLastChecked" @close="showNotifications = false" />
         <TodoListPanel v-if="showTodos" :todos="todos" @close="showTodos = false" @refresh="fetchTodos" />
-        <CreateGroupForm :show="showCreateGroupForm" @close="showCreateGroupForm = false" />
+        <CreateGroupForm v-if="page.props.features.groups_enabled" :show="showCreateGroupForm" @close="showCreateGroupForm = false" />
 
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -127,7 +127,7 @@ const leaveGroup = (group) => {
                     <p>{{ page.props.flash.error }}</p>
                     <button @click="page.props.flash.error = null" class="text-xl font-bold leading-none">&times;</button>
                 </div>
-                <div class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg">
+                <div v-if="page.props.features.groups_enabled" class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-theme-text-primary">
                         <h3 class="text-2xl font-bold">Select a Group</h3>
                         <p class="mt-2 text-theme-text-muted">
@@ -161,6 +161,12 @@ const leaveGroup = (group) => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <div v-else class="bg-theme-card overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-theme-text-primary">
+                        <h3 class="text-2xl font-bold">Welcome</h3>
+                        <p class="mt-2 text-theme-text-muted">Use the navigation above to explore the magazine.</p>
                     </div>
                 </div>
             </div>

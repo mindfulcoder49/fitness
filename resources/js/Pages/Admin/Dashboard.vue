@@ -1,13 +1,22 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import GroupAdminPanel from '@/Components/Admin/GroupAdminPanel.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({
     users: Array,
     groups: Array,
+    groupsEnabled: Boolean,
 });
+
+const settingsForm = useForm({
+    groups_enabled: props.groupsEnabled,
+});
+
+const saveSettings = () => {
+    settingsForm.patch(route('admin.settings.update'), { preserveScroll: true });
+};
 
 const activeTab = ref('groups');
 const openGroup = ref(null);
@@ -28,6 +37,24 @@ const deleteUser = (user) => {
         router.delete(route('admin.users.destroy', { user: user.id }), { preserveScroll: true });
     }
 };
+
+const showCreateUserForm = ref(false);
+const createUserForm = useForm({
+    name: '',
+    username: '',
+    email: '',
+    password: '',
+});
+
+const submitCreateUser = () => {
+    createUserForm.post(route('admin.users.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            createUserForm.reset();
+            showCreateUserForm.value = false;
+        },
+    });
+};
 </script>
 
 <template>
@@ -46,6 +73,7 @@ const deleteUser = (user) => {
                     <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                         <button @click="activeTab = 'groups'" :class="[activeTab === 'groups' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Group Management</button>
                         <button @click="activeTab = 'users'" :class="[activeTab === 'users' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Global Users</button>
+                        <button @click="activeTab = 'settings'" :class="[activeTab === 'settings' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Settings</button>
                     </nav>
                 </div>
 
@@ -67,9 +95,68 @@ const deleteUser = (user) => {
                             </div>
                         </div>
 
+                        <!-- Settings -->
+                        <div v-if="activeTab === 'settings'">
+                            <h3 class="text-2xl font-bold">Site Settings</h3>
+                            <div class="mt-6 space-y-4">
+                                <div class="flex items-center justify-between p-4 bg-theme-elevated rounded-lg">
+                                    <div>
+                                        <h4 class="text-base font-semibold text-theme-text-primary">Groups Feature</h4>
+                                        <p class="mt-1 text-sm text-theme-text-muted">When disabled, all groups routes return 404 and groups are hidden from navigation.</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        @click="settingsForm.groups_enabled = !settingsForm.groups_enabled; saveSettings()"
+                                        :class="[settingsForm.groups_enabled ? 'bg-theme-accent' : 'bg-theme-border', 'relative ml-6 inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-theme-accent-ring focus:ring-offset-2']"
+                                        role="switch"
+                                        :aria-checked="settingsForm.groups_enabled"
+                                    >
+                                        <span :class="[settingsForm.groups_enabled ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out']" />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Global Users Table -->
                         <div v-if="activeTab === 'users'">
-                            <h3 class="text-2xl font-bold">Global User Management</h3>
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-2xl font-bold">Global User Management</h3>
+                                <button @click="showCreateUserForm = !showCreateUserForm" class="px-4 py-2 bg-theme-accent text-white rounded-md text-sm font-medium hover:bg-theme-accent-hover transition">
+                                    {{ showCreateUserForm ? 'Cancel' : '+ Create User' }}
+                                </button>
+                            </div>
+
+                            <div v-if="showCreateUserForm" class="mt-4 p-4 bg-theme-elevated rounded-lg">
+                                <h4 class="text-base font-semibold text-theme-text-primary mb-4">New User</h4>
+                                <form @submit.prevent="submitCreateUser" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-theme-text-secondary mb-1">Name</label>
+                                        <input v-model="createUserForm.name" type="text" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" required />
+                                        <p v-if="createUserForm.errors.name" class="mt-1 text-xs text-theme-danger">{{ createUserForm.errors.name }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-theme-text-secondary mb-1">Username</label>
+                                        <input v-model="createUserForm.username" type="text" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" required />
+                                        <p v-if="createUserForm.errors.username" class="mt-1 text-xs text-theme-danger">{{ createUserForm.errors.username }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-theme-text-secondary mb-1">Email</label>
+                                        <input v-model="createUserForm.email" type="email" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" required />
+                                        <p v-if="createUserForm.errors.email" class="mt-1 text-xs text-theme-danger">{{ createUserForm.errors.email }}</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-theme-text-secondary mb-1">Password</label>
+                                        <input v-model="createUserForm.password" type="password" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" required />
+                                        <p v-if="createUserForm.errors.password" class="mt-1 text-xs text-theme-danger">{{ createUserForm.errors.password }}</p>
+                                    </div>
+                                    <div class="sm:col-span-2 flex justify-end">
+                                        <button type="submit" :disabled="createUserForm.processing" class="px-6 py-2 bg-theme-accent text-white rounded-md text-sm font-medium hover:bg-theme-accent-hover transition disabled:opacity-50">
+                                            Create User
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+
                             <div class="mt-6 overflow-x-auto">
                                 <table class="min-w-full divide-y divide-theme-border">
                                     <thead class="bg-theme-elevated">

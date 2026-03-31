@@ -35,16 +35,18 @@ const sections = page.props.magazineSections || [];
                             {{ section.name }}
                         </Link>
 
-                        <div class="w-px h-5 bg-theme-border"></div>
+                        <template v-if="$page.props.features.groups_enabled">
+                            <div class="w-px h-5 bg-theme-border"></div>
+                            <Link
+                                :href="route('groups.index')"
+                                class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition"
+                            >
+                                Groups
+                            </Link>
+                        </template>
 
                         <Link
-                            :href="route('groups.index')"
-                            class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition"
-                        >
-                            Groups
-                        </Link>
-
-                        <Link
+                            v-if="$page.props.features.groups_enabled"
                             :href="user ? route('dashboard') : route('community.welcome')"
                             class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition"
                         >
@@ -71,7 +73,7 @@ const sections = page.props.magazineSections || [];
                             <Link :href="route('login')" class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition">
                                 Log In
                             </Link>
-                            <Link :href="route('register')" class="rounded-md bg-theme-accent px-3 py-1.5 text-sm font-semibold text-white hover:bg-theme-accent-hover transition">
+                            <Link v-if="$page.props.features.groups_enabled" :href="route('register')" class="rounded-md bg-theme-accent px-3 py-1.5 text-sm font-semibold text-white hover:bg-theme-accent-hover transition">
                                 Register
                             </Link>
                         </template>
@@ -104,16 +106,18 @@ const sections = page.props.magazineSections || [];
                         {{ section.name }}
                     </Link>
 
-                    <div class="border-t border-theme-border-subtle my-2"></div>
+                    <template v-if="$page.props.features.groups_enabled">
+                        <div class="border-t border-theme-border-subtle my-2"></div>
+                        <Link
+                            :href="route('groups.index')"
+                            class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1"
+                        >
+                            Groups
+                        </Link>
+                    </template>
 
                     <Link
-                        :href="route('groups.index')"
-                        class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1"
-                    >
-                        Groups
-                    </Link>
-
-                    <Link
+                        v-if="$page.props.features.groups_enabled"
                         :href="user ? route('dashboard') : route('community.welcome')"
                         class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1"
                     >
@@ -132,7 +136,7 @@ const sections = page.props.magazineSections || [];
                         <Link :href="route('login')" class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1">
                             Log In
                         </Link>
-                        <Link :href="route('register')" class="block text-sm font-medium text-theme-accent hover:text-theme-accent-hover py-1">
+                        <Link v-if="$page.props.features.groups_enabled" :href="route('register')" class="block text-sm font-medium text-theme-accent hover:text-theme-accent-hover py-1">
                             Register
                         </Link>
                     </template>
@@ -162,10 +166,10 @@ const sections = page.props.magazineSections || [];
                         >
                             {{ section.name }}
                         </Link>
-                        <Link :href="route('groups.index')" class="hover:text-theme-text-primary transition">
+                        <Link v-if="$page.props.features.groups_enabled" :href="route('groups.index')" class="hover:text-theme-text-primary transition">
                             Groups
                         </Link>
-                        <Link :href="user ? route('dashboard') : route('community.welcome')" class="hover:text-theme-text-primary transition">
+                        <Link v-if="$page.props.features.groups_enabled" :href="user ? route('dashboard') : route('community.welcome')" class="hover:text-theme-text-primary transition">
                             Community
                         </Link>
                     </div>
