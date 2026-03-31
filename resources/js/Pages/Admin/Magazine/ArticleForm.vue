@@ -129,16 +129,20 @@ function getFormSnapshot() {
     };
 }
 
+function getXsrfToken() {
+    const match = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
 async function performAutosave() {
     if (isEditing.value) {
         autosaveStatus.value = 'saving';
         try {
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
             const response = await fetch(route('admin.magazine.articles.autosave', props.article.id), {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
+                    'X-XSRF-TOKEN': getXsrfToken(),
                     'Accept': 'application/json',
                 },
                 body: JSON.stringify(getFormSnapshot()),
