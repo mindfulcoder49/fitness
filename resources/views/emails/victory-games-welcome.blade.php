@@ -51,6 +51,71 @@
                                 <tr><td style="padding: 5px 0; color: #374151; font-size: 14px; line-height: 1.5;">&#10003;&nbsp; Build a public record of your competition history</td></tr>
                             </table>
 
+                            <!-- Keep showcasing -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px;">
+                                <tr>
+                                    <td style="background-color: #f0f4ff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 24px;">
+                                        <p style="margin: 0 0 6px; color: #4f46e5; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700;">Keep Showcasing Your Work</p>
+                                        <p style="margin: 0 0 16px; color: #1a1a2e; font-size: 15px; font-weight: 700; line-height: 1.4;">
+                                            Create an App entry to showcase ongoing AI testing of your project
+                                        </p>
+                                        <p style="margin: 0 0 16px; color: #374151; font-size: 14px; line-height: 1.6;">
+                                            Your competition run is just the start. You can create a public <strong>App</strong> page on VibeCode Victory Games that acts as a living showcase for your project &mdash; complete with all your AI test runs over time.
+                                        </p>
+
+                                        <p style="margin: 0 0 10px; color: #1a1a2e; font-size: 13px; font-weight: 600;">Here&rsquo;s how it works:</p>
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td style="width: 28px; vertical-align: top; padding-top: 1px;">
+                                                                <span style="display: inline-block; width: 20px; height: 20px; background-color: #4f46e5; color: #ffffff; border-radius: 50%; font-size: 11px; font-weight: 700; text-align: center; line-height: 20px;">1</span>
+                                                            </td>
+                                                            <td style="color: #374151; font-size: 14px; line-height: 1.5;">
+                                                                <strong>Claim your profile</strong> on VibeCode Victory Games and create an App entry for your project.
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td style="width: 28px; vertical-align: top; padding-top: 1px;">
+                                                                <span style="display: inline-block; width: 20px; height: 20px; background-color: #4f46e5; color: #ffffff; border-radius: 50%; font-size: 11px; font-weight: 700; text-align: center; line-height: 20px;">2</span>
+                                                            </td>
+                                                            <td style="color: #374151; font-size: 14px; line-height: 1.5;">
+                                                                <strong>Log in to <a href="{{ $aiuxtesterUrl }}" style="color: #4f46e5;">AIUXTester</a></strong> and run a new AI test session against your app URL whenever you ship updates.
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <table role="presentation" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td style="width: 28px; vertical-align: top; padding-top: 1px;">
+                                                                <span style="display: inline-block; width: 20px; height: 20px; background-color: #4f46e5; color: #ffffff; border-radius: 50%; font-size: 11px; font-weight: 700; text-align: center; line-height: 20px;">3</span>
+                                                            </td>
+                                                            <td style="color: #374151; font-size: 14px; line-height: 1.5;">
+                                                                <strong>Export the run</strong> directly from AIUXTester to VibeCode Victory Games with one click. The run &mdash; including screenshots, AI reasoning, and analysis &mdash; will appear on your App page for anyone to review.
+                                                            </td>
+                                                        </tr>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        </table>
+
+                                        <p style="margin: 16px 0 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                                            It&rsquo;s a great way to demonstrate how your app improves over time and build a public track record of your work.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
                             <!-- CTA -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 28px;">
                                 <tr>

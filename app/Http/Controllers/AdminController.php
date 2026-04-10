@@ -72,10 +72,48 @@ class AdminController extends Controller
             Storage::disk('public')->delete($existing);
         }
 
-        $path = $request->file('logo')->store('site', 'public');
+        $file = $request->file('logo');
+        $path = $file->store('site', 'public');
         SiteSetting::set('site_logo_path', $path);
 
+        $this->generateFavicon($file->getRealPath());
+
         return back()->with('success', 'Logo updated.');
+    }
+
+    private function generateFavicon(string $sourcePath): void
+    {
+        $info = @getimagesize($sourcePath);
+        if (!$info) return;
+
+        $src = match ($info[2]) {
+            IMAGETYPE_PNG  => imagecreatefrompng($sourcePath),
+            IMAGETYPE_JPEG => imagecreatefromjpeg($sourcePath),
+            IMAGETYPE_GIF  => imagecreatefromgif($sourcePath),
+            IMAGETYPE_WEBP => imagecreatefromwebp($sourcePath),
+            default        => null,
+        };
+        if (!$src) return;
+
+        $size   = 64;
+        $canvas = imagecreatetruecolor($size, $size);
+
+        // Preserve transparency for PNG/GIF source images
+        imagealphablending($canvas, false);
+        imagesavealpha($canvas, true);
+        $transparent = imagecolorallocatealpha($canvas, 0, 0, 0, 127);
+        imagefill($canvas, 0, 0, $transparent);
+
+        imagecopyresampled($canvas, $src, 0, 0, 0, 0, $size, $size, imagesx($src), imagesy($src));
+        imagedestroy($src);
+
+        ob_start();
+        imagepng($canvas);
+        $png = ob_get_clean();
+        imagedestroy($canvas);
+
+        Storage::disk('public')->put('site/favicon.png', $png);
+        SiteSetting::set('site_favicon_path', 'site/favicon.png');
     }
 
     public function updateSettings(Request $request)

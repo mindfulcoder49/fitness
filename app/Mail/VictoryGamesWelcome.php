@@ -38,6 +38,8 @@ class VictoryGamesWelcome extends Mailable
                 'victorUrl'       => config('app.url') . '/victory-games/victors/' . $this->victor->slug,
                 'registerUrl'     => $registerUrl,
                 'appName'         => config('app.name'),
+                'appsUrl'         => config('app.url') . '/victory-games/victors/' . $this->victor->slug . '#apps',
+                'aiuxtesterUrl'   => 'https://aiuxtester.fly.dev',
             ],
         );
     }
