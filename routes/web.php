@@ -2,6 +2,12 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\MagazineArticleController;
+use App\Http\Controllers\Admin\VictoryGamesImportController;
+use App\Http\Controllers\VictoryGames\HomeController as VictoryGamesHomeController;
+use App\Http\Controllers\VictoryGames\CompetitionController as VictoryGamesCompetitionController;
+use App\Http\Controllers\VictoryGames\VictorController;
+use App\Http\Controllers\VictoryGames\RunDetailController;
+use App\Http\Controllers\VictoryGames\CertificateController;
 use App\Http\Controllers\Admin\MagazineContributorController;
 use App\Http\Controllers\Admin\MagazineSectionController;
 use App\Http\Controllers\Admin\MagazineTagController;
@@ -160,6 +166,31 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::post('/articles/{article}/upload-video', [MagazineArticleController::class, 'uploadVideo'])->name('articles.upload-video');
         Route::post('/articles/{article}/upload-audio', [MagazineArticleController::class, 'uploadAudio'])->name('articles.upload-audio');
     });
+});
+
+// ── VibeCode Victory Games ─────────────────────────────────────────────────────
+Route::prefix('victory-games')->name('victory-games.')->group(function () {
+    // Public pages
+    Route::get('/', VictoryGamesHomeController::class)->name('home');
+    Route::get('/competitions/{competition:slug}', [VictoryGamesCompetitionController::class, 'show'])->name('competitions.show');
+    Route::get('/victors', [VictorController::class, 'index'])->name('victors');
+    Route::get('/victors/{victor:slug}', [VictorController::class, 'show'])->name('victors.show');
+    Route::get('/runs/{entry}', [RunDetailController::class, 'show'])->name('runs.show');
+
+    // Tokenized cert download — no login required
+    Route::get('/certificates/{token}/download', [CertificateController::class, 'download'])->name('certificates.download');
+
+    // Authenticated pages
+    Route::middleware('auth')->group(function () {
+        Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates');
+        Route::patch('/victors/{victor:slug}', [VictorController::class, 'update'])->name('victors.update');
+        Route::post('/victors/{victor:slug}/claim', [VictorController::class, 'claim'])->name('victors.claim');
+    });
+});
+
+// Admin Victory Games import
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::post('/victory-games/import', [VictoryGamesImportController::class, 'store'])->name('victory-games.import');
 });
 
 require __DIR__.'/auth.php';

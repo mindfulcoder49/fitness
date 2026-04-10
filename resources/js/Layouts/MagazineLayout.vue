@@ -35,6 +35,15 @@ const sections = page.props.magazineSections || [];
                             {{ section.name }}
                         </Link>
 
+                        <!-- Victory Games nav link -->
+                        <div class="w-px h-5 bg-theme-border"></div>
+                        <Link
+                            :href="route('victory-games.home')"
+                            class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition flex items-center gap-1"
+                        >
+                            <span>🏅</span> Victory Games
+                        </Link>
+
                         <template v-if="$page.props.features.groups_enabled">
                             <div class="w-px h-5 bg-theme-border"></div>
                             <Link
