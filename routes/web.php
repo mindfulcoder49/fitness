@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\MagazineArticleController;
+use App\Http\Controllers\Admin\VictoryGamesAppRunImportController;
 use App\Http\Controllers\Admin\VictoryGamesImportController;
 use App\Http\Controllers\Admin\VictoryGamesAdminController;
 use App\Http\Controllers\VictoryGames\HomeController as VictoryGamesHomeController;
 use App\Http\Controllers\VictoryGames\CompetitionController as VictoryGamesCompetitionController;
+use App\Http\Controllers\VictoryGames\AppController as VictoryGamesAppController;
 use App\Http\Controllers\VictoryGames\VictorController;
 use App\Http\Controllers\VictoryGames\RunDetailController;
 use App\Http\Controllers\VictoryGames\CertificateController;
@@ -188,16 +190,27 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
     // Tokenized cert download — no login required
     Route::get('/certificates/{token}/download', [CertificateController::class, 'download'])->name('certificates.download');
 
+    // Apps — public
+    Route::get('/apps/{app:slug}', [VictoryGamesAppController::class, 'show'])->name('apps.show');
+
     // Authenticated pages
     Route::middleware('auth')->group(function () {
         Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates');
         Route::patch('/victors/{victor:slug}', [VictorController::class, 'update'])->name('victors.update');
         Route::post('/victors/{victor:slug}/claim', [VictorController::class, 'claim'])->name('victors.claim');
+
+        // Apps — auth-gated
+        Route::post('/apps', [VictoryGamesAppController::class, 'store'])->name('apps.store');
+        Route::patch('/apps/{app:slug}', [VictoryGamesAppController::class, 'update'])->name('apps.update');
+        Route::post('/apps/{app:slug}/members', [VictoryGamesAppController::class, 'addMember'])->name('apps.members.add');
+        Route::delete('/apps/{app:slug}/members/{victor:slug}', [VictoryGamesAppController::class, 'removeMember'])->name('apps.members.remove');
+        Route::post('/runs/{entry}/assign-app', [VictoryGamesAppController::class, 'assignRun'])->name('runs.assign-app');
     });
 });
 
 
-// Victory Games import — accepts session admin auth OR Bearer token (ADMIN_IMPORT_TOKEN)
+// Victory Games import endpoints — Bearer token OR session admin auth, CSRF-exempt
 Route::post('/admin/victory-games/import', [VictoryGamesImportController::class, 'store'])->name('admin.victory-games.import');
+Route::post('/admin/victory-games/app-run-import', [VictoryGamesAppRunImportController::class, 'store'])->name('admin.victory-games.app-run-import');
 
 require __DIR__.'/auth.php';

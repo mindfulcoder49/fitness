@@ -6,13 +6,18 @@ import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 defineOptions({ layout: MagazineLayout });
 
 const props = defineProps({
-    victor:  Object,
-    entries: Array,
-    canEdit: Boolean,
+    victor:         Object,
+    entries:        Array,
+    unassignedRuns: Array,
+    apps:           Array,
+    allApps:        Array,
+    canEdit:        Boolean,
 });
 
-const editing     = ref(false);
-const claimOpen   = ref(false);
+const editing        = ref(false);
+const claimOpen      = ref(false);
+const creatingApp    = ref(false);
+const assigningRun   = ref(null); // entry id being assigned
 
 const form = useForm({
     _method:      'patch',
@@ -27,6 +32,14 @@ const form = useForm({
 
 const claimForm = useForm({ external_user_id: '' });
 
+const appForm = useForm({
+    name:        '',
+    description: '',
+    current_url: '',
+});
+
+const assignForm = useForm({ app_id: '' });
+
 function submitEdit() {
     form.post(route('victory-games.victors.update', props.victor.slug), {
         forceFormData: true,
@@ -37,6 +50,18 @@ function submitEdit() {
 function submitClaim() {
     claimForm.post(route('victory-games.victors.claim', props.victor.slug), {
         onSuccess: () => { claimOpen.value = false; },
+    });
+}
+
+function submitCreateApp() {
+    appForm.post(route('victory-games.apps.store'), {
+        onSuccess: () => { creatingApp.value = false; appForm.reset(); },
+    });
+}
+
+function assignRun(entryId) {
+    assignForm.post(route('victory-games.runs.assign-app', entryId), {
+        onSuccess: () => { assigningRun.value = null; assignForm.reset(); },
     });
 }
 
@@ -160,6 +185,109 @@ function formatDate(dateStr) {
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Apps -->
+        <div class="mb-10">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-theme-text-primary">Apps</h2>
+                <button v-if="canEdit" @click="creatingApp = !creatingApp"
+                    class="text-xs px-3 py-1.5 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
+                    + New App
+                </button>
+            </div>
+
+            <!-- Create app form -->
+            <div v-if="creatingApp" class="mb-4 bg-theme-card border border-theme-border rounded-xl p-5">
+                <h3 class="text-sm font-bold text-theme-text-primary mb-3">Create App</h3>
+                <form @submit.prevent="submitCreateApp" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-theme-text-secondary mb-1">Name</label>
+                        <input v-model="appForm.name" type="text" required placeholder="e.g. Spendly"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
+                        <p v-if="appForm.errors.name" class="text-xs text-danger mt-1">{{ appForm.errors.name }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-theme-text-secondary mb-1">Description</label>
+                        <textarea v-model="appForm.description" rows="2" placeholder="What does this app do?"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-theme-text-secondary mb-1">Current URL</label>
+                        <input v-model="appForm.current_url" type="url" placeholder="https://..."
+                            class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit" :disabled="appForm.processing"
+                            class="px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
+                            Create
+                        </button>
+                        <button type="button" @click="creatingApp = false"
+                            class="px-4 py-2 rounded-lg border border-theme-border text-theme-text-secondary text-sm hover:text-theme-text-primary transition">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div v-if="apps.length" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link v-for="app in apps" :key="app.id"
+                    :href="route('victory-games.apps.show', app.slug)"
+                    class="bg-theme-card border border-theme-border rounded-xl p-4 hover:border-theme-accent transition block">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="font-semibold text-theme-text-primary">{{ app.name }}</span>
+                        <span v-if="app.role === 'owner'" class="text-xs text-theme-text-faint shrink-0">owner</span>
+                    </div>
+                    <p v-if="app.description" class="text-xs text-theme-text-muted mt-1 line-clamp-2">{{ app.description }}</p>
+                    <a v-if="app.current_url" :href="app.current_url" target="_blank" rel="noopener"
+                       @click.stop class="text-xs text-theme-accent hover:underline mt-1 block truncate">
+                       {{ app.current_url }}
+                    </a>
+                    <div class="mt-2 text-xs text-theme-text-faint">{{ app.entries_count }} run{{ app.entries_count !== 1 ? 's' : '' }}</div>
+                </Link>
+            </div>
+
+            <p v-else-if="!creatingApp" class="text-sm text-theme-text-muted">
+                No apps yet.
+                <button v-if="canEdit" @click="creatingApp = true" class="text-theme-accent hover:underline ml-1">Create one →</button>
+            </p>
+        </div>
+
+        <!-- Unassigned standalone runs -->
+        <div v-if="canEdit && unassignedRuns.length" class="mb-10">
+            <h2 class="text-xl font-bold text-theme-text-primary mb-4">Unassigned Runs</h2>
+            <p class="text-sm text-theme-text-muted mb-4">These runs were pushed from AIUXTester but aren't linked to an app yet.</p>
+            <div class="space-y-3">
+                <div v-for="entry in unassignedRuns" :key="entry.id"
+                    class="bg-theme-card border border-theme-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-medium text-theme-text-primary truncate">{{ entry.app_hostname }}</div>
+                        <div class="text-xs text-theme-text-muted mt-0.5">{{ entry.step_count }} steps · {{ formatDate(entry.submitted_at) }}</div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <template v-if="assigningRun === entry.id">
+                            <select v-model="assignForm.app_id"
+                                class="rounded border border-theme-border bg-theme-input text-theme-text-primary px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-theme-accent-ring">
+                                <option value="">— select app —</option>
+                                <option v-for="app in allApps" :key="app.id" :value="app.id">{{ app.name }}</option>
+                            </select>
+                            <button @click="assignRun(entry.id)" :disabled="!assignForm.app_id || assignForm.processing"
+                                class="px-2 py-1 rounded bg-theme-btn-primary text-theme-btn-primary-text text-xs hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
+                                Assign
+                            </button>
+                            <button @click="assigningRun = null" class="text-xs text-theme-text-muted hover:text-theme-text-primary transition">Cancel</button>
+                        </template>
+                        <template v-else>
+                            <Link :href="route('victory-games.runs.show', entry.id)"
+                                class="text-xs text-theme-accent hover:underline">View →</Link>
+                            <button @click="assigningRun = entry.id; assignForm.app_id = ''"
+                                class="text-xs px-2 py-1 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
+                                Assign to app
+                            </button>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 

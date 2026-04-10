@@ -11,7 +11,7 @@ class VictoryGamesEntry extends Model
     protected $table = 'victory_games_entries';
 
     protected $fillable = [
-        'competition_id', 'victor_id', 'external_entry_id', 'external_user_id',
+        'competition_id', 'app_id', 'victor_id', 'external_entry_id', 'external_user_id',
         'app_url', 'app_goal', 'app_mode', 'session_provider', 'session_model',
         'session_status', 'session_external_id', 'submission_note', 'placement',
         'entry_profile', 'postmortem_run_analysis', 'postmortem_html_analysis',
@@ -31,6 +31,11 @@ class VictoryGamesEntry extends Model
     public function victor(): BelongsTo
     {
         return $this->belongsTo(VictoryGamesVictor::class, 'victor_id');
+    }
+
+    public function app(): BelongsTo
+    {
+        return $this->belongsTo(VictoryGamesApp::class, 'app_id');
     }
 
     public function steps(): HasMany

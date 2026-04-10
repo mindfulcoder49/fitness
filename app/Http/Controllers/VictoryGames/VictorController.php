@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
+use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesVictor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -33,45 +34,86 @@ class VictorController extends Controller
 
     public function show(VictoryGamesVictor $victor)
     {
-        $entries = $victor->entries()
+        $canEdit = auth()->check() && ($victor->isOwnedBy(auth()->user()) || auth()->user()->is_admin);
+
+        // Competition entries (have a competition_id)
+        $competitionEntries = $victor->entries()
+            ->whereNotNull('competition_id')
             ->with('competition')
             ->orderByRaw('CASE WHEN placement IS NULL THEN 4 ELSE placement END')
             ->get()
-            ->map(fn ($entry) => [
-                'id'              => $entry->id,
-                'app_url'         => $entry->app_url,
-                'app_hostname'    => $entry->appHostname(),
-                'app_goal'        => $entry->app_goal,
-                'placement'       => $entry->placement,
-                'placement_label' => $entry->placementLabel(),
-                'submission_note' => $entry->submission_note,
-                'entry_profile'   => $entry->entry_profile,
-                'step_count'      => $entry->steps()->count(),
-                'competition'     => [
-                    'id'      => $entry->competition->id,
-                    'slug'    => $entry->competition->slug,
-                    'name'    => $entry->competition->name,
-                    'held_at' => $entry->competition->held_at?->toISOString(),
-                ],
+            ->map(fn ($e) => $this->serializeEntry($e));
+
+        // Unassigned standalone runs (no competition, no app yet)
+        $unassignedRuns = $canEdit
+            ? $victor->entries()
+                ->whereNull('competition_id')
+                ->whereNull('app_id')
+                ->orderByDesc('submitted_at')
+                ->get()
+                ->map(fn ($e) => $this->serializeEntry($e))
+            : collect();
+
+        // Apps this victor belongs to
+        $apps = $victor->apps()
+            ->withCount('entries')
+            ->orderByPivot('created_at')
+            ->get()
+            ->map(fn ($app) => [
+                'id'            => $app->id,
+                'slug'          => $app->slug,
+                'name'          => $app->name,
+                'description'   => $app->description,
+                'current_url'   => $app->current_url,
+                'entries_count' => $app->entries_count,
+                'role'          => $app->pivot->role,
             ]);
 
-        $canEdit = auth()->check() && ($victor->isOwnedBy(auth()->user()) || auth()->user()->is_admin);
+        // All apps for the assign-run dropdown (only when canEdit)
+        $allApps = $canEdit
+            ? $victor->apps()->get()->map(fn ($a) => ['id' => $a->id, 'name' => $a->name])
+            : collect();
 
         return Inertia::render('VictoryGames/Victor', [
             'victor' => [
-                'id'          => $victor->id,
-                'slug'        => $victor->slug,
-                'display_name'=> $victor->display_name,
-                'email'       => $canEdit ? $victor->email : null,
-                'bio'         => $victor->bio,
-                'avatar_url'  => $victor->avatar_url,
-                'github_url'  => $victor->github_url,
-                'website_url' => $victor->website_url,
-                'twitter_url' => $victor->twitter_url,
+                'id'           => $victor->id,
+                'slug'         => $victor->slug,
+                'display_name' => $victor->display_name,
+                'email'        => $canEdit ? $victor->email : null,
+                'bio'          => $victor->bio,
+                'avatar_url'   => $victor->avatar_url,
+                'github_url'   => $victor->github_url,
+                'website_url'  => $victor->website_url,
+                'twitter_url'  => $victor->twitter_url,
             ],
-            'entries' => $entries,
-            'canEdit' => $canEdit,
+            'entries'         => $competitionEntries,
+            'unassignedRuns'  => $unassignedRuns,
+            'apps'            => $apps,
+            'allApps'         => $allApps,
+            'canEdit'         => $canEdit,
         ]);
+    }
+
+    private function serializeEntry(\App\Models\VictoryGamesEntry $entry): array
+    {
+        return [
+            'id'              => $entry->id,
+            'app_url'         => $entry->app_url,
+            'app_hostname'    => $entry->appHostname(),
+            'app_goal'        => $entry->app_goal,
+            'placement'       => $entry->placement,
+            'placement_label' => $entry->placementLabel(),
+            'submission_note' => $entry->submission_note,
+            'entry_profile'   => $entry->entry_profile,
+            'step_count'      => $entry->steps()->count(),
+            'submitted_at'    => $entry->submitted_at?->toISOString(),
+            'competition'     => $entry->competition ? [
+                'id'      => $entry->competition->id,
+                'slug'    => $entry->competition->slug,
+                'name'    => $entry->competition->name,
+                'held_at' => $entry->competition->held_at?->toISOString(),
+            ] : null,
+        ];
     }
 
     public function update(Request $request, VictoryGamesVictor $victor)

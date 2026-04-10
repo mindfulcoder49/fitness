@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -42,6 +43,16 @@ class VictoryGamesVictor extends Model
     public function certificates(): HasMany
     {
         return $this->hasMany(VictoryGamesCertificate::class, 'victor_id');
+    }
+
+    public function apps(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            VictoryGamesApp::class,
+            'victory_games_app_victor',
+            'victor_id',
+            'app_id'
+        )->withPivot('role')->withTimestamps();
     }
 
     public function getAvatarUrlAttribute(): ?string

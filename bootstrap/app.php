@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->validateCsrfTokens(except: [
             'admin/victory-games/import',
+            'admin/victory-games/app-run-import',
         ]);
 
         $middleware->web(append: [
