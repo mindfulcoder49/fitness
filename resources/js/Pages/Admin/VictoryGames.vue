@@ -23,6 +23,11 @@ function sendEmails(comp) {
         preserveScroll: true,
     });
 }
+
+function deleteCompetition(comp) {
+    if (!confirm(`Delete "${comp.name}" and ALL its runs? This cannot be undone.`)) return;
+    router.delete(route('admin.victory-games.competitions.destroy', comp.id));
+}
 </script>
 
 <template>
@@ -35,9 +40,14 @@ function sendEmails(comp) {
                 <h1 class="text-2xl font-bold text-theme-text-primary">VibeCode Victory Games</h1>
                 <p class="text-sm text-theme-text-muted mt-1">Manage competitions and send welcome emails to victors.</p>
             </div>
-            <Link :href="route('admin.dashboard')" class="text-sm text-theme-text-muted hover:text-theme-accent transition">
-                &larr; Admin Dashboard
-            </Link>
+            <div class="flex items-center gap-4">
+                <Link :href="route('admin.victory-games.runs.index')" class="text-sm text-theme-accent hover:underline transition">
+                    Manage Runs →
+                </Link>
+                <Link :href="route('admin.dashboard')" class="text-sm text-theme-text-muted hover:text-theme-accent transition">
+                    &larr; Admin Dashboard
+                </Link>
+            </div>
         </div>
 
         <!-- Flash messages -->
@@ -71,13 +81,21 @@ function sendEmails(comp) {
                         <div class="text-sm text-theme-text-muted mt-0.5">{{ formatDate(comp.held_at) }}</div>
                     </div>
 
-                    <button
-                        @click="sendEmails(comp)"
-                        :disabled="comp.with_email === 0"
-                        class="shrink-0 px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        Send Welcome Emails
-                    </button>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <button
+                            @click="sendEmails(comp)"
+                            :disabled="comp.with_email === 0"
+                            class="px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            Send Welcome Emails
+                        </button>
+                        <button
+                            @click="deleteCompetition(comp)"
+                            class="px-3 py-2 rounded-lg border border-theme-danger/40 text-theme-danger text-sm font-medium hover:bg-theme-danger/10 transition"
+                        >
+                            Delete
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Stats row -->

@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
@@ -8,9 +8,16 @@ defineOptions({ layout: MagazineLayout });
 defineProps({
     entry:       Object,
     competition: Object,
+    app:         Object,
     victor:      Object,
     steps:       Array,
+    canDelete:   Boolean,
 });
+
+function deleteRun(entry) {
+    if (!confirm('Delete this run? This cannot be undone.')) return;
+    router.delete(route('victory-games.runs.destroy', entry.id));
+}
 
 const expandedStep  = ref(null);
 const activeTab     = ref('steps'); // steps | postmortem
@@ -35,7 +42,7 @@ function typeColor(type) {
 </script>
 
 <template>
-    <Head :title="`Run: ${entry.app_hostname} — ${competition.name}`" />
+    <Head :title="`Run: ${entry.app_hostname} — ${competition?.name ?? app?.name ?? 'Standalone'}`" />
 
     <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
 
@@ -43,7 +50,15 @@ function typeColor(type) {
         <nav class="text-sm text-theme-text-muted mb-6 flex items-center gap-2 flex-wrap">
             <Link :href="route('victory-games.home')" class="hover:text-theme-accent transition">VibeCode Victory Games</Link>
             <span>/</span>
-            <Link :href="route('victory-games.competitions.show', competition.slug)" class="hover:text-theme-accent transition">{{ competition.name }}</Link>
+            <template v-if="competition">
+                <Link :href="route('victory-games.competitions.show', competition.slug)" class="hover:text-theme-accent transition">{{ competition.name }}</Link>
+            </template>
+            <template v-else-if="app">
+                <Link :href="route('victory-games.apps.show', app.slug)" class="hover:text-theme-accent transition">{{ app.name }}</Link>
+            </template>
+            <template v-else>
+                <span>Standalone Run</span>
+            </template>
             <span>/</span>
             <span class="text-theme-text-primary">{{ entry.app_hostname }}</span>
         </nav>
@@ -71,6 +86,15 @@ function typeColor(type) {
                     <span class="font-semibold">Goal:</span> {{ entry.app_goal }}
                 </p>
             </div>
+
+            <!-- Delete button -->
+            <button
+                v-if="canDelete"
+                @click="deleteRun(entry)"
+                class="shrink-0 px-3 py-1.5 rounded-lg border border-theme-danger/40 text-theme-danger text-xs font-medium hover:bg-theme-danger/10 transition"
+            >
+                Delete Run
+            </button>
         </div>
 
         <!-- Tabs -->

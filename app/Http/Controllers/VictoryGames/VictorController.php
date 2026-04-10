@@ -39,7 +39,7 @@ class VictorController extends Controller
         // Competition entries (have a competition_id)
         $competitionEntries = $victor->entries()
             ->whereNotNull('competition_id')
-            ->with('competition')
+            ->with(['competition', 'app'])
             ->orderByRaw('CASE WHEN placement IS NULL THEN 4 ELSE placement END')
             ->get()
             ->map(fn ($e) => $this->serializeEntry($e));
@@ -98,6 +98,7 @@ class VictorController extends Controller
     {
         return [
             'id'              => $entry->id,
+            'app_id'          => $entry->app_id,
             'app_url'         => $entry->app_url,
             'app_hostname'    => $entry->appHostname(),
             'app_goal'        => $entry->app_goal,
@@ -112,6 +113,11 @@ class VictorController extends Controller
                 'slug'    => $entry->competition->slug,
                 'name'    => $entry->competition->name,
                 'held_at' => $entry->competition->held_at?->toISOString(),
+            ] : null,
+            'app'             => $entry->app ? [
+                'id'   => $entry->app->id,
+                'slug' => $entry->app->slug,
+                'name' => $entry->app->name,
             ] : null,
         ];
     }

@@ -114,6 +114,10 @@ function formatDate(dateStr) {
                     <a v-if="victor.website_url" :href="victor.website_url" target="_blank" rel="noopener" class="text-theme-accent hover:underline">Website</a>
                     <a v-if="victor.twitter_url" :href="victor.twitter_url" target="_blank" rel="noopener" class="text-theme-accent hover:underline">Twitter/X</a>
                 </div>
+                <div v-if="canEdit && victor.email" class="mt-3 text-xs text-theme-text-muted bg-theme-elevated rounded-lg px-3 py-2 inline-flex items-center gap-2">
+                    <span class="font-medium text-theme-text-secondary">AIUXTester email:</span>
+                    <span>{{ victor.email }}</span>
+                </div>
             </div>
         </div>
 
@@ -323,11 +327,33 @@ function formatDate(dateStr) {
                         <p v-if="entry.entry_profile?.what_it_does" class="mt-2 text-sm text-theme-text-muted line-clamp-2">
                             {{ entry.entry_profile.what_it_does }}
                         </p>
-                        <div class="mt-3 flex items-center gap-4 text-xs text-theme-text-muted">
+                        <div class="mt-3 flex items-center gap-4 text-xs text-theme-text-muted flex-wrap">
                             <span>{{ entry.step_count }} steps</span>
                             <Link :href="route('victory-games.runs.show', entry.id)" class="text-theme-accent hover:underline">
                                 View full run →
                             </Link>
+                            <Link v-if="entry.app" :href="route('victory-games.apps.show', entry.app.slug)"
+                                class="text-theme-accent hover:underline">
+                                {{ entry.app.name }} ↗
+                            </Link>
+                            <template v-else-if="canEdit">
+                                <template v-if="assigningRun === entry.id">
+                                    <select v-model="assignForm.app_id"
+                                        class="rounded border border-theme-border bg-theme-input text-theme-text-primary px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-theme-accent-ring">
+                                        <option value="">— select app —</option>
+                                        <option v-for="app in allApps" :key="app.id" :value="app.id">{{ app.name }}</option>
+                                    </select>
+                                    <button @click="assignRun(entry.id)" :disabled="!assignForm.app_id || assignForm.processing"
+                                        class="px-2 py-1 rounded bg-theme-btn-primary text-theme-btn-primary-text text-xs hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
+                                        Assign
+                                    </button>
+                                    <button @click="assigningRun = null" class="hover:text-theme-text-primary transition">Cancel</button>
+                                </template>
+                                <button v-else @click="assigningRun = entry.id; assignForm.app_id = ''"
+                                    class="text-theme-text-faint hover:text-theme-accent transition">
+                                    + Assign to app
+                                </button>
+                            </template>
                         </div>
                     </div>
                 </div>

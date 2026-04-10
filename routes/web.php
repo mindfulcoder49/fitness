@@ -140,7 +140,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Victory Games admin routes
     Route::prefix('victory-games')->name('victory-games.')->group(function () {
         Route::get('/', [VictoryGamesAdminController::class, 'index'])->name('index');
+        Route::get('/runs', [VictoryGamesAdminController::class, 'runs'])->name('runs.index');
+        Route::patch('/runs/{entry}', [VictoryGamesAdminController::class, 'updateRun'])->name('runs.update');
         Route::post('/competitions/{competition}/send-welcome-emails', [VictoryGamesAdminController::class, 'sendWelcomeEmails'])->name('competitions.send-welcome-emails');
+        Route::delete('/competitions/{competition}', [VictoryGamesAdminController::class, 'deleteCompetition'])->name('competitions.destroy');
     });
 
     // Magazine admin routes
@@ -205,6 +208,7 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
         Route::post('/apps/{app:slug}/members', [VictoryGamesAppController::class, 'addMember'])->name('apps.members.add');
         Route::delete('/apps/{app:slug}/members/{victor:slug}', [VictoryGamesAppController::class, 'removeMember'])->name('apps.members.remove');
         Route::post('/runs/{entry}/assign-app', [VictoryGamesAppController::class, 'assignRun'])->name('runs.assign-app');
+        Route::delete('/runs/{entry}', [RunDetailController::class, 'destroy'])->name('runs.destroy');
     });
 });
 

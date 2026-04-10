@@ -4,6 +4,7 @@ namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
 use App\Models\VictoryGamesEntry;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class RunDetailController extends Controller
@@ -27,6 +28,14 @@ class RunDetailController extends Controller
             'timestamp'      => $step->timestamp,
         ]);
 
+        $entry->load(['competition', 'victor', 'app', 'steps']);
+
+        $user     = auth()->user();
+        $canDelete = $user && (
+            $user->is_admin
+            || ($entry->competition_id === null && $entry->victor && $entry->victor->user_id === $user->id)
+        );
+
         return Inertia::render('VictoryGames/RunDetail', [
             'entry' => [
                 'id'              => $entry->id,
@@ -45,12 +54,19 @@ class RunDetailController extends Controller
                     'html_analysis'   => $entry->postmortem_html_analysis,
                     'recommendations' => $entry->postmortem_recommendations,
                 ],
+                'competition_id'  => $entry->competition_id,
             ],
-            'competition' => [
+            'canDelete' => $canDelete,
+            'competition' => $entry->competition ? [
                 'id'   => $entry->competition->id,
                 'slug' => $entry->competition->slug,
                 'name' => $entry->competition->name,
-            ],
+            ] : null,
+            'app' => $entry->app ? [
+                'id'   => $entry->app->id,
+                'slug' => $entry->app->slug,
+                'name' => $entry->app->name,
+            ] : null,
             'victor' => $entry->victor ? [
                 'slug'         => $entry->victor->slug,
                 'display_name' => $entry->victor->display_name,
@@ -58,5 +74,32 @@ class RunDetailController extends Controller
             ] : null,
             'steps' => $steps,
         ]);
+    }
+
+    public function destroy(VictoryGamesEntry $entry)
+    {
+        $user = auth()->user();
+
+        if ($user->is_admin) {
+            // Admin can delete any run
+        } elseif ($entry->competition_id !== null) {
+            abort(403, 'Competition runs can only be deleted by an admin.');
+        } elseif (!$entry->victor || $entry->victor->user_id !== $user->id) {
+            abort(403, 'You can only delete your own runs.');
+        }
+
+        $victorSlug = $entry->victor?->slug;
+
+        // Clean up stored screenshots
+        Storage::disk('public')->deleteDirectory("victory-games/screenshots/{$entry->id}");
+
+        $entry->delete(); // steps cascade
+
+        if ($victorSlug) {
+            return redirect()->route('victory-games.victors.show', $victorSlug)
+                ->with('success', 'Run deleted.');
+        }
+
+        return redirect()->route('victory-games.home')->with('success', 'Run deleted.');
     }
 }
