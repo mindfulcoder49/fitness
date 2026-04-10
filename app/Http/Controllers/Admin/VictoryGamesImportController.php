@@ -63,6 +63,16 @@ class VictoryGamesImportController extends Controller
         $token = config('app.admin_import_token');
         if ($token) {
             $bearer = $request->bearerToken();
+
+            // Fallback: Apache/FastCGI sometimes strips Authorization from $_SERVER;
+            // apache_request_headers() bypasses that.
+            if (!$bearer && function_exists('apache_request_headers')) {
+                $authHeader = apache_request_headers()['Authorization'] ?? '';
+                if (str_starts_with($authHeader, 'Bearer ')) {
+                    $bearer = substr($authHeader, 7);
+                }
+            }
+
             if ($bearer && hash_equals($token, $bearer)) {
                 return;
             }
