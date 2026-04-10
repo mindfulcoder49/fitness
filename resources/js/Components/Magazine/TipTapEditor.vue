@@ -28,7 +28,10 @@ const uploading = ref(false);
 const editor = useEditor({
     content: props.modelValue,
     extensions: [
-        StarterKit,
+        StarterKit.configure({
+            link: false,
+            underline: false,
+        }),
         Image,
         Link.configure({ openOnClick: false }),
         Placeholder.configure({ placeholder: 'Write your article...' }),

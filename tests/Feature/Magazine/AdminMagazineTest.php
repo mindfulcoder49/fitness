@@ -8,6 +8,8 @@ use App\Models\Tag;
 use App\Models\User;
 use App\Models\Vertical;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminMagazineTest extends TestCase
@@ -72,6 +74,52 @@ class AdminMagazineTest extends TestCase
         $response->assertRedirect('/admin/magazine/articles/create');
         $response->assertSessionHasErrors('vertical_id');
         $this->assertDatabaseCount('articles', 0);
+    }
+
+    public function test_article_can_be_updated_with_method_spoofed_form_data_and_featured_image(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $section = Section::create([
+            'name' => 'News',
+            'slug' => 'news',
+            'is_active' => true,
+        ]);
+
+        $article = Article::create([
+            'title' => 'Original Title',
+            'slug' => 'original-title',
+            'content' => '<p>Original body</p>',
+            'section_id' => $section->id,
+            'status' => 'draft',
+            'access' => 'public',
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.magazine.articles.edit', $article, false))
+            ->post(route('admin.magazine.articles.update', $article), [
+                '_method' => 'patch',
+                'title' => 'Updated Title',
+                'slug' => '',
+                'content' => '<p>Updated body</p>',
+                'section_id' => $section->id,
+                'status' => 'published',
+                'access' => 'public',
+                'featured_image' => UploadedFile::fake()->image('cover.jpg'),
+            ]);
+
+        $response->assertRedirect(route('admin.magazine.articles.edit', $article, false));
+        $response->assertSessionHasNoErrors();
+
+        $article = $article->fresh();
+
+        $this->assertSame('Updated Title', $article->title);
+        $this->assertSame('<p>Updated body</p>', $article->content);
+        $this->assertSame('updated-title', $article->slug);
+        $this->assertNotNull($article->published_at);
+        $this->assertNotNull($article->featured_image_path);
+        Storage::disk('public')->assertExists($article->featured_image_path);
     }
 
     public function test_duplicate_section_names_with_auto_slug_do_not_500(): void

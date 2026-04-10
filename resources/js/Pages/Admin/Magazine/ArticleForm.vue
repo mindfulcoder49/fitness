@@ -226,7 +226,14 @@ function discardDraft() {
 
 function submit() {
     if (isEditing.value) {
-        form.patch(route('admin.magazine.articles.update', props.article.id));
+        form
+            .transform((data) => ({
+                ...data,
+                _method: 'patch',
+            }))
+            .post(route('admin.magazine.articles.update', props.article.id), {
+                forceFormData: true,
+            });
     } else {
         form.post(route('admin.magazine.articles.store'), {
             onSuccess: () => localStorage.removeItem(DRAFT_KEY),
