@@ -10,9 +10,6 @@ import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
 const user = usePage().props.auth.user;
-
-// Add this line for debugging
-console.log('User object in AuthenticatedLayout:', user);
 </script>
 
 <template>
@@ -39,6 +36,18 @@ console.log('User object in AuthenticatedLayout:', user);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
+                                    :href="route('magazine.home')"
+                                    :active="route().current('magazine.home')"
+                                >
+                                    Home
+                                </NavLink>
+                                <NavLink
+                                    :href="route('victory-games.home')"
+                                    :active="route().current('victory-games.*')"
+                                >
+                                    Victory Games
+                                </NavLink>
+                                <NavLink
                                     :href="route('dashboard')"
                                     :active="route().current('dashboard')"
                                 >
@@ -52,23 +61,18 @@ console.log('User object in AuthenticatedLayout:', user);
                                     Groups
                                 </NavLink>
                                 <NavLink
-                                    :href="route('blog.index')"
-                                    :active="route().current('blog.index')"
-                                >
-                                    Blog
-                                </NavLink>
-                                <NavLink
-                                    :href="route('changelog.index')"
-                                    :active="route().current('changelog.index')"
-                                >
-                                    Changelog
-                                </NavLink>
-                                <NavLink
                                     v-if="user.is_admin"
                                     :href="route('admin.dashboard')"
                                     :active="route().current('admin.dashboard')"
                                 >
                                     Admin
+                                </NavLink>
+                                <NavLink
+                                    v-if="user.is_admin"
+                                    :href="route('admin.victory-games.index')"
+                                    :active="route().current('admin.victory-games.*')"
+                                >
+                                    VG Admin
                                 </NavLink>
                                 <NavLink
                                     v-if="user.is_admin"
@@ -179,6 +183,18 @@ console.log('User object in AuthenticatedLayout:', user);
                 >
                     <div class="space-y-1 pb-3 pt-2">
                         <ResponsiveNavLink
+                            :href="route('magazine.home')"
+                            :active="route().current('magazine.home')"
+                        >
+                            Home
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            :href="route('victory-games.home')"
+                            :active="route().current('victory-games.*')"
+                        >
+                            Victory Games
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
                         >
@@ -192,23 +208,18 @@ console.log('User object in AuthenticatedLayout:', user);
                             Groups
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            :href="route('blog.index')"
-                            :active="route().current('blog.index')"
-                        >
-                            Blog
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            :href="route('changelog.index')"
-                            :active="route().current('changelog.index')"
-                        >
-                            Changelog
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
                             v-if="user.is_admin"
                             :href="route('admin.dashboard')"
                             :active="route().current('admin.dashboard')"
                         >
                             Admin
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            v-if="user.is_admin"
+                            :href="route('admin.victory-games.index')"
+                            :active="route().current('admin.victory-games.*')"
+                        >
+                            VG Admin
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             v-if="user.is_admin"

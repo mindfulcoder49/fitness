@@ -58,23 +58,38 @@ class VictoryGamesImportController extends Controller
         $comp = $this->upsertCompetition($payload['competition'], $payload['recap'] ?? null);
 
         // Build a map of external_entry_id → VictoryGamesEntry for the run/match import
+        // Also track user_email per entry for victor creation below
         $entryMap = [];
+        $emailMap = []; // external_entry_id => user_email
         foreach ($payload['entries'] ?? [] as $entryData) {
             $entry = $this->upsertEntry($comp, $entryData);
             $entryMap[$entryData['external_id']] = $entry;
+            $emailMap[$entryData['external_id']] = $entryData['user_email'] ?? null;
         }
 
         // Link victor profiles to entries (match by external_user_id)
-        foreach ($entryMap as $entry) {
+        foreach ($entryMap as $externalId => $entry) {
+            $email = $emailMap[$externalId] ?? null;
             if (!$entry->victor_id) {
                 $victor = VictoryGamesVictor::firstOrCreate(
                     ['external_user_id' => $entry->external_user_id],
                     [
-                        'slug'         => $this->uniqueSlug($entry->appHostname()),
-                        'display_name' => $entry->appHostname(),
+                        'slug'        => $this->uniqueSlug($entry->appHostname()),
+                        'display_name'=> $entry->appHostname(),
+                        'email'       => $email,
+                        'claim_token' => VictoryGamesVictor::generateClaimToken(),
                     ]
                 );
                 $entry->update(['victor_id' => $victor->id]);
+            } else {
+                // Back-fill email and claim_token if victor exists but is missing them
+                $victor = VictoryGamesVictor::find($entry->victor_id);
+                if ($victor) {
+                    $updates = [];
+                    if (!$victor->email && $email) $updates['email'] = $email;
+                    if (!$victor->claim_token) $updates['claim_token'] = VictoryGamesVictor::generateClaimToken();
+                    if ($updates) $victor->update($updates);
+                }
             }
         }
 

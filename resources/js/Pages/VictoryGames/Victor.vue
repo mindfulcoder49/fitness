@@ -17,6 +17,7 @@ const claimOpen   = ref(false);
 const form = useForm({
     _method:      'patch',
     display_name: props.victor.display_name,
+    email:        props.victor.email ?? '',
     bio:          props.victor.bio ?? '',
     github_url:   props.victor.github_url ?? '',
     website_url:  props.victor.website_url ?? '',
@@ -99,6 +100,12 @@ function formatDate(dateStr) {
                     <label class="block text-sm font-medium text-theme-text-secondary mb-1">Display Name</label>
                     <input v-model="form.display_name" type="text" required class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
                     <p v-if="form.errors.display_name" class="text-xs text-danger mt-1">{{ form.errors.display_name }}</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-theme-text-secondary mb-1">Email</label>
+                    <input v-model="form.email" type="email" class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
+                    <p class="text-xs text-theme-text-muted mt-1">Used for competition notifications. Not displayed publicly.</p>
+                    <p v-if="form.errors.email" class="text-xs text-danger mt-1">{{ form.errors.email }}</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-theme-text-secondary mb-1">Bio</label>

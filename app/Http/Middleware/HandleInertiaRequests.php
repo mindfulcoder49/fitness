@@ -50,6 +50,10 @@ class HandleInertiaRequests extends Middleware
             ],
             'appName' => config('app.name'),
             'appUrl' => config('app.url'),
+            'logoUrl' => function () {
+                $path = SiteSetting::get('site_logo_path');
+                return $path ? \Illuminate\Support\Facades\Storage::disk('public')->url($path) : null;
+            },
             'magazineSections' => fn () => Section::active()->get(['id', 'name', 'slug']),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),

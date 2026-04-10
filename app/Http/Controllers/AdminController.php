@@ -6,6 +6,7 @@ use App\Models\Group;
 use App\Models\SiteSetting;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Storage;
 use App\Models\GroupTask;
 use App\Models\Like;
 use App\Models\Post;
@@ -58,6 +59,23 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'User created.');
+    }
+
+    public function updateLogo(Request $request)
+    {
+        $request->validate([
+            'logo' => 'required|image|max:2048',
+        ]);
+
+        $existing = SiteSetting::get('site_logo_path');
+        if ($existing) {
+            Storage::disk('public')->delete($existing);
+        }
+
+        $path = $request->file('logo')->store('site', 'public');
+        SiteSetting::set('site_logo_path', $path);
+
+        return back()->with('success', 'Logo updated.');
     }
 
     public function updateSettings(Request $request)

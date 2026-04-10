@@ -1,8 +1,8 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import GroupAdminPanel from '@/Components/Admin/GroupAdminPanel.vue';
-import { Head, router, useForm } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 
 const props = defineProps({
     users: Array,
@@ -13,6 +13,25 @@ const props = defineProps({
 const settingsForm = useForm({
     groups_enabled: props.groupsEnabled,
 });
+
+const currentLogoUrl = computed(() => usePage().props.logoUrl);
+const logoForm = useForm({ logo: null });
+const logoPreview = ref(null);
+
+function onLogoChange(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    logoForm.logo = file;
+    logoPreview.value = URL.createObjectURL(file);
+}
+
+function submitLogo() {
+    logoForm.post(route('admin.settings.logo'), {
+        forceFormData: true,
+        preserveScroll: true,
+        onSuccess: () => { logoPreview.value = null; logoForm.reset(); },
+    });
+}
 
 const saveSettings = () => {
     settingsForm.patch(route('admin.settings.update'), { preserveScroll: true });
@@ -74,6 +93,7 @@ const submitCreateUser = () => {
                         <button @click="activeTab = 'groups'" :class="[activeTab === 'groups' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Group Management</button>
                         <button @click="activeTab = 'users'" :class="[activeTab === 'users' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Global Users</button>
                         <button @click="activeTab = 'settings'" :class="[activeTab === 'settings' ? 'border-theme-accent text-theme-accent-text' : 'border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary', 'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium']">Settings</button>
+                        <Link :href="route('admin.victory-games.index')" class="whitespace-nowrap border-b-2 border-transparent text-theme-text-muted hover:border-theme-border hover:text-theme-text-secondary py-4 px-1 text-sm font-medium">Victory Games</Link>
                     </nav>
                 </div>
 
@@ -113,6 +133,29 @@ const submitCreateUser = () => {
                                     >
                                         <span :class="[settingsForm.groups_enabled ? 'translate-x-5' : 'translate-x-0', 'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out']" />
                                     </button>
+                                </div>
+
+                                <!-- Site Logo -->
+                                <div class="p-4 bg-theme-elevated rounded-lg">
+                                    <h4 class="text-base font-semibold text-theme-text-primary mb-1">Site Logo</h4>
+                                    <p class="text-sm text-theme-text-muted mb-4">Upload a PNG, JPG, SVG, or WebP. Displayed in the nav and footer. Max 2 MB.</p>
+                                    <div class="flex items-center gap-6 flex-wrap">
+                                        <div class="shrink-0">
+                                            <p class="text-xs text-theme-text-muted mb-1">Current</p>
+                                            <img :src="currentLogoUrl || '/images/ai-survival-mag-logo.svg'" alt="Current logo" class="h-12 w-auto object-contain rounded border border-theme-border bg-theme-card p-1" />
+                                        </div>
+                                        <div v-if="logoPreview" class="shrink-0">
+                                            <p class="text-xs text-theme-text-muted mb-1">Preview</p>
+                                            <img :src="logoPreview" alt="Preview" class="h-12 w-auto object-contain rounded border border-theme-border bg-theme-card p-1" />
+                                        </div>
+                                    </div>
+                                    <form @submit.prevent="submitLogo" class="mt-4 flex items-center gap-3 flex-wrap">
+                                        <input type="file" accept="image/*" @change="onLogoChange" class="text-sm text-theme-text-secondary" required />
+                                        <button type="submit" :disabled="logoForm.processing || !logoForm.logo" class="px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
+                                            Upload Logo
+                                        </button>
+                                        <p v-if="logoForm.errors.logo" class="text-xs text-danger w-full">{{ logoForm.errors.logo }}</p>
+                                    </form>
                                 </div>
                             </div>
                         </div>

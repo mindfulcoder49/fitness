@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Admin\MagazineArticleController;
 use App\Http\Controllers\Admin\VictoryGamesImportController;
+use App\Http\Controllers\Admin\VictoryGamesAdminController;
 use App\Http\Controllers\VictoryGames\HomeController as VictoryGamesHomeController;
 use App\Http\Controllers\VictoryGames\CompetitionController as VictoryGamesCompetitionController;
 use App\Http\Controllers\VictoryGames\VictorController;
@@ -107,6 +108,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [AdminController::class, 'index'])->name('dashboard');
     Route::patch('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
+    Route::post('/settings/logo', [AdminController::class, 'updateLogo'])->name('settings.logo');
     Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
     Route::patch('/users/{user}/media-permissions', [AdminController::class, 'updateUserMediaPermissions'])->name('users.update-media-permissions');
     Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
@@ -131,6 +133,13 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::patch('/groups/{group}/launch', [AdminController::class, 'launchGroup'])->name('groups.launch');
         Route::patch('/groups/{group}/unlaunch', [AdminController::class, 'unlaunchGroup'])->name('groups.unlaunch');
         Route::delete('/groups/{group}', [AdminController::class, 'destroyGroup'])->name('groups.destroy');
+    });
+
+    // Victory Games admin routes
+    Route::prefix('victory-games')->name('victory-games.')->group(function () {
+        Route::get('/', [VictoryGamesAdminController::class, 'index'])->name('index');
+        Route::post('/import', [VictoryGamesImportController::class, 'store'])->name('import');
+        Route::post('/competitions/{competition}/send-welcome-emails', [VictoryGamesAdminController::class, 'sendWelcomeEmails'])->name('competitions.send-welcome-emails');
     });
 
     // Magazine admin routes
@@ -188,9 +197,5 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
     });
 });
 
-// Admin Victory Games import
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::post('/victory-games/import', [VictoryGamesImportController::class, 'store'])->name('victory-games.import');
-});
 
 require __DIR__.'/auth.php';

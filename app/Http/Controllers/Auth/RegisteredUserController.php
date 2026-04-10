@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\GroupLaunched;
 use App\Models\Group;
 use App\Models\User;
+use App\Models\VictoryGamesVictor;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +25,8 @@ class RegisteredUserController extends Controller
      */
     public function create(Request $request): Response
     {
-        $group = null;
+        $group  = null;
+        $victor = null;
 
         if ($request->query('group')) {
             $foundGroup = Group::find($request->query('group'));
@@ -36,8 +38,21 @@ class RegisteredUserController extends Controller
             }
         }
 
+        if ($request->query('victor_token')) {
+            $foundVictor = VictoryGamesVictor::where('claim_token', $request->query('victor_token'))
+                ->whereNull('user_id')
+                ->first();
+            if ($foundVictor) {
+                $victor = [
+                    'display_name' => $foundVictor->display_name,
+                    'claim_token'  => $foundVictor->claim_token,
+                ];
+            }
+        }
+
         return Inertia::render('Auth/Register', [
-            'group' => $group,
+            'group'  => $group,
+            'victor' => $victor,
         ]);
     }
 
@@ -49,11 +64,12 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:'.User::class,
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'group' => 'nullable|integer|exists:groups,id',
+            'name'         => 'required|string|max:255',
+            'username'     => 'required|string|max:255|unique:'.User::class,
+            'email'        => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'password'     => ['required', 'confirmed', Rules\Password::defaults()],
+            'group'        => 'nullable|integer|exists:groups,id',
+            'victor_token' => 'nullable|string|size:64',
         ]);
 
         $user = User::create([
@@ -66,6 +82,18 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
 
         Auth::login($user);
+
+        // Auto-claim a victor profile if a valid token was provided
+        if ($request->victor_token) {
+            $victor = VictoryGamesVictor::where('claim_token', $request->victor_token)
+                ->whereNull('user_id')
+                ->first();
+            if ($victor) {
+                $victor->update(['user_id' => $user->id]);
+                return redirect()->route('victory-games.victors.show', $victor->slug)
+                    ->with('success', 'Your victor profile has been claimed!');
+            }
+        }
 
         if ($request->group) {
             $group = Group::find($request->group);

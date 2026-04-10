@@ -7,19 +7,18 @@ import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
-    group: {
-        type: Object,
-        default: null,
-    },
+    group:  { type: Object, default: null },
+    victor: { type: Object, default: null },
 });
 
 const form = useForm({
-    name: '',
-    username: '',
-    email: '',
-    password: '',
-    password_confirmation: '',
-    group: props.group?.id ?? null,
+    name:                 '',
+    username:             '',
+    email:                '',
+    password:             '',
+    password_confirmation:'',
+    group:                props.group?.id ?? null,
+    victor_token:         props.victor?.claim_token ?? null,
 });
 
 const submit = () => {
@@ -36,6 +35,13 @@ const submit = () => {
         <div v-if="group" class="mb-4 rounded-md bg-theme-accent/10 border border-theme-accent/30 p-4 text-center">
             <p class="text-sm text-theme-text-secondary">
                 You've been invited to join <strong class="text-theme-accent-text">{{ group.name }}</strong>!
+            </p>
+        </div>
+
+        <div v-if="victor" class="mb-4 rounded-md p-4 text-center" style="background-color: #1a1a2e;">
+            <p class="text-xs font-semibold uppercase tracking-widest mb-1" style="color: #c9a84c; letter-spacing: 4px;">VibeCode Victory Games</p>
+            <p class="text-sm" style="color: #e5e7eb;">
+                Register to claim your victor profile for <strong style="color: #ffffff;">{{ victor.display_name }}</strong>.
             </p>
         </div>
 

@@ -55,13 +55,14 @@ class VictorController extends Controller
                 ],
             ]);
 
-        $canEdit = auth()->check() && $victor->isOwnedBy(auth()->user());
+        $canEdit = auth()->check() && ($victor->isOwnedBy(auth()->user()) || auth()->user()->is_admin);
 
         return Inertia::render('VictoryGames/Victor', [
             'victor' => [
                 'id'          => $victor->id,
                 'slug'        => $victor->slug,
                 'display_name'=> $victor->display_name,
+                'email'       => $canEdit ? $victor->email : null,
                 'bio'         => $victor->bio,
                 'avatar_url'  => $victor->avatar_url,
                 'github_url'  => $victor->github_url,
@@ -75,10 +76,11 @@ class VictorController extends Controller
 
     public function update(Request $request, VictoryGamesVictor $victor)
     {
-        abort_unless($victor->isOwnedBy(auth()->user()), 403);
+        abort_unless($victor->isOwnedBy(auth()->user()) || auth()->user()->is_admin, 403);
 
         $data = $request->validate([
             'display_name' => 'required|string|max:255',
+            'email'        => 'nullable|email|max:255',
             'bio'          => 'nullable|string|max:2000',
             'github_url'   => 'nullable|url|max:255',
             'website_url'  => 'nullable|url|max:255',

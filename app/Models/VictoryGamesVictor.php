@@ -6,17 +6,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class VictoryGamesVictor extends Model
 {
     protected $table = 'victory_games_victors';
 
     protected $fillable = [
-        'user_id', 'external_user_id', 'slug', 'display_name',
+        'user_id', 'external_user_id', 'email', 'claim_token', 'slug', 'display_name',
         'bio', 'avatar_path', 'github_url', 'website_url', 'twitter_url',
+        'welcome_email_sent_at',
     ];
 
+    public static function generateClaimToken(): string
+    {
+        return Str::random(64);
+    }
+
     protected $appends = ['avatar_url'];
+
+    protected $casts = [
+        'welcome_email_sent_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {
