@@ -17,14 +17,22 @@ class HomepageController extends Controller
             ->latest('published_at')
             ->first();
 
-        $sections = Section::active()
-            ->with(['articles' => function ($query) {
-                $query->published()
+        $sections = Section::active()->get();
+
+        $sections->each(function (Section $section) {
+            $articles = collect();
+
+            if ($section->homepage_article_limit > 0) {
+                $articles = $section->articles()
+                    ->published()
+                    ->orderedWithinSection()
                     ->with(['section', 'contributors'])
-                    ->latest('published_at')
-                    ->limit(4);
-            }])
-            ->get();
+                    ->limit($section->homepage_article_limit)
+                    ->get();
+            }
+
+            $section->setRelation('articles', $articles);
+        });
 
         return Inertia::render('Magazine/Home', [
             'featured' => $featured,

@@ -19,8 +19,8 @@ class SectionController extends Controller
 
         $articles = $section->articles()
             ->published()
+            ->orderedWithinSection()
             ->with(['section', 'contributors', 'vertical'])
-            ->latest('published_at')
             ->paginate(12);
 
         return Inertia::render('Magazine/Section', [
@@ -41,8 +41,8 @@ class SectionController extends Controller
 
         $articles = $vertical->articles()
             ->published()
+            ->orderedWithinSection()
             ->with(['section', 'contributors'])
-            ->latest('published_at')
             ->paginate(12);
 
         return Inertia::render('Magazine/Vertical', [

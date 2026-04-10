@@ -122,6 +122,85 @@ class AdminMagazineTest extends TestCase
         Storage::disk('public')->assertExists($article->featured_image_path);
     }
 
+    public function test_admin_can_update_section_homepage_article_limit(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $section = Section::create([
+            'name' => 'News',
+            'slug' => 'news',
+            'homepage_article_limit' => 4,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from('/admin/magazine/sections')
+            ->patch(route('admin.magazine.sections.update', $section), [
+                'name' => 'News',
+                'slug' => 'news',
+                'description' => '',
+                'homepage_article_limit' => 2,
+                'is_active' => true,
+            ]);
+
+        $response->assertRedirect('/admin/magazine/sections');
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('sections', [
+            'id' => $section->id,
+            'homepage_article_limit' => 2,
+        ]);
+    }
+
+    public function test_admin_can_reorder_articles_within_a_section(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $section = Section::create([
+            'name' => 'News',
+            'slug' => 'news',
+            'is_active' => true,
+        ]);
+
+        $first = Article::create([
+            'title' => 'First',
+            'slug' => 'first',
+            'content' => '<p>First</p>',
+            'section_id' => $section->id,
+            'section_order' => 1,
+            'status' => 'published',
+            'access' => 'public',
+            'published_at' => now()->subDay(),
+        ]);
+
+        $second = Article::create([
+            'title' => 'Second',
+            'slug' => 'second',
+            'content' => '<p>Second</p>',
+            'section_id' => $section->id,
+            'section_order' => 2,
+            'status' => 'published',
+            'access' => 'public',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->actingAs($admin)
+            ->from(route('admin.magazine.sections.articles', $section, false))
+            ->post(route('admin.magazine.sections.articles.reorder', $section), [
+                'order' => [$second->id, $first->id],
+            ]);
+
+        $response->assertRedirect(route('admin.magazine.sections.articles', $section, false));
+        $response->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('articles', [
+            'id' => $second->id,
+            'section_order' => 1,
+        ]);
+        $this->assertDatabaseHas('articles', [
+            'id' => $first->id,
+            'section_order' => 2,
+        ]);
+    }
+
     public function test_duplicate_section_names_with_auto_slug_do_not_500(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

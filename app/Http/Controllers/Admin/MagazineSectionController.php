@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Article;
 use App\Models\Section;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class MagazineSectionController extends Controller
@@ -28,6 +30,7 @@ class MagazineSectionController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'nullable|string|max:255|unique:sections',
             'description' => 'nullable|string',
+            'homepage_article_limit' => 'required|integer|min:0|max:12',
             'is_active' => 'boolean',
         ]);
 
@@ -44,6 +47,7 @@ class MagazineSectionController extends Controller
             'name' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:sections,slug,' . $section->id,
             'description' => 'nullable|string',
+            'homepage_article_limit' => 'required|integer|min:0|max:12',
             'is_active' => 'boolean',
         ]);
 
@@ -71,6 +75,46 @@ class MagazineSectionController extends Controller
         }
 
         return back()->with('success', 'Sections reordered.');
+    }
+
+    public function articles(Section $section)
+    {
+        $articles = $section->articles()
+            ->with(['vertical'])
+            ->orderedWithinSection()
+            ->get();
+
+        return Inertia::render('Admin/Magazine/SectionArticles', [
+            'section' => $section,
+            'articles' => $articles,
+        ]);
+    }
+
+    public function reorderArticles(Request $request, Section $section)
+    {
+        $validated = $request->validate([
+            'order' => 'required|array',
+            'order.*' => 'integer|exists:articles,id',
+        ]);
+
+        $sectionArticleIds = $section->articles()->pluck('id')->all();
+        $submittedOrder = array_values(array_unique($validated['order']));
+
+        if (
+            count($submittedOrder) !== count($sectionArticleIds) ||
+            array_diff($sectionArticleIds, $submittedOrder) ||
+            array_diff($submittedOrder, $sectionArticleIds)
+        ) {
+            throw ValidationException::withMessages([
+                'order' => 'Article order must include every article in the section exactly once.',
+            ]);
+        }
+
+        foreach ($submittedOrder as $index => $articleId) {
+            Article::whereKey($articleId)->update(['section_order' => $index + 1]);
+        }
+
+        return back()->with('success', 'Article order updated.');
     }
 
     private function resolveUniqueSlug(string $value): string

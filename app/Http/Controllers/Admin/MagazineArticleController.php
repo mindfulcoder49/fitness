@@ -47,6 +47,7 @@ class MagazineArticleController extends Controller
     {
         $validated = $this->validateArticle($request);
         $validated = $this->normalizePublicationFields($validated);
+        $validated['section_order'] = $this->nextSectionOrder((int) $validated['section_id']);
 
         if ($request->hasFile('featured_image')) {
             $validated['featured_image_path'] = $request->file('featured_image')->store('articles/images', 'public');
@@ -83,6 +84,11 @@ class MagazineArticleController extends Controller
     {
         $validated = $this->validateArticle($request, $article);
         $validated = $this->normalizePublicationFields($validated);
+        $newSectionId = (int) $validated['section_id'];
+
+        if ($article->section_id !== $newSectionId || $article->section_order === null) {
+            $validated['section_order'] = $this->nextSectionOrder($newSectionId, $article->id);
+        }
 
         if ($request->hasFile('featured_image')) {
             $validated['featured_image_path'] = $request->file('featured_image')->store('articles/images', 'public');
@@ -261,5 +267,13 @@ class MagazineArticleController extends Controller
             }
         }
         $article->contributors()->sync($sync);
+    }
+
+    private function nextSectionOrder(int $sectionId, ?int $ignoreArticleId = null): int
+    {
+        return (int) Article::query()
+            ->where('section_id', $sectionId)
+            ->when($ignoreArticleId, fn ($query) => $query->whereKeyNot($ignoreArticleId))
+            ->max('section_order') + 1;
     }
 }

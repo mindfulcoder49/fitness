@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Section extends Model
 {
-    protected $fillable = ['name', 'slug', 'description', 'sort_order', 'is_active'];
+    protected $fillable = ['name', 'slug', 'description', 'sort_order', 'homepage_article_limit', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'homepage_article_limit' => 'integer',
     ];
 
     public function verticals(): HasMany

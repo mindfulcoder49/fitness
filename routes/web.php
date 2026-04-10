@@ -153,6 +153,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         Route::patch('/sections/{section}', [MagazineSectionController::class, 'update'])->name('sections.update');
         Route::delete('/sections/{section}', [MagazineSectionController::class, 'destroy'])->name('sections.destroy');
         Route::post('/sections/reorder', [MagazineSectionController::class, 'reorder'])->name('sections.reorder');
+        Route::get('/sections/{section}/articles', [MagazineSectionController::class, 'articles'])->name('sections.articles');
+        Route::post('/sections/{section}/articles/reorder', [MagazineSectionController::class, 'reorderArticles'])->name('sections.articles.reorder');
 
         Route::post('/verticals', [MagazineVerticalController::class, 'store'])->name('verticals.store');
         Route::patch('/verticals/{vertical}', [MagazineVerticalController::class, 'update'])->name('verticals.update');

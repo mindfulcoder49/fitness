@@ -12,7 +12,7 @@ class Article extends Model
 {
     protected $fillable = [
         'title', 'slug', 'excerpt', 'content', 'featured_image_path',
-        'section_id', 'vertical_id', 'status', 'access', 'is_featured',
+        'section_id', 'section_order', 'vertical_id', 'status', 'access', 'is_featured',
         'meta_title', 'meta_description', 'published_at',
     ];
 
@@ -56,6 +56,15 @@ class Article extends Model
     public function scopePublicAccess(Builder $query): Builder
     {
         return $query->where('access', 'public');
+    }
+
+    public function scopeOrderedWithinSection(Builder $query): Builder
+    {
+        return $query
+            ->orderByRaw('case when section_order is null then 1 else 0 end')
+            ->orderBy('section_order')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id');
     }
 
     public function getFeaturedImageUrlAttribute(): ?string

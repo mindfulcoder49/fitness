@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { ref } from 'vue';
 
@@ -17,6 +17,7 @@ const createForm = useForm({
     name: '',
     slug: '',
     description: '',
+    homepage_article_limit: 4,
     is_active: true,
 });
 
@@ -24,6 +25,7 @@ const editForm = useForm({
     name: '',
     slug: '',
     description: '',
+    homepage_article_limit: 4,
     is_active: true,
 });
 
@@ -49,6 +51,7 @@ function startEdit(section) {
     editForm.name = section.name;
     editForm.slug = section.slug;
     editForm.description = section.description || '';
+    editForm.homepage_article_limit = section.homepage_article_limit ?? 4;
     editForm.is_active = section.is_active;
 }
 
@@ -113,6 +116,10 @@ function deleteVertical(vertical) {
                     <input v-model="createForm.slug" placeholder="Slug (auto-generated)" class="bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
                 </div>
                 <textarea v-model="createForm.description" placeholder="Description (optional)" rows="2" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
+                <div>
+                    <label class="block text-xs text-theme-text-faint mb-1">Homepage Article Count</label>
+                    <input v-model.number="createForm.homepage_article_limit" type="number" min="0" max="12" class="w-32 bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
+                </div>
                 <div class="flex items-center gap-4">
                     <label class="flex items-center gap-2 text-sm text-theme-text-secondary">
                         <input type="checkbox" v-model="createForm.is_active" class="rounded border-theme-border text-theme-accent" />
@@ -142,11 +149,13 @@ function deleteVertical(vertical) {
                                 <h3 class="font-semibold text-theme-text-primary">{{ section.name }}</h3>
                                 <span v-if="!section.is_active" class="text-xs px-1.5 py-0.5 bg-theme-danger/20 text-theme-danger rounded">Inactive</span>
                                 <span class="text-xs text-theme-text-faint">({{ section.articles_count }} articles)</span>
+                                <span class="text-xs text-theme-text-faint">Front page: {{ section.homepage_article_limit }}</span>
                             </div>
                             <p v-if="section.description" class="text-sm text-theme-text-muted mt-0.5">{{ section.description }}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
+                        <Link :href="route('admin.magazine.sections.articles', section.id)" class="text-xs text-theme-link hover:text-theme-link-hover">Arrange Articles</Link>
                         <button @click="startVerticalCreate(section)" class="text-xs text-theme-link hover:text-theme-link-hover">+ Vertical</button>
                         <button @click="startEdit(section)" class="text-xs text-theme-link hover:text-theme-link-hover">Edit</button>
                         <button @click="deleteSection(section)" class="text-xs text-theme-danger hover:text-theme-danger-hover">Delete</button>
@@ -160,6 +169,10 @@ function deleteVertical(vertical) {
                         <input v-model="editForm.slug" class="bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
                     </div>
                     <textarea v-model="editForm.description" rows="2" class="w-full bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
+                    <div>
+                        <label class="block text-xs text-theme-text-faint mb-1">Homepage Article Count</label>
+                        <input v-model.number="editForm.homepage_article_limit" type="number" min="0" max="12" class="w-32 bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm" />
+                    </div>
                     <div class="flex items-center gap-4">
                         <label class="flex items-center gap-2 text-sm text-theme-text-secondary">
                             <input type="checkbox" v-model="editForm.is_active" class="rounded border-theme-border text-theme-accent" />

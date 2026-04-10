@@ -42,12 +42,14 @@ class PublicListingTest extends TestCase
             'slug' => 'section-one',
             'is_active' => true,
             'sort_order' => 1,
+            'homepage_article_limit' => 2,
         ]);
         $sectionTwo = Section::create([
             'name' => 'Section Two',
             'slug' => 'section-two',
             'is_active' => true,
             'sort_order' => 2,
+            'homepage_article_limit' => 3,
         ]);
 
         foreach (range(1, 5) as $index) {
@@ -56,6 +58,7 @@ class PublicListingTest extends TestCase
                 'slug' => "one-{$index}",
                 'content' => '<p>x</p>',
                 'section_id' => $sectionOne->id,
+                'section_order' => 6 - $index,
                 'status' => 'published',
                 'access' => 'public',
                 'published_at' => now()->subMinutes(20 + $index),
@@ -65,6 +68,7 @@ class PublicListingTest extends TestCase
                 'slug' => "two-{$index}",
                 'content' => '<p>x</p>',
                 'section_id' => $sectionTwo->id,
+                'section_order' => $index,
                 'status' => 'published',
                 'access' => 'public',
                 'published_at' => now()->subMinutes(40 + $index),
@@ -77,8 +81,52 @@ class PublicListingTest extends TestCase
                 ->component('Magazine/Home')
                 ->where('sections.0.slug', 'section-one')
                 ->where('sections.1.slug', 'section-two')
-                ->has('sections.0.articles', 4)
-                ->has('sections.1.articles', 4)
+                ->has('sections.0.articles', 2)
+                ->where('sections.0.articles.0.slug', 'one-5')
+                ->where('sections.0.articles.1.slug', 'one-4')
+                ->has('sections.1.articles', 3)
+                ->where('sections.1.articles.0.slug', 'two-1')
+                ->where('sections.1.articles.1.slug', 'two-2')
+                ->where('sections.1.articles.2.slug', 'two-3')
+            );
+    }
+
+    public function test_section_page_uses_manual_section_order(): void
+    {
+        $section = Section::create([
+            'name' => 'Ordered',
+            'slug' => 'ordered',
+            'is_active' => true,
+        ]);
+
+        Article::create([
+            'title' => 'Second',
+            'slug' => 'second',
+            'content' => '<p>x</p>',
+            'section_id' => $section->id,
+            'section_order' => 2,
+            'status' => 'published',
+            'access' => 'public',
+            'published_at' => now()->subDay(),
+        ]);
+
+        Article::create([
+            'title' => 'First',
+            'slug' => 'first',
+            'content' => '<p>x</p>',
+            'section_id' => $section->id,
+            'section_order' => 1,
+            'status' => 'published',
+            'access' => 'public',
+            'published_at' => now()->subDays(2),
+        ]);
+
+        $this->get(route('magazine.section', $section->slug))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Magazine/Section')
+                ->where('articles.data.0.slug', 'first')
+                ->where('articles.data.1.slug', 'second')
             );
     }
 

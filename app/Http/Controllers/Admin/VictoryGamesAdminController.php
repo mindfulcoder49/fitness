@@ -12,27 +12,49 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class VictoryGamesAdminController extends Controller
 {
     public function index()
     {
-        $competitions = VictoryGamesCompetition::orderByDesc('held_at')->get()
+        $competitions = VictoryGamesCompetition::with(['entries.victor'])
+            ->orderByDesc('held_at')
+            ->get()
             ->map(function ($comp) {
-                $victorIds = VictoryGamesVictor::whereHas(
-                    'entries', fn ($q) => $q->where('competition_id', $comp->id)
-                )->pluck('id');
+                $victors = $comp->entries
+                    ->pluck('victor')
+                    ->filter()
+                    ->unique('id')
+                    ->sortBy('display_name')
+                    ->values()
+                    ->map(fn ($victor) => [
+                        'id' => $victor->id,
+                        'display_name' => $victor->display_name,
+                        'email' => $victor->email,
+                        'has_email' => !empty($victor->email),
+                        'claimed' => !is_null($victor->user_id),
+                        'welcome_email_sent_at' => $victor->welcome_email_sent_at?->toISOString(),
+                    ]);
+
+                $withEmail = $victors->where('has_email', true);
 
                 return [
-                    'id'           => $comp->id,
-                    'slug'         => $comp->slug,
-                    'name'         => $comp->name,
-                    'held_at'      => $comp->held_at?->toISOString(),
-                    'victor_count' => $victorIds->count(),
-                    'with_email'   => VictoryGamesVictor::whereIn('id', $victorIds)->whereNotNull('email')->count(),
-                    'claimed'      => VictoryGamesVictor::whereIn('id', $victorIds)->whereNotNull('user_id')->count(),
-                    'emails_sent'  => VictoryGamesVictor::whereIn('id', $victorIds)->whereNotNull('welcome_email_sent_at')->count(),
+                    'id' => $comp->id,
+                    'slug' => $comp->slug,
+                    'name' => $comp->name,
+                    'held_at' => $comp->held_at?->toISOString(),
+                    'victor_count' => $victors->count(),
+                    'with_email' => $withEmail->count(),
+                    'claimed' => $victors->where('claimed', true)->count(),
+                    'emails_sent' => $withEmail->filter(fn ($victor) => !empty($victor['welcome_email_sent_at']))->count(),
+                    'victors' => $victors->all(),
+                    'default_victor_ids' => $withEmail
+                        ->filter(fn ($victor) => empty($victor['welcome_email_sent_at']))
+                        ->pluck('id')
+                        ->values()
+                        ->all(),
                 ];
             });
 
@@ -121,11 +143,23 @@ class VictoryGamesAdminController extends Controller
             ->with('success', "Competition \"{$name}\" and all its runs have been deleted.");
     }
 
-    public function sendWelcomeEmails(VictoryGamesCompetition $competition)
+    public function sendWelcomeEmails(Request $request, VictoryGamesCompetition $competition)
     {
-        $victors = VictoryGamesVictor::whereHas(
-            'entries', fn ($q) => $q->where('competition_id', $competition->id)
-        )->whereNotNull('email')->get();
+        $data = $request->validate([
+            'victor_ids' => 'required|array|min:1',
+            'victor_ids.*' => 'integer|distinct|exists:victory_games_victors,id',
+        ]);
+
+        $victors = VictoryGamesVictor::whereIn('id', $data['victor_ids'])
+            ->whereHas('entries', fn ($q) => $q->where('competition_id', $competition->id))
+            ->whereNotNull('email')
+            ->get();
+
+        if ($victors->count() !== count($data['victor_ids'])) {
+            throw ValidationException::withMessages([
+                'victor_ids' => 'Select only victors from this competition who have an email address.',
+            ]);
+        }
 
         $sent   = 0;
         $failed = 0;
