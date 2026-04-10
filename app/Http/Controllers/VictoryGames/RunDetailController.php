@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
+use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesEntry;
+use App\Models\VictoryGamesVictor;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -30,11 +32,24 @@ class RunDetailController extends Controller
 
         $entry->load(['competition', 'victor', 'app', 'steps']);
 
-        $user     = auth()->user();
+        $user = auth()->user();
+        $authVictor = $user ? VictoryGamesVictor::where('user_id', $user->id)->first() : null;
         $canDelete = $user && (
             $user->is_admin
             || ($entry->competition_id === null && $entry->victor && $entry->victor->user_id === $user->id)
         );
+        $canAssignApp = $user && (
+            $user->is_admin
+            || ($authVictor && $entry->victor_id === $authVictor->id)
+        );
+
+        $assignableApps = collect();
+
+        if ($canAssignApp) {
+            $assignableApps = $user->is_admin
+                ? VictoryGamesApp::orderBy('name')->get(['id', 'slug', 'name'])
+                : $authVictor->apps()->orderBy('name')->get(['victory_games_apps.id', 'victory_games_apps.slug', 'victory_games_apps.name']);
+        }
 
         return Inertia::render('VictoryGames/RunDetail', [
             'entry' => [
@@ -57,6 +72,7 @@ class RunDetailController extends Controller
                 'competition_id'  => $entry->competition_id,
             ],
             'canDelete' => $canDelete,
+            'canAssignApp' => $canAssignApp,
             'competition' => $entry->competition ? [
                 'id'   => $entry->competition->id,
                 'slug' => $entry->competition->slug,
@@ -72,6 +88,13 @@ class RunDetailController extends Controller
                 'display_name' => $entry->victor->display_name,
                 'avatar_url'   => $entry->victor->avatar_url,
             ] : null,
+            'assignableApps' => $assignableApps
+                ->map(fn ($app) => [
+                    'id' => $app->id,
+                    'slug' => $app->slug,
+                    'name' => $app->name,
+                ])
+                ->values(),
             'steps' => $steps,
         ]);
     }

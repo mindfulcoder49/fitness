@@ -1,17 +1,23 @@
 <script setup>
-import { ref } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
 
-defineProps({
+const props = defineProps({
     entry:       Object,
     competition: Object,
     app:         Object,
     victor:      Object,
     steps:       Array,
     canDelete:   Boolean,
+    canAssignApp: Boolean,
+    assignableApps: Array,
+});
+
+const assignForm = useForm({
+    app_id: props.app?.id ?? '',
 });
 
 function deleteRun(entry) {
@@ -19,12 +25,54 @@ function deleteRun(entry) {
     router.delete(route('victory-games.runs.destroy', entry.id));
 }
 
-const expandedStep  = ref(null);
-const activeTab     = ref('steps'); // steps | postmortem
+function assignRun() {
+    assignForm.post(route('victory-games.runs.assign-app', props.entry.id), {
+        preserveScroll: true,
+    });
+}
+
+watch(() => props.app?.id, (appId) => {
+    assignForm.app_id = appId ?? '';
+});
+
+const expandedStep = ref(props.steps[0]?.id ?? null);
+const activeTab = ref('steps'); // steps | postmortem
+const lightboxImage = ref(null);
+
+watch(() => props.steps, (steps) => {
+    expandedStep.value = steps[0]?.id ?? null;
+}, { immediate: true });
 
 function toggleStep(id) {
     expandedStep.value = expandedStep.value === id ? null : id;
 }
+
+function openLightbox(step) {
+    if (!step.screenshot_url) return;
+
+    lightboxImage.value = {
+        src: step.screenshot_url,
+        alt: `Step ${step.step_number} screenshot`,
+    };
+}
+
+function closeLightbox() {
+    lightboxImage.value = null;
+}
+
+function handleKeydown(event) {
+    if (event.key === 'Escape') {
+        closeLightbox();
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeydown);
+});
 
 const actionTypeColor = {
     initialize:    'bg-blue-500/10 text-blue-400',
@@ -97,6 +145,49 @@ function typeColor(type) {
             </button>
         </div>
 
+        <div v-if="canAssignApp" class="mb-8 bg-theme-card border border-theme-border rounded-xl p-5">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                    <h2 class="text-lg font-bold text-theme-text-primary">Attach This Run To An App</h2>
+                    <p class="text-sm text-theme-text-muted mt-1">
+                        Make this run show up on the right app page and keep your competition history organized.
+                    </p>
+                </div>
+                <Link
+                    v-if="victor"
+                    :href="route('victory-games.victors.show', victor.slug)"
+                    class="text-sm text-theme-accent hover:underline"
+                >
+                    Back to Victor Profile
+                </Link>
+            </div>
+
+            <div v-if="assignableApps.length" class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                <select
+                    v-model="assignForm.app_id"
+                    class="w-full sm:w-80 rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                >
+                    <option value="">— no app —</option>
+                    <option v-for="assignableApp in assignableApps" :key="assignableApp.id" :value="assignableApp.id">
+                        {{ assignableApp.name }}
+                    </option>
+                </select>
+
+                <button
+                    type="button"
+                    @click="assignRun"
+                    :disabled="assignForm.processing"
+                    class="px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-50"
+                >
+                    Save App Link
+                </button>
+            </div>
+
+            <div v-else class="mt-4 text-sm text-theme-text-muted">
+                Create an app from your victor profile first, then come back here to attach this run.
+            </div>
+        </div>
+
         <!-- Tabs -->
         <div class="flex border-b border-theme-border mb-6 gap-1">
             <button
@@ -144,8 +235,9 @@ function typeColor(type) {
                         <img
                             :src="step.screenshot_url"
                             :alt="`Step ${step.step_number} screenshot`"
-                            class="w-full max-h-[600px] object-top object-cover"
+                            class="w-full max-h-[600px] object-top object-cover cursor-zoom-in"
                             loading="lazy"
+                            @click="openLightbox(step)"
                         />
                     </div>
 
@@ -215,6 +307,28 @@ function typeColor(type) {
 
             <div v-if="!entry.postmortem && !(entry.entry_profile && Object.keys(entry.entry_profile).length)" class="text-center py-12 text-theme-text-muted">
                 No analysis available for this entry.
+            </div>
+        </div>
+
+        <div
+            v-if="lightboxImage"
+            class="fixed inset-0 z-50 bg-black/85 px-4 py-6 sm:px-8"
+            @click="closeLightbox"
+        >
+            <button
+                type="button"
+                class="absolute right-4 top-4 rounded-lg border border-white/20 bg-black/40 px-3 py-1.5 text-sm text-white hover:bg-black/60 transition"
+                @click.stop="closeLightbox"
+            >
+                Close
+            </button>
+            <div class="flex h-full items-center justify-center">
+                <img
+                    :src="lightboxImage.src"
+                    :alt="lightboxImage.alt"
+                    class="max-h-full max-w-full object-contain"
+                    @click.stop
+                />
             </div>
         </div>
     </div>

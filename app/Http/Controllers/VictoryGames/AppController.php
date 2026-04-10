@@ -124,9 +124,20 @@ class AppController extends Controller
     {
         $this->requireEntryOwner($entry);
 
+        $user = auth()->user();
+        $victor = $user ? VictoryGamesVictor::where('user_id', $user->id)->first() : null;
+
         $data = $request->validate([
             'app_id' => 'nullable|exists:victory_games_apps,id',
         ]);
+
+        if (!empty($data['app_id']) && !($user && $user->is_admin)) {
+            abort_unless(
+                $victor && $victor->apps()->whereKey($data['app_id'])->exists(),
+                403,
+                'You can only assign runs to your own apps.'
+            );
+        }
 
         $entry->update(['app_id' => $data['app_id']]);
 

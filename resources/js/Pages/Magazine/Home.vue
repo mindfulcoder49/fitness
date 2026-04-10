@@ -9,6 +9,7 @@ defineOptions({ layout: MagazineLayout });
 defineProps({
     featured: Object,
     sections: Array,
+    competitions: Array,
 });
 
 function formatDate(dateStr) {
@@ -23,6 +24,58 @@ function formatDate(dateStr) {
     <Head :title="$page.props.appName" />
 
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-10 grid gap-6 lg:grid-cols-[2fr_1fr]">
+            <div class="bg-theme-card border border-theme-border rounded-xl p-5">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-theme-text-primary">Victory Games</h2>
+                        <p class="text-sm text-theme-text-muted mt-1">Jump straight into a competition and browse the entries.</p>
+                    </div>
+                    <Link :href="route('victory-games.home')" class="text-sm font-medium text-theme-link hover:text-theme-link-hover transition">
+                        View all &rarr;
+                    </Link>
+                </div>
+
+                <div v-if="competitions?.length" class="grid gap-3 sm:grid-cols-2">
+                    <Link
+                        v-for="competition in competitions"
+                        :key="competition.id"
+                        :href="route('victory-games.competitions.show', competition.slug)"
+                        class="rounded-lg border border-theme-border bg-theme-elevated/50 px-4 py-3 hover:border-theme-accent transition"
+                    >
+                        <div class="text-sm font-semibold text-theme-text-primary">{{ competition.name }}</div>
+                        <div class="text-xs text-theme-text-muted mt-1">{{ formatDate(competition.held_at) }}</div>
+                    </Link>
+                </div>
+
+                <div v-else class="text-sm text-theme-text-muted">
+                    No competitions have been published yet.
+                </div>
+            </div>
+
+            <Link
+                :href="route('victory-games.victors')"
+                class="group bg-theme-card border border-theme-border rounded-xl p-5 hover:border-theme-accent transition block"
+            >
+                <div class="text-xs font-semibold uppercase tracking-[0.2em] text-theme-accent">Victory Games</div>
+                <h2 class="mt-2 text-2xl font-bold text-theme-text-primary group-hover:text-theme-accent transition">
+                    View Our Victors
+                </h2>
+                <p class="mt-3 text-sm text-theme-text-muted">
+                    Meet the builders behind the competition apps, claimed profiles, and run histories.
+                </p>
+                <div class="mt-6 text-sm font-medium text-theme-link group-hover:text-theme-link-hover transition">
+                    Browse victors &rarr;
+                </div>
+            </Link>
+        </div>
+
+        <div class="mb-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-theme-text-faint">
+                {{ $page.props.appName }} Magazine
+            </p>
+        </div>
+
         <!-- Hero Featured Article -->
         <div v-if="featured" class="mb-16">
             <Link :href="route('magazine.article', featured.slug)" class="group block">
