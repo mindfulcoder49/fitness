@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class VictoryGamesImportController extends Controller
 {
@@ -29,6 +30,8 @@ class VictoryGamesImportController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize($request);
+
         ini_set('memory_limit', '512M');
         set_time_limit(300);
 
@@ -51,6 +54,26 @@ class VictoryGamesImportController extends Controller
             Log::error('VictoryGames import failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    private function authorize(Request $request): void
+    {
+        // Bearer token path (for server-to-server exports)
+        $token = config('app.admin_import_token');
+        if ($token) {
+            $bearer = $request->bearerToken();
+            if ($bearer && hash_equals($token, $bearer)) {
+                return;
+            }
+        }
+
+        // Session path (logged-in admin via browser/admin UI)
+        $user = $request->user();
+        if ($user && $user->is_admin) {
+            return;
+        }
+
+        abort(401, 'Unauthorized.');
     }
 
     private function import(array $payload): array

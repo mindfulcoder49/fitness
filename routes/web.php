@@ -138,7 +138,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Victory Games admin routes
     Route::prefix('victory-games')->name('victory-games.')->group(function () {
         Route::get('/', [VictoryGamesAdminController::class, 'index'])->name('index');
-        Route::post('/import', [VictoryGamesImportController::class, 'store'])->name('import');
         Route::post('/competitions/{competition}/send-welcome-emails', [VictoryGamesAdminController::class, 'sendWelcomeEmails'])->name('competitions.send-welcome-emails');
     });
 
@@ -197,5 +196,8 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
     });
 });
 
+
+// Victory Games import — accepts session admin auth OR Bearer token (ADMIN_IMPORT_TOKEN)
+Route::post('/admin/victory-games/import', [VictoryGamesImportController::class, 'store'])->name('admin.victory-games.import');
 
 require __DIR__.'/auth.php';
