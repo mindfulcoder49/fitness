@@ -2,7 +2,6 @@
 
 namespace App\Ai\Agents\VictoryGames;
 
-use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasProviderOptions;
@@ -21,7 +20,7 @@ class RunPostmortemAgent implements Agent, HasProviderOptions, HasStructuredOutp
         return 'You analyze a browser-agent test run and return a grounded run analysis plus concrete recommendations.';
     }
 
-    public function schema(JsonSchema $schema): array
+    public function schema($schema): array
     {
         return [
             'run_analysis' => $schema->string()->required(),

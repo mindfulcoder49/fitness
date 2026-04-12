@@ -2,7 +2,6 @@
 
 namespace App\Ai\Agents\VictoryGames;
 
-use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasProviderOptions;
@@ -40,7 +39,7 @@ Rules:
 TEXT;
     }
 
-    public function schema(JsonSchema $schema): array
+    public function schema($schema): array
     {
         return [
             'action' => $schema->string()->enum([

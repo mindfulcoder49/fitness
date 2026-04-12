@@ -2,7 +2,6 @@
 
 namespace App\Ai\Agents\VictoryGames;
 
-use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Ai\Attributes\MaxTokens;
 use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\HasProviderOptions;
@@ -21,7 +20,7 @@ class HtmlPostmortemAgent implements Agent, HasProviderOptions, HasStructuredOut
         return 'You review captured page HTML from a browser-agent run and return structural UX/accessibility analysis plus concrete recommendations.';
     }
 
-    public function schema(JsonSchema $schema): array
+    public function schema($schema): array
     {
         return [
             'html_analysis' => $schema->string()->required(),
