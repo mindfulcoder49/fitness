@@ -14,6 +14,7 @@ use App\Models\VictoryGamesEntryMemory;
 use App\Models\VictoryGamesRunStep;
 use App\Support\VictoryGames\NativeAiuxHtmlSanitizer;
 use App\Support\VictoryGames\NativeAiuxLoopDetector;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -445,6 +446,7 @@ class NativeAiuxRunner
         callable $callback,
     ): mixed {
         $startedAt = microtime(true);
+        $maxAttempts = $this->promptRetryAttempts();
 
         $this->log(
             $entry,
@@ -458,43 +460,62 @@ class NativeAiuxRunner
             $stepNumber,
         );
 
-        try {
-            $result = $callback();
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $result = $callback();
 
-            $this->log(
-                $entry,
-                'debug',
-                $this->phaseLabel($phase).' prompt completed.',
-                $this->encodeLogDetails(array_merge(
-                    ['phase' => $phase],
-                    $context,
-                    ['elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000)],
-                    $this->runtimeSnapshot(null, 'end_'),
-                )),
-                $stepNumber,
-            );
+                $this->log(
+                    $entry,
+                    'debug',
+                    $this->phaseLabel($phase).' prompt completed.',
+                    $this->encodeLogDetails(array_merge(
+                        ['phase' => $phase],
+                        $context,
+                        [
+                            'attempt' => $attempt,
+                            'max_attempts' => $maxAttempts,
+                            'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                        ],
+                        $this->runtimeSnapshot(null, 'end_'),
+                    )),
+                    $stepNumber,
+                );
 
-            return $result;
-        } catch (\Throwable $exception) {
-            $this->log(
-                $entry,
-                'warning',
-                $this->phaseLabel($phase).' prompt failed.',
-                $this->encodeLogDetails(array_merge(
-                    ['phase' => $phase],
-                    $context,
-                    [
-                        'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
-                        'exception_class' => $exception::class,
-                        'exception_message' => $exception->getMessage(),
-                    ],
-                    $this->runtimeSnapshot(null, 'end_'),
-                )),
-                $stepNumber,
-            );
+                return $result;
+            } catch (\Throwable $exception) {
+                $shouldRetry = $attempt < $maxAttempts && $this->shouldRetryPromptException($exception);
+                $retryDelayMs = $shouldRetry ? $this->promptRetryBackoffMs($attempt) : null;
 
-            throw $exception;
+                $this->log(
+                    $entry,
+                    'warning',
+                    $this->phaseLabel($phase).' prompt failed'.($shouldRetry ? '; retrying.' : '.'),
+                    $this->encodeLogDetails(array_merge(
+                        ['phase' => $phase],
+                        $context,
+                        [
+                            'attempt' => $attempt,
+                            'max_attempts' => $maxAttempts,
+                            'retrying' => $shouldRetry,
+                            'retry_delay_ms' => $retryDelayMs,
+                            'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                            'exception_class' => $exception::class,
+                            'exception_message' => $exception->getMessage(),
+                        ],
+                        $this->runtimeSnapshot(null, 'end_'),
+                    )),
+                    $stepNumber,
+                );
+
+                if (!$shouldRetry) {
+                    throw $exception;
+                }
+
+                usleep($retryDelayMs * 1000);
+            }
         }
+
+        throw new \RuntimeException('Prompt retry loop exited unexpectedly.');
     }
 
     private function normalizePlannerDecision(array $decision): array
@@ -913,6 +934,23 @@ class NativeAiuxRunner
             'html_postmortem' => 'HTML postmortem agent',
             default => ucfirst(str_replace('_', ' ', $phase)),
         };
+    }
+
+    private function shouldRetryPromptException(\Throwable $exception): bool
+    {
+        return $exception instanceof ConnectionException;
+    }
+
+    private function promptRetryAttempts(): int
+    {
+        return max(1, (int) config('victory_games.native_runs.prompt_retry_attempts', 3));
+    }
+
+    private function promptRetryBackoffMs(int $attempt): int
+    {
+        $baseDelay = max(0, (int) config('victory_games.native_runs.prompt_retry_backoff_ms', 500));
+
+        return $baseDelay * max(1, $attempt);
     }
 
     private function maxSteps(VictoryGamesEntry $entry): int

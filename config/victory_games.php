@@ -12,6 +12,8 @@ return [
         'poll_interval_seconds' => (int) env('VICTORY_GAMES_NATIVE_POLL_INTERVAL_SECONDS', 4),
         'planner_timeout' => (int) env('VICTORY_GAMES_NATIVE_PLANNER_TIMEOUT', 120),
         'postmortem_timeout' => (int) env('VICTORY_GAMES_NATIVE_POSTMORTEM_TIMEOUT', 120),
+        'prompt_retry_attempts' => (int) env('VICTORY_GAMES_NATIVE_PROMPT_RETRY_ATTEMPTS', 3),
+        'prompt_retry_backoff_ms' => (int) env('VICTORY_GAMES_NATIVE_PROMPT_RETRY_BACKOFF_MS', 500),
         'loop_detection_window' => (int) env('VICTORY_GAMES_NATIVE_LOOP_WINDOW', 10),
         'loop_detection_rules' => [
             'repeat_single' => (int) env('VICTORY_GAMES_NATIVE_LOOP_REPEAT_SINGLE', 4),
