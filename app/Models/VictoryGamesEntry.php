@@ -77,6 +77,43 @@ class VictoryGamesEntry extends Model
         };
     }
 
+    public function isOwnedByUser(?User $user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return $this->started_by_user_id === $user->id
+            || $this->victor?->user_id === $user->id;
+    }
+
+    public function isActiveNativeRun(): bool
+    {
+        return $this->run_origin === 'native'
+            && in_array($this->session_status, ['queued', 'running', 'analyzing'], true);
+    }
+
+    public function canBeDeletedBy(?User $user): bool
+    {
+        if (!$user || $this->isActiveNativeRun()) {
+            return false;
+        }
+
+        return $user->is_admin || $this->isOwnedByUser($user);
+    }
+
+    public function reusableConfig(array $defaults = []): array
+    {
+        return [
+            'goal' => (string) ($this->app_goal ?: ($defaults['goal'] ?? '')),
+            'start_url' => (string) ($this->app_url ?: ($defaults['start_url'] ?? '')),
+            'mode' => (string) ($this->app_mode ?: ($defaults['mode'] ?? 'desktop')),
+            'provider' => (string) ($this->session_provider ?: ($defaults['provider'] ?? '')),
+            'model' => (string) ($this->session_model ?: ($defaults['model'] ?? '')),
+            'max_steps' => max(1, (int) data_get($this->run_config, 'max_steps', $defaults['max_steps'] ?? 1)),
+        ];
+    }
+
     /** Human-readable app hostname for display. */
     public function appHostname(): string
     {

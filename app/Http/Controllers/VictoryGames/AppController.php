@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesEntry;
 use App\Models\VictoryGamesVictor;
@@ -14,24 +15,31 @@ class AppController extends Controller
 {
     // ── Public ─────────────────────────────────────────────────────────────────
 
-    public function show(VictoryGamesApp $app)
+    public function show(Request $request, VictoryGamesApp $app)
     {
         $app->load(['victors', 'entries.competition', 'entries.steps']);
 
-        $authUser   = auth()->user();
+        $authUser   = $request->user();
         $authVictor = $authUser ? VictoryGamesVictor::where('user_id', $authUser->id)->first() : null;
         $canEdit    = (($authVictor && $app->isOwnedBy($authVictor)) || ($authUser && $authUser->is_admin));
         $canRun     = ($authVictor && ($app->isMember($authVictor) || ($authUser && $authUser->is_admin)));
 
-        $entries = $app->entries()
-            ->with(['competition', 'steps'])
-            ->orderByDesc('submitted_at')
-            ->get()
-            ->map(fn ($e) => $this->serializeEntry($e));
-
         $availableProviders = $this->availableRunProviders();
         $defaultProviderKey = array_key_first($availableProviders);
         $defaultProvider = $defaultProviderKey ? $availableProviders[$defaultProviderKey] : null;
+        $runDefaults = [
+            'start_url' => $app->current_url,
+            'mode' => config('victory_games.native_runs.default_mode', 'desktop'),
+            'provider' => $defaultProviderKey,
+            'model' => $defaultProvider ? Arr::get($defaultProvider, 'default_model') : '',
+            'max_steps' => (int) config('victory_games.native_runs.max_steps', 8),
+        ];
+
+        $entries = $app->entries()
+            ->with(['competition', 'steps', 'victor'])
+            ->orderByDesc('submitted_at')
+            ->get()
+            ->map(fn ($e) => $this->serializeEntry($e, $authUser, $runDefaults));
 
         return Inertia::render('VictoryGames/App', [
             'app' => [
@@ -57,11 +65,10 @@ class AppController extends Controller
                     'label' => Arr::get($provider, 'label', ucfirst($key)),
                     'default_model' => Arr::get($provider, 'default_model'),
                 ], array_keys($availableProviders), $availableProviders)),
-                'defaults' => [
-                    'start_url' => $app->current_url,
-                    'mode' => config('victory_games.native_runs.default_mode', 'desktop'),
-                    'provider' => $defaultProviderKey,
-                    'model' => $defaultProvider ? Arr::get($defaultProvider, 'default_model') : '',
+                'defaults' => $runDefaults,
+                'limits' => [
+                    'min_steps' => max(1, (int) config('victory_games.native_runs.min_steps', 1)),
+                    'max_steps' => max(1, (int) config('victory_games.native_runs.max_steps_limit', 50)),
                 ],
             ],
         ]);
@@ -194,7 +201,7 @@ class AppController extends Controller
         );
     }
 
-    private function serializeEntry(VictoryGamesEntry $entry): array
+    private function serializeEntry(VictoryGamesEntry $entry, ?User $user, array $runDefaults): array
     {
         return [
             'id'              => $entry->id,
@@ -209,8 +216,12 @@ class AppController extends Controller
             'submitted_at'    => $entry->submitted_at?->toISOString(),
             'run_origin'      => $entry->run_origin,
             'session_status'  => $entry->session_status,
+            'run_config'      => $entry->run_config,
             'started_at'      => $entry->started_at?->toISOString(),
             'completed_at'    => $entry->completed_at?->toISOString(),
+            'is_active_native_run' => $entry->isActiveNativeRun(),
+            'can_delete'      => $entry->canBeDeletedBy($user),
+            'reuse_config'    => $entry->reusableConfig($runDefaults),
             'competition'     => $entry->competition ? [
                 'id'      => $entry->competition->id,
                 'slug'    => $entry->competition->slug,

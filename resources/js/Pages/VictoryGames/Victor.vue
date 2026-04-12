@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
@@ -62,6 +62,14 @@ function submitCreateApp() {
 function assignRun(entryId) {
     assignForm.post(route('victory-games.runs.assign-app', entryId), {
         onSuccess: () => { assigningRun.value = null; assignForm.reset(); },
+    });
+}
+
+function deleteRun(entry) {
+    if (!confirm('Delete this run? This cannot be undone.')) return;
+
+    router.delete(route('victory-games.runs.destroy', entry.id), {
+        preserveScroll: true,
     });
 }
 
@@ -285,6 +293,14 @@ function formatDate(dateStr) {
                         <template v-else>
                             <Link :href="route('victory-games.runs.show', entry.id)"
                                 class="text-xs text-theme-accent hover:underline">View →</Link>
+                            <button
+                                v-if="entry.can_delete"
+                                type="button"
+                                @click="deleteRun(entry)"
+                                class="text-xs text-theme-danger hover:underline"
+                            >
+                                Delete
+                            </button>
                             <button @click="assigningRun = entry.id; assignForm.app_id = ''"
                                 class="text-xs px-2 py-1 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
                                 Assign to app
@@ -332,6 +348,14 @@ function formatDate(dateStr) {
                             <Link :href="route('victory-games.runs.show', entry.id)" class="text-theme-accent hover:underline">
                                 View full run →
                             </Link>
+                            <button
+                                v-if="entry.can_delete"
+                                type="button"
+                                @click="deleteRun(entry)"
+                                class="text-theme-danger hover:underline"
+                            >
+                                Delete
+                            </button>
                             <Link v-if="entry.app" :href="route('victory-games.apps.show', entry.app.slug)"
                                 class="text-theme-accent hover:underline">
                                 {{ entry.app.name }} ↗

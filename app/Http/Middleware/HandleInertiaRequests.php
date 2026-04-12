@@ -47,6 +47,11 @@ class HandleInertiaRequests extends Middleware
                     'can_post_videos' => $user->can_post_videos,
                     'theme' => $user->theme ?? 'light',
                 ] : null,
+                'victor' => $user?->victoryGamesVictor ? [
+                    'id' => $user->victoryGamesVictor->id,
+                    'slug' => $user->victoryGamesVictor->slug,
+                    'display_name' => $user->victoryGamesVictor->display_name,
+                ] : null,
             ],
             'appName' => config('app.name'),
             'appUrl' => config('app.url'),

@@ -7,6 +7,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 const showingMobileMenu = ref(false);
 const page = usePage();
 const user = page.props.auth?.user;
+const victor = page.props.auth?.victor;
 const sections = page.props.magazineSections || [];
 </script>
 
@@ -63,6 +64,13 @@ const sections = page.props.magazineSections || [];
                         </Link>
 
                         <template v-if="user">
+                            <Link
+                                v-if="victor"
+                                :href="route('victory-games.victors.show', victor.slug)"
+                                class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition"
+                            >
+                                My Victor
+                            </Link>
                             <Link
                                 :href="route('dashboard')"
                                 class="text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary transition"
@@ -134,6 +142,13 @@ const sections = page.props.magazineSections || [];
                     </Link>
 
                     <template v-if="user">
+                        <Link
+                            v-if="victor"
+                            :href="route('victory-games.victors.show', victor.slug)"
+                            class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1"
+                        >
+                            My Victor
+                        </Link>
                         <Link :href="route('dashboard')" class="block text-sm font-medium text-theme-text-secondary hover:text-theme-text-primary py-1">
                             {{ user.name }}
                         </Link>

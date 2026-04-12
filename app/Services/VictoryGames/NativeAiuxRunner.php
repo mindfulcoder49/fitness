@@ -102,7 +102,7 @@ class NativeAiuxRunner
                     break;
                 }
 
-                if ($state['current_step'] >= $this->maxSteps()) {
+                if ($state['current_step'] >= $this->maxSteps($entry)) {
                     $state['status'] = 'failed';
                     $state['end_reason'] = 'Max steps reached.';
                     $this->log($entry, 'warning', 'Run hit the max-step limit.', stepNumber: $state['current_step']);
@@ -182,7 +182,7 @@ class NativeAiuxRunner
                 );
                 $state['recent_action_fingerprints'] = array_slice(
                     $state['recent_action_fingerprints'],
-                    -config('victory_games.native_runs.loop_detection_window', 10)
+                    -$this->loopDetectionWindow($entry)
                 );
 
                 if ($this->loopDetector->isLooping(
@@ -762,8 +762,20 @@ class NativeAiuxRunner
         ]);
     }
 
-    private function maxSteps(): int
+    private function maxSteps(VictoryGamesEntry $entry): int
     {
-        return (int) config('victory_games.native_runs.max_steps', 8);
+        $minSteps = max(1, (int) config('victory_games.native_runs.min_steps', 1));
+        $maxStepsLimit = max($minSteps, (int) config('victory_games.native_runs.max_steps_limit', 50));
+        $configuredSteps = (int) Arr::get($entry->run_config, 'max_steps', config('victory_games.native_runs.max_steps', 8));
+
+        return max($minSteps, min($maxStepsLimit, $configuredSteps));
+    }
+
+    private function loopDetectionWindow(VictoryGamesEntry $entry): int
+    {
+        return max(
+            1,
+            (int) Arr::get($entry->run_config, 'loop_detection_window', config('victory_games.native_runs.loop_detection_window', 10))
+        );
     }
 }

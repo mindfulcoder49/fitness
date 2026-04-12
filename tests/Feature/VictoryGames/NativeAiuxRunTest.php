@@ -5,6 +5,7 @@ namespace Tests\Feature\VictoryGames;
 use App\Jobs\RunVictoryGamesNativeAiuxJob;
 use App\Models\User;
 use App\Models\VictoryGamesApp;
+use App\Models\VictoryGamesCompetition;
 use App\Models\VictoryGamesEntry;
 use App\Models\VictoryGamesVictor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -52,6 +53,7 @@ class NativeAiuxRunTest extends TestCase
             'mode' => 'desktop',
             'provider' => 'openai',
             'model' => 'gpt-5-mini',
+            'max_steps' => 12,
         ]);
 
         $response->assertForbidden();
@@ -79,6 +81,7 @@ class NativeAiuxRunTest extends TestCase
             'mode' => 'desktop',
             'provider' => 'openai',
             'model' => 'gpt-5-mini',
+            'max_steps' => 12,
         ]);
 
         $entry = VictoryGamesEntry::first();
@@ -94,6 +97,7 @@ class NativeAiuxRunTest extends TestCase
         $this->assertSame($member->id, $entry->started_by_user_id);
         $this->assertSame('openai', $entry->session_provider);
         $this->assertSame('gpt-5-mini', $entry->session_model);
+        $this->assertSame(12, $entry->run_config['max_steps']);
 
         Queue::assertPushed(RunVictoryGamesNativeAiuxJob::class, 1);
     }
@@ -135,6 +139,31 @@ class NativeAiuxRunTest extends TestCase
 
         $response->assertForbidden();
         $this->assertDatabaseHas('victory_games_entries', ['id' => $entry->id]);
+    }
+
+    public function test_owner_can_delete_their_own_competition_run(): void
+    {
+        $user = User::factory()->create();
+        $victor = $this->createVictorFor($user, 'Competition Victor');
+        $app = $this->createAppFor($victor, 'Competition App');
+        $competition = VictoryGamesCompetition::create([
+            'external_id' => (string) Str::uuid(),
+            'slug' => 'spring-showdown',
+            'name' => 'Spring Showdown',
+            'status' => 'complete',
+            'held_at' => now(),
+        ]);
+        $entry = $this->createNativeEntry($victor, $app, [
+            'competition_id' => $competition->id,
+            'started_by_user_id' => $user->id,
+            'session_status' => 'completed',
+            'completed_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->delete(route('victory-games.runs.destroy', $entry));
+
+        $response->assertRedirect(route('victory-games.victors.show', $victor));
+        $this->assertDatabaseMissing('victory_games_entries', ['id' => $entry->id]);
     }
 
     private function createVictorFor(User $user, string $displayName): VictoryGamesVictor

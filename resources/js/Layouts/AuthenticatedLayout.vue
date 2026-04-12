@@ -9,7 +9,9 @@ import ThemeToggle from '@/Components/ThemeToggle.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
-const user = usePage().props.auth.user;
+const page = usePage();
+const user = page.props.auth.user;
+const victor = page.props.auth?.victor;
 </script>
 
 <template>
@@ -46,6 +48,13 @@ const user = usePage().props.auth.user;
                                     :active="route().current('victory-games.*')"
                                 >
                                     Victory Games
+                                </NavLink>
+                                <NavLink
+                                    v-if="victor"
+                                    :href="route('victory-games.victors.show', victor.slug)"
+                                    :active="route().current('victory-games.victors.show') && route().params?.victor === victor.slug"
+                                >
+                                    My Victor
                                 </NavLink>
                                 <NavLink
                                     :href="route('dashboard')"
@@ -113,6 +122,12 @@ const user = usePage().props.auth.user;
                                     </template>
 
                                     <template #content>
+                                        <DropdownLink
+                                            v-if="victor"
+                                            :href="route('victory-games.victors.show', victor.slug)"
+                                        >
+                                            My Victor
+                                        </DropdownLink>
                                         <DropdownLink
                                             :href="route('profile.edit')"
                                         >
@@ -195,6 +210,13 @@ const user = usePage().props.auth.user;
                             Victory Games
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
+                            v-if="victor"
+                            :href="route('victory-games.victors.show', victor.slug)"
+                            :active="route().current('victory-games.victors.show') && route().params?.victor === victor.slug"
+                        >
+                            My Victor
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
                             :href="route('dashboard')"
                             :active="route().current('dashboard')"
                         >
@@ -246,6 +268,12 @@ const user = usePage().props.auth.user;
                         </div>
 
                         <div class="mt-3 space-y-1">
+                            <ResponsiveNavLink
+                                v-if="victor"
+                                :href="route('victory-games.victors.show', victor.slug)"
+                            >
+                                My Victor
+                            </ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
                             </ResponsiveNavLink>

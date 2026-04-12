@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\VictoryGamesEntry;
 use App\Support\VictoryGames\RunDetailDataBuilder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -18,27 +19,28 @@ class RunDetailController extends Controller
         return Inertia::render('VictoryGames/RunDetail', $this->runDetailDataBuilder->build($entry, $request->user()));
     }
 
-    public function destroy(VictoryGamesEntry $entry)
+    public function destroy(Request $request, VictoryGamesEntry $entry)
     {
         $user = auth()->user();
 
-        if ($entry->run_origin === 'native' && in_array($entry->session_status, ['queued', 'running', 'analyzing'], true)) {
-            abort(403, 'Stop the active native run before deleting it.');
-        }
-
-        if ($user->is_admin) {
-            // Admin can delete any run
-        } elseif ($entry->competition_id !== null) {
-            abort(403, 'Competition runs can only be deleted by an admin.');
-        } elseif (!$entry->victor || $entry->victor->user_id !== $user->id) {
-            abort(403, 'You can only delete your own runs.');
-        }
+        abort_unless($entry->canBeDeletedBy($user), 403, 'You can only delete your own completed runs.');
 
         $victorSlug = $entry->victor?->slug;
+        $appSlug = $entry->app?->slug;
+        $previousUrl = (string) url()->previous();
 
         Storage::disk('public')->deleteDirectory("victory-games/screenshots/{$entry->id}");
 
         $entry->delete();
+
+        if ($previousUrl !== '' && !Str::endsWith($previousUrl, "/victory-games/runs/{$entry->id}")) {
+            return back()->with('success', 'Run deleted.');
+        }
+
+        if ($appSlug) {
+            return redirect()->route('victory-games.apps.show', $appSlug)
+                ->with('success', 'Run deleted.');
+        }
 
         if ($victorSlug) {
             return redirect()->route('victory-games.victors.show', $victorSlug)

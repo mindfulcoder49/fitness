@@ -4,7 +4,9 @@ return [
 
     'native_runs' => [
         'default_mode' => env('VICTORY_GAMES_NATIVE_DEFAULT_MODE', 'desktop'),
+        'min_steps' => (int) env('VICTORY_GAMES_NATIVE_MIN_STEPS', 1),
         'max_steps' => (int) env('VICTORY_GAMES_NATIVE_MAX_STEPS', 8),
+        'max_steps_limit' => (int) env('VICTORY_GAMES_NATIVE_MAX_STEPS_LIMIT', 50),
         'html_character_limit' => (int) env('VICTORY_GAMES_NATIVE_HTML_CHARACTER_LIMIT', 40000),
         'postmortem_page_limit' => (int) env('VICTORY_GAMES_NATIVE_POSTMORTEM_PAGE_LIMIT', 10),
         'poll_interval_seconds' => (int) env('VICTORY_GAMES_NATIVE_POLL_INTERVAL_SECONDS', 4),

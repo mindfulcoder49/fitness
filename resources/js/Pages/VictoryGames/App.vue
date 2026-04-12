@@ -1,6 +1,6 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed, nextTick, ref, watch } from 'vue';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
@@ -15,6 +15,7 @@ const props = defineProps({
 const editing = ref(false);
 const addingMember = ref(false);
 const showingRunForm = ref(Boolean(props.nativeRun?.canStart && props.entries.length === 0));
+const runComposer = ref(null);
 
 const editForm = useForm({
     _method: 'patch',
@@ -25,13 +26,30 @@ const editForm = useForm({
 
 const memberForm = useForm({ victor_slug: '' });
 const providerOptions = computed(() => props.nativeRun?.providers ?? []);
-const runForm = useForm({
-    goal: '',
-    start_url: props.nativeRun?.defaults?.start_url ?? props.app.current_url ?? '',
-    mode: props.nativeRun?.defaults?.mode ?? 'desktop',
-    provider: props.nativeRun?.defaults?.provider ?? providerOptions.value[0]?.key ?? '',
-    model: props.nativeRun?.defaults?.model ?? providerOptions.value[0]?.default_model ?? '',
-});
+
+function createRunFormDefaults(overrides = {}) {
+    const providerFallback = props.nativeRun?.defaults?.provider ?? providerOptions.value[0]?.key ?? '';
+    const requestedProvider = overrides.provider || '';
+    const provider = providerOptions.value.some((option) => option.key === requestedProvider)
+        ? requestedProvider
+        : providerFallback;
+    const selectedProvider = providerOptions.value.find((option) => option.key === provider);
+    const providerStayedTheSame = provider === requestedProvider;
+
+    return {
+        goal: '',
+        start_url: props.nativeRun?.defaults?.start_url ?? props.app.current_url ?? '',
+        mode: props.nativeRun?.defaults?.mode ?? 'desktop',
+        provider,
+        model: providerStayedTheSame
+            ? (overrides.model || selectedProvider?.default_model || props.nativeRun?.defaults?.model || '')
+            : (selectedProvider?.default_model || props.nativeRun?.defaults?.model || ''),
+        max_steps: props.nativeRun?.defaults?.max_steps ?? 8,
+        ...overrides,
+    };
+}
+
+const runForm = useForm(createRunFormDefaults());
 
 function submitEdit() {
     editForm.post(route('victory-games.apps.update', props.app.slug), {
@@ -62,6 +80,25 @@ function submitRun() {
     runForm.post(route('victory-games.apps.runs.store', props.app.slug), {
         preserveScroll: true,
     });
+}
+
+function deleteRun(entry) {
+    if (!confirm('Delete this run? This cannot be undone.')) return;
+
+    router.delete(route('victory-games.runs.destroy', entry.id), {
+        preserveScroll: true,
+    });
+}
+
+async function reuseRunConfig(entry) {
+    const nextValues = createRunFormDefaults(entry.reuse_config ?? {});
+
+    Object.assign(runForm, nextValues);
+    runForm.clearErrors();
+    showingRunForm.value = true;
+
+    await nextTick();
+    runComposer.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 const placementEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
@@ -185,7 +222,7 @@ function statusBadgeClass(status) {
             </form>
         </div>
 
-        <div class="mb-8 rounded-xl border border-theme-border bg-theme-card p-6">
+        <div ref="runComposer" class="mb-8 rounded-xl border border-theme-border bg-theme-card p-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h2 class="text-xl font-bold text-theme-text-primary">Native AIUX Testing</h2>
@@ -260,6 +297,23 @@ function statusBadgeClass(status) {
                             class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
                         />
                         <p v-if="runForm.errors.model" class="mt-1 text-xs text-danger">{{ runForm.errors.model }}</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Max steps</label>
+                        <input
+                            v-model.number="runForm.max_steps"
+                            type="number"
+                            :min="nativeRun.limits?.min_steps ?? 1"
+                            :max="nativeRun.limits?.max_steps ?? 50"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        />
+                        <p class="mt-1 text-xs text-theme-text-muted">
+                            Choose how many planning/execution steps the agent is allowed to take before it stops.
+                        </p>
+                        <p v-if="runForm.errors.max_steps" class="mt-1 text-xs text-danger">{{ runForm.errors.max_steps }}</p>
                     </div>
                 </div>
 
@@ -343,10 +397,25 @@ function statusBadgeClass(status) {
 
                             <div class="mt-3 flex items-center gap-4 text-xs text-theme-text-muted">
                                 <span>{{ entry.step_count }} steps</span>
-                                <Link :href="route('victory-games.runs.show', entry.id)"
-                                    class="text-theme-accent hover:underline">
+                                <Link :href="route('victory-games.runs.show', entry.id)" class="text-theme-accent hover:underline">
                                     View run →
                                 </Link>
+                                <button
+                                    v-if="nativeRun.canStart"
+                                    type="button"
+                                    @click="reuseRunConfig(entry)"
+                                    class="text-theme-text-muted transition hover:text-theme-accent"
+                                >
+                                    Reuse config
+                                </button>
+                                <button
+                                    v-if="entry.can_delete"
+                                    type="button"
+                                    @click="deleteRun(entry)"
+                                    class="text-theme-danger transition hover:text-theme-danger/80"
+                                >
+                                    Delete
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesVictor;
 use Illuminate\Http\Request;
@@ -39,9 +40,10 @@ class VictorController extends Controller
         ]);
     }
 
-    public function show(VictoryGamesVictor $victor)
+    public function show(Request $request, VictoryGamesVictor $victor)
     {
-        $canEdit = auth()->check() && ($victor->isOwnedBy(auth()->user()) || auth()->user()->is_admin);
+        $authUser = $request->user();
+        $canEdit = $authUser && ($victor->isOwnedBy($authUser) || $authUser->is_admin);
 
         // Competition entries (have a competition_id)
         $competitionEntries = $victor->entries()
@@ -49,7 +51,7 @@ class VictorController extends Controller
             ->with(['competition', 'app'])
             ->orderByRaw('CASE WHEN placement IS NULL THEN 4 ELSE placement END')
             ->get()
-            ->map(fn ($e) => $this->serializeEntry($e));
+            ->map(fn ($e) => $this->serializeEntry($e, $authUser));
 
         // Unassigned standalone runs (no competition, no app yet)
         $unassignedRuns = $canEdit
@@ -58,7 +60,7 @@ class VictorController extends Controller
                 ->whereNull('app_id')
                 ->orderByDesc('submitted_at')
                 ->get()
-                ->map(fn ($e) => $this->serializeEntry($e))
+                ->map(fn ($e) => $this->serializeEntry($e, $authUser))
             : collect();
 
         // Apps this victor belongs to
@@ -101,7 +103,7 @@ class VictorController extends Controller
         ]);
     }
 
-    private function serializeEntry(\App\Models\VictoryGamesEntry $entry): array
+    private function serializeEntry(\App\Models\VictoryGamesEntry $entry, ?User $user): array
     {
         return [
             'id'              => $entry->id,
@@ -115,6 +117,9 @@ class VictorController extends Controller
             'entry_profile'   => $entry->entry_profile,
             'step_count'      => $entry->steps()->count(),
             'submitted_at'    => $entry->submitted_at?->toISOString(),
+            'session_status'  => $entry->session_status,
+            'is_active_native_run' => $entry->isActiveNativeRun(),
+            'can_delete'      => $entry->canBeDeletedBy($user),
             'competition'     => $entry->competition ? [
                 'id'      => $entry->competition->id,
                 'slug'    => $entry->competition->slug,

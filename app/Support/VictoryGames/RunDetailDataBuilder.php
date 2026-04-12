@@ -14,12 +14,8 @@ class RunDetailDataBuilder
         $entry->load(['competition', 'victor', 'app', 'steps', 'logs']);
 
         $authVictor = $user?->victoryGamesVictor;
-        $activeNativeRun = $entry->run_origin === 'native'
-            && in_array($entry->session_status, ['queued', 'running', 'analyzing'], true);
-        $canDelete = $user && (
-            $user->is_admin
-            || ($entry->competition_id === null && $entry->victor && $entry->victor->user_id === $user->id)
-        ) && !$activeNativeRun;
+        $activeNativeRun = $entry->isActiveNativeRun();
+        $canDelete = $entry->canBeDeletedBy($user);
         $canAssignApp = $user && (
             $user->is_admin
             || ($authVictor && $entry->victor_id === $authVictor->id)

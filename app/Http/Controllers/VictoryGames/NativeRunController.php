@@ -22,6 +22,8 @@ class NativeRunController extends Controller
         abort_unless($app->isMember($victor) || $request->user()?->is_admin, 403);
 
         $availableProviders = $this->availableProviders();
+        $minSteps = max(1, (int) config('victory_games.native_runs.min_steps', 1));
+        $maxStepsLimit = max($minSteps, (int) config('victory_games.native_runs.max_steps_limit', 50));
 
         $data = $request->validate([
             'goal' => 'required|string|max:5000',
@@ -29,6 +31,7 @@ class NativeRunController extends Controller
             'mode' => 'required|in:desktop,mobile',
             'provider' => 'required|string|in:'.implode(',', array_keys($availableProviders)),
             'model' => 'required|string|max:255',
+            'max_steps' => 'required|integer|min:'.$minSteps.'|max:'.$maxStepsLimit,
         ]);
 
         $startUrl = $data['start_url'] ?: $app->current_url;
@@ -50,7 +53,7 @@ class NativeRunController extends Controller
             'session_status' => 'queued',
             'session_external_id' => (string) Str::uuid(),
             'run_config' => [
-                'max_steps' => (int) config('victory_games.native_runs.max_steps', 8),
+                'max_steps' => (int) $data['max_steps'],
                 'loop_detection_window' => (int) config('victory_games.native_runs.loop_detection_window', 10),
                 'loop_detection_rules' => config('victory_games.native_runs.loop_detection_rules', []),
             ],

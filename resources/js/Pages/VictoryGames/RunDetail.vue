@@ -24,6 +24,7 @@ const liveApp = ref(props.app);
 const liveVictor = ref(props.victor);
 const liveSteps = ref(props.steps ?? []);
 const liveLogs = ref(props.logs ?? []);
+const liveCanDelete = ref(props.canDelete);
 const liveCanAssignApp = ref(props.canAssignApp);
 const liveCanStop = ref(props.canStop);
 const liveAssignableApps = ref(props.assignableApps ?? []);
@@ -50,6 +51,10 @@ watch(() => props.steps, (steps) => {
 
 watch(() => props.logs, (logs) => {
     liveLogs.value = logs ?? [];
+}, { immediate: true });
+
+watch(() => props.canDelete, (canDelete) => {
+    liveCanDelete.value = canDelete;
 }, { immediate: true });
 
 watch(() => props.canAssignApp, (canAssignApp) => {
@@ -207,6 +212,7 @@ async function pollStatus() {
         liveVictor.value = payload.victor;
         liveSteps.value = payload.steps ?? [];
         liveLogs.value = payload.logs ?? [];
+        liveCanDelete.value = Boolean(payload.canDelete);
         liveCanAssignApp.value = Boolean(payload.canAssignApp);
         liveCanStop.value = Boolean(payload.canStop);
         liveAssignableApps.value = payload.assignableApps ?? [];
@@ -333,7 +339,7 @@ onUnmounted(() => {
                 </button>
 
                 <button
-                    v-if="canDelete && !isActiveRun"
+                    v-if="liveCanDelete && !isActiveRun"
                     type="button"
                     @click="deleteRun"
                     class="rounded-lg border border-theme-danger/40 px-3 py-1.5 text-xs font-medium text-theme-danger transition hover:bg-theme-danger/10"
