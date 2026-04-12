@@ -398,6 +398,11 @@ class NativeAiuxRunner
             'Mode: '.($entry->app_mode ?: config('victory_games.native_runs.default_mode', 'desktop')),
             'Current URL: '.($state['current_url'] ?: 'unknown'),
             'Current step: '.(string) $state['current_step'],
+            'Max steps: '.(string) ($state['max_steps'] ?? config('victory_games.native_runs.max_steps', 12)),
+            'Remaining step budget: '.(string) max(
+                0,
+                ((int) ($state['max_steps'] ?? config('victory_games.native_runs.max_steps', 12))) - ((int) ($state['current_step'] ?? 0))
+            ),
             'Memory: '.json_encode($state['memory'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             'Recent action history:',
             $this->formatHistory($state['action_history']),
