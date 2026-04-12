@@ -50,7 +50,7 @@ TEXT;
                 'fail',
                 'give_up',
             ])->required(),
-            'params' => $schema->object(fn (JsonSchema $schema) => [
+            'params' => $schema->object(fn ($schema) => [
                 'url' => $schema->string(),
                 'script' => $schema->string(),
                 'summary' => $schema->string(),
