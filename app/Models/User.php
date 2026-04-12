@@ -98,4 +98,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(Contributor::class);
     }
+
+    public function victoryGamesVictor(): HasOne
+    {
+        return $this->hasOne(VictoryGamesVictor::class, 'user_id');
+    }
 }

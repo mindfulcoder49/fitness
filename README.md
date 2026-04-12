@@ -1,61 +1,97 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Vibecode International
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Laravel 12 application for Vibecode International, including the Victory Games surface and a queued native AIUX runner built with the Laravel AI SDK and Playwright PHP.
 
-## About Laravel
+## Local Setup
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+```
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+For native AIUX work, also install the Playwright runtime:
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```bash
+php artisan victory-games:install-browser-runtime
+```
 
-## Learning Laravel
+Run the app locally:
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```bash
+composer dev
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+Or start processes separately:
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+php artisan serve
+php artisan queue:work
+npm run dev
+```
 
-## Laravel Sponsors
+## Local Verification
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Quick verification:
 
-### Premium Partners
+```bash
+./scripts/local-check.sh quick
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Full verification:
 
-## Contributing
+```bash
+./scripts/local-check.sh full
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+`full` mode attempts the Laravel test suite and expects a working local database configuration.
 
-## Code of Conduct
+## Production Deploy
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+This app is deployed to the same Hostinger account as the Boston project under `vibecodeinternational.com`.
 
-## Security Vulnerabilities
+Use the local wrappers:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+./scripts/prod-preflight.sh
+./scripts/deploy-hostinger.sh
+./scripts/prod-smoke.sh
+```
 
-## License
+Useful remote Artisan access:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+./scripts/prod-artisan.sh about
+./scripts/prod-artisan.sh route:list --path=victory-games
+```
+
+## Important Production Notes
+
+As of April 11, 2026:
+
+- the default Hostinger shell `php` is still `8.2.30`
+- PHP `8.3.30` is available at `/opt/alt/php83/usr/bin/php`
+- deploy and Artisan flows for this repo must use the PHP 8.3 binary explicitly
+- production `.env` currently has no `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY`
+
+So the code can be deployed with the PHP 8.3 CLI, but real native AIUX agent runs still need a provider key to be configured first.
+
+## Analytics Tooling
+
+Local-only analytics tooling lives in [tools/analytics](tools/analytics/README.md) and supports:
+
+- GA4 smoke tests and ad hoc reports
+- Search Console queries and sitemap submission
+- local credential handling without putting Google credentials on Hostinger
+
+Founder-action queue tooling lives in [tools/exoskeleton](tools/exoskeleton/README.md).
+
+## Ops Docs
+
+- [AGENTS.md](AGENTS.md)
+- [CLAUDE.md](CLAUDE.md)
+- [docs/ops/OPERATING_SYSTEM.md](docs/ops/OPERATING_SYSTEM.md)
+- [docs/ops/backend-administration.md](docs/ops/backend-administration.md)
+- [docs/ops/analytics.md](docs/ops/analytics.md)

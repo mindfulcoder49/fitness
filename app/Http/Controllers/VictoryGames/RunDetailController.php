@@ -3,105 +3,28 @@
 namespace App\Http\Controllers\VictoryGames;
 
 use App\Http\Controllers\Controller;
-use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesEntry;
-use App\Models\VictoryGamesVictor;
+use App\Support\VictoryGames\RunDetailDataBuilder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class RunDetailController extends Controller
 {
-    public function show(VictoryGamesEntry $entry)
+    public function __construct(private readonly RunDetailDataBuilder $runDetailDataBuilder) {}
+
+    public function show(Request $request, VictoryGamesEntry $entry)
     {
-        $entry->load(['competition', 'victor', 'steps']);
-
-        $steps = $entry->steps->map(fn ($step) => [
-            'id'             => $step->id,
-            'step_number'    => $step->step_number,
-            'action_type'    => $step->action_type,
-            'action_params'  => $step->action_params,
-            'intent'         => $step->intent,
-            'reasoning'      => $step->reasoning,
-            'action_result'  => $step->action_result,
-            'success'        => $step->success,
-            'error_message'  => $step->error_message,
-            'page_url'       => $step->page_url,
-            'screenshot_url' => $step->screenshot_url,
-            'timestamp'      => $step->timestamp,
-        ]);
-
-        $entry->load(['competition', 'victor', 'app', 'steps']);
-
-        $user = auth()->user();
-        $authVictor = $user ? VictoryGamesVictor::where('user_id', $user->id)->first() : null;
-        $canDelete = $user && (
-            $user->is_admin
-            || ($entry->competition_id === null && $entry->victor && $entry->victor->user_id === $user->id)
-        );
-        $canAssignApp = $user && (
-            $user->is_admin
-            || ($authVictor && $entry->victor_id === $authVictor->id)
-        );
-
-        $assignableApps = collect();
-
-        if ($canAssignApp) {
-            $assignableApps = $user->is_admin
-                ? VictoryGamesApp::orderBy('name')->get(['id', 'slug', 'name'])
-                : $authVictor->apps()->orderBy('name')->get(['victory_games_apps.id', 'victory_games_apps.slug', 'victory_games_apps.name']);
-        }
-
-        return Inertia::render('VictoryGames/RunDetail', [
-            'entry' => [
-                'id'              => $entry->id,
-                'app_url'         => $entry->app_url,
-                'app_hostname'    => $entry->appHostname(),
-                'app_goal'        => $entry->app_goal,
-                'app_mode'        => $entry->app_mode,
-                'session_provider'=> $entry->session_provider,
-                'session_model'   => $entry->session_model,
-                'placement'       => $entry->placement,
-                'placement_label' => $entry->placementLabel(),
-                'submission_note' => $entry->submission_note,
-                'entry_profile'   => $entry->entry_profile,
-                'postmortem'      => [
-                    'run_analysis'    => $entry->postmortem_run_analysis,
-                    'html_analysis'   => $entry->postmortem_html_analysis,
-                    'recommendations' => $entry->postmortem_recommendations,
-                ],
-                'competition_id'  => $entry->competition_id,
-            ],
-            'canDelete' => $canDelete,
-            'canAssignApp' => $canAssignApp,
-            'competition' => $entry->competition ? [
-                'id'   => $entry->competition->id,
-                'slug' => $entry->competition->slug,
-                'name' => $entry->competition->name,
-            ] : null,
-            'app' => $entry->app ? [
-                'id'   => $entry->app->id,
-                'slug' => $entry->app->slug,
-                'name' => $entry->app->name,
-            ] : null,
-            'victor' => $entry->victor ? [
-                'slug'         => $entry->victor->slug,
-                'display_name' => $entry->victor->display_name,
-                'avatar_url'   => $entry->victor->avatar_url,
-            ] : null,
-            'assignableApps' => $assignableApps
-                ->map(fn ($app) => [
-                    'id' => $app->id,
-                    'slug' => $app->slug,
-                    'name' => $app->name,
-                ])
-                ->values(),
-            'steps' => $steps,
-        ]);
+        return Inertia::render('VictoryGames/RunDetail', $this->runDetailDataBuilder->build($entry, $request->user()));
     }
 
     public function destroy(VictoryGamesEntry $entry)
     {
         $user = auth()->user();
+
+        if ($entry->run_origin === 'native' && in_array($entry->session_status, ['queued', 'running', 'analyzing'], true)) {
+            abort(403, 'Stop the active native run before deleting it.');
+        }
 
         if ($user->is_admin) {
             // Admin can delete any run
@@ -113,10 +36,9 @@ class RunDetailController extends Controller
 
         $victorSlug = $entry->victor?->slug;
 
-        // Clean up stored screenshots
         Storage::disk('public')->deleteDirectory("victory-games/screenshots/{$entry->id}");
 
-        $entry->delete(); // steps cascade
+        $entry->delete();
 
         if ($victorSlug) {
             return redirect()->route('victory-games.victors.show', $victorSlug)

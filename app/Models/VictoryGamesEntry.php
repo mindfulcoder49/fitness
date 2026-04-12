@@ -11,16 +11,20 @@ class VictoryGamesEntry extends Model
     protected $table = 'victory_games_entries';
 
     protected $fillable = [
-        'competition_id', 'app_id', 'victor_id', 'external_entry_id', 'external_user_id',
+        'competition_id', 'app_id', 'victor_id', 'started_by_user_id', 'external_entry_id', 'external_user_id',
+        'run_origin',
         'app_url', 'app_goal', 'app_mode', 'session_provider', 'session_model',
-        'session_status', 'session_external_id', 'submission_note', 'placement',
+        'session_status', 'session_external_id', 'run_config', 'end_reason', 'submission_note', 'placement',
         'entry_profile', 'postmortem_run_analysis', 'postmortem_html_analysis',
-        'postmortem_recommendations', 'submitted_at',
+        'postmortem_recommendations', 'submitted_at', 'started_at', 'completed_at',
     ];
 
     protected $casts = [
         'entry_profile' => 'array',
+        'run_config' => 'array',
         'submitted_at'  => 'datetime',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function competition(): BelongsTo
@@ -33,6 +37,11 @@ class VictoryGamesEntry extends Model
         return $this->belongsTo(VictoryGamesVictor::class, 'victor_id');
     }
 
+    public function startedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'started_by_user_id');
+    }
+
     public function app(): BelongsTo
     {
         return $this->belongsTo(VictoryGamesApp::class, 'app_id');
@@ -41,6 +50,21 @@ class VictoryGamesEntry extends Model
     public function steps(): HasMany
     {
         return $this->hasMany(VictoryGamesRunStep::class, 'entry_id')->orderBy('step_number');
+    }
+
+    public function logs(): HasMany
+    {
+        return $this->hasMany(VictoryGamesEntryLog::class, 'entry_id')->orderBy('id');
+    }
+
+    public function htmlCaptures(): HasMany
+    {
+        return $this->hasMany(VictoryGamesEntryHtmlCapture::class, 'entry_id')->orderBy('step_number');
+    }
+
+    public function memoryItems(): HasMany
+    {
+        return $this->hasMany(VictoryGamesEntryMemory::class, 'entry_id')->orderBy('memory_key');
     }
 
     public function placementLabel(): ?string

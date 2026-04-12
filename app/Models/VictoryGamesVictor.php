@@ -24,6 +24,20 @@ class VictoryGamesVictor extends Model
         return Str::random(64);
     }
 
+    public static function generateSlug(string $displayName): string
+    {
+        $base = Str::slug($displayName) ?: 'victor';
+        $slug = $base;
+        $index = 2;
+
+        while (static::where('slug', $slug)->exists()) {
+            $slug = "{$base}-{$index}";
+            $index++;
+        }
+
+        return $slug;
+    }
+
     protected $appends = ['avatar_url'];
 
     protected $casts = [

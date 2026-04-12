@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesEntry;
 use App\Models\VictoryGamesVictor;
+use Illuminate\Support\Arr;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,13 +20,18 @@ class AppController extends Controller
 
         $authUser   = auth()->user();
         $authVictor = $authUser ? VictoryGamesVictor::where('user_id', $authUser->id)->first() : null;
-        $canEdit    = $authVictor && ($app->isOwnedBy($authVictor) || ($authUser && $authUser->is_admin));
+        $canEdit    = (($authVictor && $app->isOwnedBy($authVictor)) || ($authUser && $authUser->is_admin));
+        $canRun     = ($authVictor && ($app->isMember($authVictor) || ($authUser && $authUser->is_admin)));
 
         $entries = $app->entries()
             ->with(['competition', 'steps'])
             ->orderByDesc('submitted_at')
             ->get()
             ->map(fn ($e) => $this->serializeEntry($e));
+
+        $availableProviders = $this->availableRunProviders();
+        $defaultProviderKey = array_key_first($availableProviders);
+        $defaultProvider = $defaultProviderKey ? $availableProviders[$defaultProviderKey] : null;
 
         return Inertia::render('VictoryGames/App', [
             'app' => [
@@ -44,6 +50,20 @@ class AppController extends Controller
             ],
             'entries' => $entries,
             'canEdit' => $canEdit,
+            'nativeRun' => [
+                'canStart' => $canRun && !empty($availableProviders),
+                'providers' => array_values(array_map(fn (string $key, array $provider) => [
+                    'key' => $key,
+                    'label' => Arr::get($provider, 'label', ucfirst($key)),
+                    'default_model' => Arr::get($provider, 'default_model'),
+                ], array_keys($availableProviders), $availableProviders)),
+                'defaults' => [
+                    'start_url' => $app->current_url,
+                    'mode' => config('victory_games.native_runs.default_mode', 'desktop'),
+                    'provider' => $defaultProviderKey,
+                    'model' => $defaultProvider ? Arr::get($defaultProvider, 'default_model') : '',
+                ],
+            ],
         ]);
     }
 
@@ -187,6 +207,10 @@ class AppController extends Controller
             'entry_profile'   => $entry->entry_profile,
             'step_count'      => $entry->steps->count(),
             'submitted_at'    => $entry->submitted_at?->toISOString(),
+            'run_origin'      => $entry->run_origin,
+            'session_status'  => $entry->session_status,
+            'started_at'      => $entry->started_at?->toISOString(),
+            'completed_at'    => $entry->completed_at?->toISOString(),
             'competition'     => $entry->competition ? [
                 'id'      => $entry->competition->id,
                 'slug'    => $entry->competition->slug,
@@ -194,5 +218,12 @@ class AppController extends Controller
                 'held_at' => $entry->competition->held_at?->toISOString(),
             ] : null,
         ];
+    }
+
+    private function availableRunProviders(): array
+    {
+        return collect(config('victory_games.native_runs.providers', []))
+            ->filter(fn (array $provider) => (bool) Arr::get($provider, 'enabled'))
+            ->all();
     }
 }

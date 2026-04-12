@@ -1,27 +1,37 @@
 <script setup>
-import { ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
 
 const props = defineProps({
-    app:     Object,
+    app: Object,
     entries: Array,
     canEdit: Boolean,
+    nativeRun: Object,
 });
 
-const editing       = ref(false);
-const addingMember  = ref(false);
+const editing = ref(false);
+const addingMember = ref(false);
+const showingRunForm = ref(Boolean(props.nativeRun?.canStart && props.entries.length === 0));
 
 const editForm = useForm({
-    _method:     'patch',
-    name:        props.app.name,
+    _method: 'patch',
+    name: props.app.name,
     description: props.app.description ?? '',
     current_url: props.app.current_url ?? '',
 });
 
 const memberForm = useForm({ victor_slug: '' });
+const providerOptions = computed(() => props.nativeRun?.providers ?? []);
+const runForm = useForm({
+    goal: '',
+    start_url: props.nativeRun?.defaults?.start_url ?? props.app.current_url ?? '',
+    mode: props.nativeRun?.defaults?.mode ?? 'desktop',
+    provider: props.nativeRun?.defaults?.provider ?? providerOptions.value[0]?.key ?? '',
+    model: props.nativeRun?.defaults?.model ?? providerOptions.value[0]?.default_model ?? '',
+});
 
 function submitEdit() {
     editForm.post(route('victory-games.apps.update', props.app.slug), {
@@ -40,11 +50,42 @@ function removeMember(victorSlug) {
     useForm({}).delete(route('victory-games.apps.members.remove', [props.app.slug, victorSlug]));
 }
 
+watch(() => runForm.provider, (providerKey) => {
+    const selectedProvider = providerOptions.value.find((provider) => provider.key === providerKey);
+
+    if (selectedProvider) {
+        runForm.model = selectedProvider.default_model ?? '';
+    }
+}, { immediate: true });
+
+function submitRun() {
+    runForm.post(route('victory-games.apps.runs.store', props.app.slug), {
+        preserveScroll: true,
+    });
+}
+
 const placementEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
+const statusColors = {
+    queued: 'bg-slate-500/10 text-slate-300',
+    running: 'bg-blue-500/10 text-blue-300',
+    analyzing: 'bg-amber-500/10 text-amber-300',
+    completed: 'bg-green-500/10 text-green-300',
+    failed: 'bg-red-500/10 text-red-300',
+    stopped: 'bg-zinc-500/10 text-zinc-300',
+    loop_detected: 'bg-orange-500/10 text-orange-300',
+};
 
 function formatDate(d) {
     if (!d) return '';
     return new Date(d).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+function formatStatus(status) {
+    return status ? status.replaceAll('_', ' ') : 'unknown';
+}
+
+function statusBadgeClass(status) {
+    return statusColors[status] ?? 'bg-theme-elevated text-theme-text-muted';
 }
 </script>
 
@@ -144,6 +185,115 @@ function formatDate(d) {
             </form>
         </div>
 
+        <div class="mb-8 rounded-xl border border-theme-border bg-theme-card p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-theme-text-primary">Native AIUX Testing</h2>
+                    <p class="mt-1 text-sm text-theme-text-secondary">
+                        Queue a Playwright PHP browser run driven by the Laravel AI SDK. Workers execute the test in the background and stream progress to the run page.
+                    </p>
+                </div>
+                <button
+                    v-if="nativeRun.canStart"
+                    type="button"
+                    @click="showingRunForm = !showingRunForm"
+                    class="rounded-lg border border-theme-border px-3 py-1.5 text-xs font-medium text-theme-text-muted transition hover:border-theme-accent hover:text-theme-accent"
+                >
+                    {{ showingRunForm ? 'Hide form' : 'New native run' }}
+                </button>
+            </div>
+
+            <form v-if="nativeRun.canStart && showingRunForm" @submit.prevent="submitRun" class="mt-5 space-y-4">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Goal</label>
+                    <textarea
+                        v-model="runForm.goal"
+                        rows="3"
+                        required
+                        placeholder="Describe what the agent should try to achieve."
+                        class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                    />
+                    <p v-if="runForm.errors.goal" class="mt-1 text-xs text-danger">{{ runForm.errors.goal }}</p>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Start URL</label>
+                    <input
+                        v-model="runForm.start_url"
+                        type="url"
+                        placeholder="https://example.com"
+                        class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                    />
+                    <p class="mt-1 text-xs text-theme-text-muted">Leave this as the app URL if the test should begin on the current homepage.</p>
+                    <p v-if="runForm.errors.start_url" class="mt-1 text-xs text-danger">{{ runForm.errors.start_url }}</p>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Mode</label>
+                        <select
+                            v-model="runForm.mode"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        >
+                            <option value="desktop">Desktop</option>
+                            <option value="mobile">Mobile</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Provider</label>
+                        <select
+                            v-model="runForm.provider"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        >
+                            <option v-for="provider in providerOptions" :key="provider.key" :value="provider.key">
+                                {{ provider.label }}
+                            </option>
+                        </select>
+                        <p v-if="runForm.errors.provider" class="mt-1 text-xs text-danger">{{ runForm.errors.provider }}</p>
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Model</label>
+                        <input
+                            v-model="runForm.model"
+                            type="text"
+                            required
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        />
+                        <p v-if="runForm.errors.model" class="mt-1 text-xs text-danger">{{ runForm.errors.model }}</p>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button
+                        type="submit"
+                        :disabled="runForm.processing"
+                        class="rounded-lg bg-theme-btn-primary px-4 py-2 text-sm font-semibold text-theme-btn-primary-text transition hover:bg-theme-btn-primary-hover disabled:opacity-50"
+                    >
+                        Queue Native Run
+                    </button>
+                    <button
+                        type="button"
+                        @click="showingRunForm = false"
+                        class="rounded-lg border border-theme-border px-4 py-2 text-sm text-theme-text-secondary transition hover:text-theme-text-primary"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+
+            <div v-else-if="!nativeRun.providers.length" class="mt-5 rounded-lg bg-theme-elevated px-4 py-3 text-sm text-theme-text-muted">
+                Native runs are unavailable because no AI providers are configured for this environment.
+            </div>
+
+            <div v-else-if="$page.props.auth?.user" class="mt-5 rounded-lg bg-theme-elevated px-4 py-3 text-sm text-theme-text-muted">
+                Native runs are available to this app’s team members. Create your own victor profile and app if you want to run tests independently.
+            </div>
+
+            <div v-else class="mt-5 rounded-lg bg-theme-elevated px-4 py-3 text-sm text-theme-text-muted">
+                Log in to create a victor profile, make an app, and queue native AIUX runs.
+            </div>
+        </div>
+
         <!-- Run history -->
         <div>
             <h2 class="text-xl font-bold text-theme-text-primary mb-4">Run History</h2>
@@ -170,6 +320,19 @@ function formatDate(d) {
                                 <span class="text-xs text-theme-text-faint">{{ formatDate(entry.submitted_at) }}</span>
                             </div>
 
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="rounded-full bg-theme-elevated px-2 py-0.5 text-theme-text-muted">
+                                    {{ entry.run_origin === 'native' ? 'Native AIUX' : 'AIUXTester import' }}
+                                </span>
+                                <span
+                                    v-if="entry.session_status"
+                                    class="rounded-full px-2 py-0.5 capitalize"
+                                    :class="statusBadgeClass(entry.session_status)"
+                                >
+                                    {{ formatStatus(entry.session_status) }}
+                                </span>
+                            </div>
+
                             <div class="mt-1 text-sm text-theme-text-secondary truncate" :title="entry.app_url">
                                 {{ entry.app_hostname }}
                             </div>
@@ -191,7 +354,7 @@ function formatDate(d) {
             </div>
 
             <div v-else class="text-center py-12 text-theme-text-muted">
-                No runs yet. Export a session from AIUXTester to get started.
+                {{ nativeRun.canStart ? 'No runs yet. Queue a native run above or import one from AIUXTester.' : 'No runs yet. Export a session from AIUXTester to get started.' }}
             </div>
         </div>
 

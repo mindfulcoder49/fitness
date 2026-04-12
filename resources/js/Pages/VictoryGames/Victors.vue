@@ -1,14 +1,35 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import MagazineLayout from '@/Layouts/MagazineLayout.vue';
 
 defineOptions({ layout: MagazineLayout });
 
-defineProps({
+const props = defineProps({
     victors: Array,
+    authVictor: Object,
+});
+
+const page = usePage();
+const createProfileOpen = ref(false);
+const createProfileForm = useForm({
+    display_name: page.props.auth?.user?.name ?? '',
+    bio: '',
+    github_url: '',
+    website_url: '',
+    twitter_url: '',
 });
 
 const placementEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
+
+function submitCreateProfile() {
+    createProfileForm.post(route('victory-games.victors.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            createProfileOpen.value = false;
+        },
+    });
+}
 </script>
 
 <template>
@@ -26,6 +47,113 @@ const placementEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
         <div class="mb-10">
             <h1 class="text-3xl font-extrabold text-theme-text-primary">Our Victors</h1>
             <p class="mt-2 text-theme-text-secondary">Builders who competed in the VibeCode Victory Games.</p>
+        </div>
+
+        <div
+            v-if="$page.props.auth?.user && !props.authVictor"
+            class="mb-8 rounded-2xl border border-theme-border bg-theme-card p-6"
+        >
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-theme-text-primary">Create Your Victor Profile</h2>
+                    <p class="mt-1 text-sm text-theme-text-secondary">
+                        You need a victor profile before you can make an app and queue native AIUX tests.
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    @click="createProfileOpen = !createProfileOpen"
+                    class="rounded-lg border border-theme-border px-3 py-1.5 text-xs font-medium text-theme-text-muted transition hover:border-theme-accent hover:text-theme-accent"
+                >
+                    {{ createProfileOpen ? 'Close' : 'Create profile' }}
+                </button>
+            </div>
+
+            <form v-if="createProfileOpen" @submit.prevent="submitCreateProfile" class="mt-5 space-y-4">
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Display Name</label>
+                    <input
+                        v-model="createProfileForm.display_name"
+                        type="text"
+                        required
+                        class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                    />
+                    <p v-if="createProfileForm.errors.display_name" class="mt-1 text-xs text-danger">{{ createProfileForm.errors.display_name }}</p>
+                </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Bio</label>
+                    <textarea
+                        v-model="createProfileForm.bio"
+                        rows="3"
+                        class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                    />
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">GitHub URL</label>
+                        <input
+                            v-model="createProfileForm.github_url"
+                            type="url"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Website URL</label>
+                        <input
+                            v-model="createProfileForm.website_url"
+                            type="url"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        />
+                    </div>
+                    <div>
+                        <label class="mb-1 block text-sm font-medium text-theme-text-secondary">Twitter/X URL</label>
+                        <input
+                            v-model="createProfileForm.twitter_url"
+                            type="url"
+                            class="w-full rounded-lg border border-theme-border bg-theme-input px-3 py-2 text-sm text-theme-text-primary focus:outline-none focus:ring-2 focus:ring-theme-accent-ring"
+                        />
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button
+                        type="submit"
+                        :disabled="createProfileForm.processing"
+                        class="rounded-lg bg-theme-btn-primary px-4 py-2 text-sm font-semibold text-theme-btn-primary-text transition hover:bg-theme-btn-primary-hover disabled:opacity-50"
+                    >
+                        Create Victor Profile
+                    </button>
+                    <button
+                        type="button"
+                        @click="createProfileOpen = false"
+                        class="rounded-lg border border-theme-border px-4 py-2 text-sm text-theme-text-secondary transition hover:text-theme-text-primary"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div
+            v-else-if="props.authVictor"
+            class="mb-8 rounded-2xl border border-theme-border bg-theme-card p-6"
+        >
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-theme-text-primary">Your Victor Profile</h2>
+                    <p class="mt-1 text-sm text-theme-text-secondary">
+                        {{ props.authVictor.display_name }} is ready. Create an app from your profile to start queued native AIUX runs.
+                    </p>
+                </div>
+                <Link
+                    :href="route('victory-games.victors.show', props.authVictor.slug)"
+                    class="rounded-lg border border-theme-border px-3 py-1.5 text-xs font-medium text-theme-text-muted transition hover:border-theme-accent hover:text-theme-accent"
+                >
+                    View profile
+                </Link>
+            </div>
         </div>
 
         <div v-if="victors.length" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

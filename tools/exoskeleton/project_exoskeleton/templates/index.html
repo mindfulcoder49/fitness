@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Founder Action Queue</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f5f2eb;
+            --panel: #fffdf8;
+            --ink: #1c1a16;
+            --muted: #6c6458;
+            --line: #d8cfbf;
+            --accent: #b34d2e;
+            --accent-soft: #f3dfd6;
+            --success: #2c6e49;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            background: radial-gradient(circle at top, #fff7eb 0%, var(--bg) 58%);
+            color: var(--ink);
+        }
+        .shell {
+            max-width: 1120px;
+            margin: 0 auto;
+            padding: 32px 20px 56px;
+        }
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            align-items: end;
+            margin-bottom: 28px;
+        }
+        h1 {
+            margin: 0 0 8px;
+            font-size: 2.2rem;
+            line-height: 1;
+        }
+        .subtle {
+            color: var(--muted);
+            margin: 0;
+        }
+        .card {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 10px 28px rgba(28, 26, 22, 0.06);
+        }
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        input, select, button {
+            width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            padding: 10px 12px;
+            font: inherit;
+            background: white;
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            vertical-align: top;
+            padding: 14px 10px;
+            border-bottom: 1px solid var(--line);
+        }
+        th {
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .pill {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-size: 0.8rem;
+        }
+        .pill.done {
+            background: #dcefe4;
+            color: var(--success);
+        }
+        .actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .link {
+            color: var(--accent);
+            text-decoration: none;
+        }
+        .tiny {
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+        .empty {
+            padding: 28px 8px 8px;
+            color: var(--muted);
+        }
+        @media (max-width: 860px) {
+            .filters {
+                grid-template-columns: 1fr;
+            }
+            .hero {
+                flex-direction: column;
+                align-items: start;
+            }
+            table, thead, tbody, tr, th, td {
+                display: block;
+            }
+            thead {
+                display: none;
+            }
+            tr {
+                border-bottom: 1px solid var(--line);
+                padding: 10px 0;
+            }
+            td {
+                border: 0;
+                padding: 6px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <div class="hero">
+            <div>
+                <h1>Founder Action Queue</h1>
+                <p class="subtle">Local exoskeleton queue for approval-required and founder-executed work.</p>
+            </div>
+            <div class="card tiny">
+                <div><strong>Project:</strong> {{ project_slug }}</div>
+                <div><strong>Default project:</strong> {{ default_project_slug }}</div>
+            </div>
+        </div>
+
+        <form class="card filters" method="get" action="/">
+            <div>
+                <label for="project_slug">Project Slug</label>
+                <input id="project_slug" name="project_slug" value="{{ project_slug }}">
+            </div>
+            <div>
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {% for value in ["open", "in_progress", "done", "canceled", "all"] %}
+                    <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="task_type">Task Type</label>
+                <select id="task_type" name="task_type">
+                    {% for value in ["all", "founder_required", "founder_review", "recommended"] %}
+                    <option value="{{ value }}" {% if task_type_filter == value %}selected{% endif %}>{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display:flex;align-items:end;">
+                <button type="submit">Apply Filters</button>
+            </div>
+        </form>
+
+        <div class="card">
+            {% if tasks %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>System</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>
+                            <div><a class="link" href="/tasks/{{ task.id }}">{{ task.title }}</a></div>
+                            <div class="tiny">{{ task.id }}</div>
+                            {% if task.success_criteria %}
+                            <div class="tiny">Success: {{ task.success_criteria }}</div>
+                            {% endif %}
+                        </td>
+                        <td><span class="pill">{{ task.task_type }}</span></td>
+                        <td>{{ task.priority }}</td>
+                        <td>{{ task.external_system or "—" }}</td>
+                        <td>
+                            <span class="pill {% if task.status == 'done' %}done{% endif %}">{{ task.status }}</span>
+                        </td>
+                        <td>
+                            <div class="actions">
+                                {% if task.status != "done" %}
+                                <form method="post" action="/tasks/{{ task.id }}/complete?status_filter={{ status_filter }}&task_type_filter={{ task_type_filter }}&project_slug={{ project_slug }}">
+                                    <button type="submit">Mark Done</button>
+                                </form>
+                                {% else %}
+                                <span class="tiny">Completed {{ task.completed_at }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty">No matching tasks.</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

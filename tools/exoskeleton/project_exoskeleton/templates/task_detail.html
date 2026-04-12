@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ task.title }}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Georgia, "Times New Roman", serif;
+            background: #f5f2eb;
+            color: #1c1a16;
+        }
+        .shell {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 28px 20px 48px;
+        }
+        .link {
+            color: #b34d2e;
+            text-decoration: none;
+        }
+        .card {
+            background: #fffdf8;
+            border: 1px solid #d8cfbf;
+            border-radius: 16px;
+            padding: 18px;
+            margin-top: 16px;
+        }
+        pre {
+            margin: 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: "SFMono-Regular", Consolas, monospace;
+            font-size: 0.92rem;
+        }
+        .meta {
+            color: #6c6458;
+        }
+        .copy-block {
+            margin: 0;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .copy-button {
+            border: 1px solid #d8cfbf;
+            background: #f8f3e8;
+            color: #1c1a16;
+            border-radius: 999px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font: inherit;
+        }
+        .copy-button:hover {
+            background: #efe6d6;
+        }
+        .copy-area {
+            width: 100%;
+            min-height: 320px;
+            box-sizing: border-box;
+            padding: 14px;
+            border: 1px solid #d8cfbf;
+            border-radius: 12px;
+            background: #fff;
+            color: #1c1a16;
+            font: inherit;
+            line-height: 1.5;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <a class="link" href="/">← Back to queue</a>
+        <div class="card">
+            <h1>{{ task.title }}</h1>
+            <p class="meta">{{ task.id }} · {{ task.status }} · {{ task.task_type }} · {{ task.priority }}</p>
+            <div class="section-header">
+                <p><strong>Action</strong></p>
+                <button class="copy-button" type="button" onclick="copyTaskAction(this)">Copy action</button>
+            </div>
+            <textarea id="action-text" class="copy-area" readonly>{{ task.action_text }}</textarea>
+            {% if task.success_criteria %}
+            <p><strong>Success criteria</strong></p>
+            <p class="copy-block">{{ task.success_criteria }}</p>
+            {% endif %}
+            {% if task.blocking_reason %}
+            <p><strong>Why this is blocked</strong></p>
+            <p class="copy-block">{{ task.blocking_reason }}</p>
+            {% endif %}
+            {% if task.external_system %}
+            <p><strong>External system:</strong> {{ task.external_system }}</p>
+            {% endif %}
+            {% if task.source %}
+            <p><strong>Source:</strong> {{ task.source }}</p>
+            {% endif %}
+        </div>
+        <div class="card">
+            <h2>Full JSON</h2>
+            <pre>{{ task_json }}</pre>
+        </div>
+    </div>
+    <script>
+        function copyTaskAction(button) {
+            const area = document.getElementById("action-text");
+            if (!area) {
+                return;
+            }
+
+            const copyText = area.value;
+            const resetLabel = () => {
+                button.textContent = "Copy action";
+            };
+            const setCopiedLabel = () => {
+                button.textContent = "Copied";
+                window.setTimeout(resetLabel, 1500);
+            };
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(copyText).then(setCopiedLabel, () => {
+                    area.focus();
+                    area.select();
+                    document.execCommand("copy");
+                    setCopiedLabel();
+                });
+                return;
+            }
+
+            area.focus();
+            area.select();
+            document.execCommand("copy");
+            setCopiedLabel();
+        }
+    </script>
+</body>
+</html>

@@ -13,6 +13,8 @@ class VictorController extends Controller
 {
     public function index()
     {
+        $authVictor = auth()->user()?->victoryGamesVictor;
+
         $victors = VictoryGamesVictor::withCount('entries')
             ->orderBy('display_name')
             ->get()
@@ -29,6 +31,11 @@ class VictorController extends Controller
 
         return Inertia::render('VictoryGames/Victors', [
             'victors' => $victors,
+            'authVictor' => $authVictor ? [
+                'id' => $authVictor->id,
+                'slug' => $authVictor->slug,
+                'display_name' => $authVictor->display_name,
+            ] : null,
         ]);
     }
 
@@ -148,6 +155,41 @@ class VictorController extends Controller
 
         return redirect()->route('victory-games.victors.show', $victor->slug)
             ->with('success', 'Profile updated.');
+    }
+
+    public function store(Request $request)
+    {
+        abort_unless(auth()->check(), 401);
+
+        if ($request->user()->victoryGamesVictor) {
+            return redirect()
+                ->route('victory-games.victors.show', $request->user()->victoryGamesVictor)
+                ->with('success', 'You already have a victor profile.');
+        }
+
+        $data = $request->validate([
+            'display_name' => 'required|string|max:255',
+            'bio' => 'nullable|string|max:2000',
+            'github_url' => 'nullable|url|max:255',
+            'website_url' => 'nullable|url|max:255',
+            'twitter_url' => 'nullable|url|max:255',
+        ]);
+
+        $victor = VictoryGamesVictor::create([
+            'user_id' => $request->user()->id,
+            'email' => $request->user()->email,
+            'claim_token' => VictoryGamesVictor::generateClaimToken(),
+            'slug' => VictoryGamesVictor::generateSlug($data['display_name']),
+            'display_name' => $data['display_name'],
+            'bio' => $data['bio'] ?? null,
+            'github_url' => $data['github_url'] ?? null,
+            'website_url' => $data['website_url'] ?? null,
+            'twitter_url' => $data['twitter_url'] ?? null,
+        ]);
+
+        return redirect()
+            ->route('victory-games.victors.show', $victor)
+            ->with('success', 'Victor profile created.');
     }
 
     /**

@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vci-analytics-tools"
+version = "0.1.0"
+description = "Local GA4 and Search Console tooling for Vibecode International"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Vibecode International Team"}
+]
+dependencies = [
+    "click>=8.1.0,<9.0.0",
+    "google-analytics-admin>=0.27.0,<1.0.0",
+    "google-analytics-data>=0.18.0,<1.0.0",
+    "google-auth>=2.0.0,<3.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "ruff>=0.6.0,<1.0.0",
+]
+
+[project.scripts]
+vci-analytics = "vci_analytics.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["vci_analytics*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

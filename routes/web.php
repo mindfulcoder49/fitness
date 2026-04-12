@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\VictoryGamesAdminController;
 use App\Http\Controllers\VictoryGames\HomeController as VictoryGamesHomeController;
 use App\Http\Controllers\VictoryGames\CompetitionController as VictoryGamesCompetitionController;
 use App\Http\Controllers\VictoryGames\AppController as VictoryGamesAppController;
+use App\Http\Controllers\VictoryGames\NativeRunController;
 use App\Http\Controllers\VictoryGames\VictorController;
 use App\Http\Controllers\VictoryGames\RunDetailController;
 use App\Http\Controllers\VictoryGames\CertificateController;
@@ -200,6 +201,7 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
 
     // Authenticated pages
     Route::middleware('auth')->group(function () {
+        Route::post('/victors', [VictorController::class, 'store'])->name('victors.store');
         Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates');
         Route::patch('/victors/{victor:slug}', [VictorController::class, 'update'])->name('victors.update');
         Route::post('/victors/{victor:slug}/claim', [VictorController::class, 'claim'])->name('victors.claim');
@@ -209,9 +211,13 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
         Route::patch('/apps/{app:slug}', [VictoryGamesAppController::class, 'update'])->name('apps.update');
         Route::post('/apps/{app:slug}/members', [VictoryGamesAppController::class, 'addMember'])->name('apps.members.add');
         Route::delete('/apps/{app:slug}/members/{victor:slug}', [VictoryGamesAppController::class, 'removeMember'])->name('apps.members.remove');
+        Route::post('/apps/{app:slug}/runs', [NativeRunController::class, 'store'])->name('apps.runs.store');
         Route::post('/runs/{entry}/assign-app', [VictoryGamesAppController::class, 'assignRun'])->name('runs.assign-app');
+        Route::post('/runs/{entry}/stop', [NativeRunController::class, 'stop'])->name('runs.stop');
         Route::delete('/runs/{entry}', [RunDetailController::class, 'destroy'])->name('runs.destroy');
     });
+
+    Route::get('/runs/{entry}/status', [NativeRunController::class, 'status'])->name('runs.status');
 });
 
 
