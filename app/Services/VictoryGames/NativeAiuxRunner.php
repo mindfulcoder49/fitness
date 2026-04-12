@@ -59,6 +59,7 @@ class NativeAiuxRunner
             'status' => 'running',
             'end_reason' => null,
             'current_step' => 0,
+            'max_steps' => $this->maxSteps($entry),
             'current_url' => $entry->app_url,
             'current_html' => '',
             'memory' => $entry->memoryItems()->pluck('memory_value', 'memory_key')->all(),
