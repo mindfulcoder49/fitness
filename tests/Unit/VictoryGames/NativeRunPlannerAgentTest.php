@@ -9,6 +9,15 @@ use Tests\TestCase;
 
 class NativeRunPlannerAgentTest extends TestCase
 {
+    public function test_instructions_describe_live_browser_and_javascript_capabilities(): void
+    {
+        $instructions = (string) NativeRunPlannerAgent::make()->instructions();
+
+        $this->assertStringContainsString('live browser page', $instructions);
+        $this->assertStringContainsString('execute_js action runs inside the real page context', $instructions);
+        $this->assertStringContainsString('do not fail or give_up from the initial page state', $instructions);
+    }
+
     public function test_openai_structured_output_schema_requires_all_fields(): void
     {
         $schema = (new ObjectSchema(

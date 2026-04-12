@@ -279,11 +279,26 @@ class NativeAiuxRunner
                 'logs' => $entry->logs()->latest('id')->limit(20)->get(['level', 'message', 'details'])->values(),
             ];
 
-            $runResponse = RunPostmortemAgent::make()->prompt(
-                prompt: json_encode($runFacts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                provider: $entry->session_provider ?: config('ai.default'),
-                model: $entry->session_model,
-                timeout: config('victory_games.native_runs.postmortem_timeout', 120),
+            $provider = $entry->session_provider ?: config('ai.default');
+            $runPrompt = json_encode($runFacts, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+            $runResponse = $this->promptWithTelemetry(
+                $entry,
+                phase: 'run_postmortem',
+                stepNumber: $state['current_step'] ?? null,
+                prompt: $runPrompt,
+                context: [
+                    'provider' => $provider,
+                    'model' => $entry->session_model,
+                    'action_history_count' => count($state['action_history'] ?? []),
+                    'memory_count' => count($state['memory'] ?? []),
+                ],
+                callback: fn () => RunPostmortemAgent::make()->prompt(
+                    prompt: $runPrompt,
+                    provider: $provider,
+                    model: $entry->session_model,
+                    timeout: config('victory_games.native_runs.postmortem_timeout', 120),
+                ),
             );
 
             $pages = $entry->htmlCaptures()
@@ -300,14 +315,27 @@ class NativeAiuxRunner
                 ])
                 ->all();
 
-            $htmlResponse = HtmlPostmortemAgent::make()->prompt(
-                prompt: json_encode([
-                    'goal' => $entry->app_goal,
-                    'pages' => $pages,
-                ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-                provider: $entry->session_provider ?: config('ai.default'),
-                model: $entry->session_model,
-                timeout: config('victory_games.native_runs.postmortem_timeout', 120),
+            $htmlPrompt = json_encode([
+                'goal' => $entry->app_goal,
+                'pages' => $pages,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+            $htmlResponse = $this->promptWithTelemetry(
+                $entry,
+                phase: 'html_postmortem',
+                stepNumber: $state['current_step'] ?? null,
+                prompt: $htmlPrompt,
+                context: [
+                    'provider' => $provider,
+                    'model' => $entry->session_model,
+                    'pages_count' => count($pages),
+                ],
+                callback: fn () => HtmlPostmortemAgent::make()->prompt(
+                    prompt: $htmlPrompt,
+                    provider: $provider,
+                    model: $entry->session_model,
+                    timeout: config('victory_games.native_runs.postmortem_timeout', 120),
+                ),
             );
 
             $entry->forceFill([
@@ -365,8 +393,6 @@ class NativeAiuxRunner
 
     private function planNextAction(VictoryGamesEntry $entry, array $state): array
     {
-        $this->log($entry, 'debug', 'Requesting the next action from the planner agent.', stepNumber: $state['current_step']);
-
         $prompt = implode("\n\n", [
             'Goal: '.$entry->app_goal,
             'Mode: '.($entry->app_mode ?: config('victory_games.native_runs.default_mode', 'desktop')),
@@ -379,14 +405,91 @@ class NativeAiuxRunner
             $state['current_html'],
         ]);
 
-        $response = NativeRunPlannerAgent::make()->prompt(
+        $provider = $entry->session_provider ?: config('ai.default');
+
+        $response = $this->promptWithTelemetry(
+            $entry,
+            phase: 'planner',
+            stepNumber: $state['current_step'],
             prompt: $prompt,
-            provider: $entry->session_provider ?: config('ai.default'),
-            model: $entry->session_model,
-            timeout: config('victory_games.native_runs.planner_timeout', 120),
+            context: [
+                'provider' => $provider,
+                'model' => $entry->session_model,
+                'current_url' => $state['current_url'] ?: 'unknown',
+                'action_history_count' => count($state['action_history'] ?? []),
+                'memory_count' => count($state['memory'] ?? []),
+                'current_html_bytes' => strlen((string) ($state['current_html'] ?? '')),
+            ],
+            callback: fn () => NativeRunPlannerAgent::make()->prompt(
+                prompt: $prompt,
+                provider: $provider,
+                model: $entry->session_model,
+                timeout: config('victory_games.native_runs.planner_timeout', 120),
+            ),
         );
 
         return $this->normalizePlannerDecision($response->toArray());
+    }
+
+    private function promptWithTelemetry(
+        VictoryGamesEntry $entry,
+        string $phase,
+        ?int $stepNumber,
+        string $prompt,
+        array $context,
+        callable $callback,
+    ): mixed {
+        $startedAt = microtime(true);
+
+        $this->log(
+            $entry,
+            'debug',
+            $this->phaseLabel($phase).' prompt started.',
+            $this->encodeLogDetails(array_merge(
+                ['phase' => $phase],
+                $context,
+                $this->runtimeSnapshot($prompt, 'start_'),
+            )),
+            $stepNumber,
+        );
+
+        try {
+            $result = $callback();
+
+            $this->log(
+                $entry,
+                'debug',
+                $this->phaseLabel($phase).' prompt completed.',
+                $this->encodeLogDetails(array_merge(
+                    ['phase' => $phase],
+                    $context,
+                    ['elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000)],
+                    $this->runtimeSnapshot(null, 'end_'),
+                )),
+                $stepNumber,
+            );
+
+            return $result;
+        } catch (\Throwable $exception) {
+            $this->log(
+                $entry,
+                'warning',
+                $this->phaseLabel($phase).' prompt failed.',
+                $this->encodeLogDetails(array_merge(
+                    ['phase' => $phase],
+                    $context,
+                    [
+                        'elapsed_ms' => (int) round((microtime(true) - $startedAt) * 1000),
+                        'exception_class' => $exception::class,
+                        'exception_message' => $exception->getMessage(),
+                    ],
+                    $this->runtimeSnapshot(null, 'end_'),
+                )),
+                $stepNumber,
+            );
+
+            throw $exception;
+        }
     }
 
     private function normalizePlannerDecision(array $decision): array
@@ -760,6 +863,51 @@ class NativeAiuxRunner
             'message' => $message,
             'details' => $details,
         ]);
+    }
+
+    private function encodeLogDetails(array $details): ?string
+    {
+        $payload = array_filter($details, fn (mixed $value): bool => $value !== null);
+
+        if ($payload === []) {
+            return null;
+        }
+
+        return json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: null;
+    }
+
+    private function runtimeSnapshot(?string $prompt = null, string $prefix = ''): array
+    {
+        $details = [
+            $prefix.'fd_count' => $this->openFileDescriptorCount(),
+            $prefix.'memory_bytes' => memory_get_usage(true),
+            $prefix.'memory_mb' => round(memory_get_usage(true) / 1048576, 2),
+            $prefix.'peak_memory_mb' => round(memory_get_peak_usage(true) / 1048576, 2),
+        ];
+
+        if ($prompt !== null) {
+            $details[$prefix.'prompt_bytes'] = strlen($prompt);
+            $details[$prefix.'prompt_lines'] = substr_count($prompt, "\n") + 1;
+        }
+
+        return $details;
+    }
+
+    private function openFileDescriptorCount(): ?int
+    {
+        $descriptors = glob('/proc/self/fd/*');
+
+        return is_array($descriptors) ? count($descriptors) : null;
+    }
+
+    private function phaseLabel(string $phase): string
+    {
+        return match ($phase) {
+            'planner' => 'Planner agent',
+            'run_postmortem' => 'Run postmortem agent',
+            'html_postmortem' => 'HTML postmortem agent',
+            default => ucfirst(str_replace('_', ' ', $phase)),
+        };
     }
 
     private function maxSteps(VictoryGamesEntry $entry): int
