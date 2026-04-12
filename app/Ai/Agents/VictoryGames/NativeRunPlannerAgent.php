@@ -36,6 +36,8 @@ Rules:
 - If the goal is satisfied, use finish with a short findings report.
 - If the run is blocked by a real issue, use fail or give_up with a specific reason.
 - Keep reasoning concrete and brief.
+- Always return every schema field.
+- Set unused action-specific fields to null.
 TEXT;
     }
 
@@ -50,17 +52,15 @@ TEXT;
                 'fail',
                 'give_up',
             ])->required(),
-            'params' => $schema->object(fn ($schema) => [
-                'url' => $schema->string(),
-                'script' => $schema->string(),
-                'summary' => $schema->string(),
-                'reason' => $schema->string(),
-                'key' => $schema->string(),
-                'value' => $schema->string(),
-            ])->required(),
+            'url' => $schema->string()->nullable()->required(),
+            'script' => $schema->string()->nullable()->required(),
+            'summary' => $schema->string()->nullable()->required(),
+            'reason' => $schema->string()->nullable()->required(),
+            'key' => $schema->string()->nullable()->required(),
+            'value' => $schema->string()->nullable()->required(),
             'intent' => $schema->string()->required(),
             'reasoning' => $schema->string()->required(),
-            'last_action_result' => $schema->string(),
+            'last_action_result' => $schema->string()->nullable()->required(),
         ];
     }
 

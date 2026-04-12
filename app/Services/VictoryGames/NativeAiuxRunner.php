@@ -392,7 +392,14 @@ class NativeAiuxRunner
     private function normalizePlannerDecision(array $decision): array
     {
         $action = (string) ($decision['action'] ?? 'fail');
-        $params = is_array($decision['params'] ?? null) ? $decision['params'] : [];
+        $params = [
+            'url' => $decision['url'] ?? null,
+            'script' => $decision['script'] ?? null,
+            'summary' => $decision['summary'] ?? null,
+            'reason' => $decision['reason'] ?? null,
+            'key' => $decision['key'] ?? null,
+            'value' => $decision['value'] ?? null,
+        ];
 
         return match ($action) {
             'navigate' => [
