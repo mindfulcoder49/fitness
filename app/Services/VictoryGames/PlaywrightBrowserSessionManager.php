@@ -42,8 +42,6 @@ class PlaywrightBrowserSessionManager implements BrowserSessionManager
             (int) config('services.playwright.viewport_width', 1440),
             (int) config('services.playwright.viewport_height', 960),
         );
-        $page->setDefaultTimeout((int) config('services.playwright.timeout_ms', 45000));
-        $page->setDefaultNavigationTimeout((int) config('services.playwright.timeout_ms', 45000));
 
         return new PlaywrightBrowserSession(
             $page,
