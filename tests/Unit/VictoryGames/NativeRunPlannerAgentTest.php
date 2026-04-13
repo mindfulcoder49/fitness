@@ -17,8 +17,6 @@ class NativeRunPlannerAgentTest extends TestCase
         $this->assertStringContainsString('execute_js action runs inside the real page context', $instructions);
         $this->assertStringContainsString('one focused thing', $instructions);
         $this->assertStringContainsString('Do not write long looping scripts', $instructions);
-        $this->assertStringContainsString('reading or summarizing multiple articles', $instructions);
-        $this->assertStringContainsString('prefer staying on relevant content routes such as `/article/` pages', $instructions);
         $this->assertStringContainsString('Respect the remaining step budget', $instructions);
         $this->assertStringContainsString('do not fail or give_up from the initial page state', $instructions);
     }

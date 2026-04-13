@@ -951,7 +951,7 @@ class NativeAiuxRunner
     {
         $baseDelay = max(0, (int) config('victory_games.native_runs.prompt_retry_backoff_ms', 500));
 
-        return $baseDelay * (2 ** max(0, $attempt - 1));
+        return $baseDelay * max(1, $attempt);
     }
 
     private function maxSteps(VictoryGamesEntry $entry): int
