@@ -197,6 +197,29 @@ class VictorController extends Controller
             ->with('success', 'Victor profile created.');
     }
 
+    public function destroy(Request $request, VictoryGamesVictor $victor)
+    {
+        $user = $request->user();
+        abort_unless($victor->isOwnedBy($user) || $user->is_admin, 403);
+
+        $isOwnProfile = $victor->isOwnedBy($user);
+        $displayName  = $victor->display_name;
+
+        if ($victor->avatar_path) {
+            Storage::delete($victor->avatar_path);
+        }
+
+        $victor->delete(); // certificates and app pivot rows cascade; entries get victor_id = null
+
+        if ($isOwnProfile) {
+            return redirect()->route('victory-games.home')
+                ->with('success', 'Your Victor profile has been deleted.');
+        }
+
+        return redirect()->route('victory-games.victors')
+            ->with('success', "Victor profile \"{$displayName}\" has been deleted.");
+    }
+
     /**
      * Claim an unclaimed victor profile by matching external_user_id.
      * The user submits their AIUXTester user ID; if it matches an unclaimed profile, it gets linked.

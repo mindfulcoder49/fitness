@@ -73,6 +73,16 @@ function deleteRun(entry) {
     });
 }
 
+function deleteVictor() {
+    if (!confirm(
+        `Delete the Victor profile "${props.victor.display_name}"?\n\n` +
+        'This will permanently remove the profile, all certificates, and app memberships. ' +
+        'Competition runs will remain but be unlinked. This cannot be undone.'
+    )) return;
+
+    router.delete(route('victory-games.victors.destroy', props.victor.slug));
+}
+
 const placementEmoji = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 function formatDate(dateStr) {
@@ -111,6 +121,9 @@ function formatDate(dateStr) {
                     <h1 class="text-2xl font-extrabold text-theme-text-primary">{{ victor.display_name }}</h1>
                     <button v-if="canEdit" @click="editing = true" class="text-xs px-3 py-1 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
                         Edit Profile
+                    </button>
+                    <button v-if="canEdit" @click="deleteVictor" class="text-xs px-3 py-1 rounded border border-theme-border text-theme-text-muted hover:text-theme-danger hover:border-theme-danger transition">
+                        Delete Profile
                     </button>
                     <button v-else-if="!canEdit && $page.props.auth?.user" @click="claimOpen = true" class="text-xs px-3 py-1 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
                         Claim Profile
