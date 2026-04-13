@@ -134,6 +134,11 @@ const victor = page.props.auth?.victor;
                                             Profile
                                         </DropdownLink>
                                         <DropdownLink
+                                            :href="route('help')"
+                                        >
+                                            Help
+                                        </DropdownLink>
+                                        <DropdownLink
                                             :href="route('logout')"
                                             method="post"
                                             as="button"
@@ -276,6 +281,9 @@ const victor = page.props.auth?.victor;
                             </ResponsiveNavLink>
                             <ResponsiveNavLink :href="route('profile.edit')">
                                 Profile
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink :href="route('help')">
+                                Help
                             </ResponsiveNavLink>
                             <ResponsiveNavLink
                                 :href="route('logout')"

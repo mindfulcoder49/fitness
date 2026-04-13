@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\Admin\MagazineArticleController;
 use App\Http\Controllers\Admin\VictoryGamesAppRunImportController;
 use App\Http\Controllers\Admin\VictoryGamesImportController;
@@ -63,6 +64,7 @@ Route::get('/article/{article:slug}', [ArticleController::class, 'show'])->name(
 Route::get('/contributor/{contributor:slug}', [ContributorController::class, 'show'])->name('magazine.contributor');
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/help', HelpController::class)->middleware(['auth', 'verified'])->name('help');
 Route::get('/blog', [BlogController::class, 'index'])->middleware(['auth', 'verified'])->name('blog.index');
 Route::get('/changelog', [ChangelogController::class, 'index'])->middleware(['auth', 'verified'])->name('changelog.index');
 Route::get('/users/{user:username}', [UserController::class, 'show'])->middleware(['auth', 'verified'])->name('users.show');
