@@ -208,6 +208,7 @@ Route::prefix('victory-games')->name('victory-games.')->group(function () {
         Route::patch('/victors/{victor:slug}', [VictorController::class, 'update'])->name('victors.update');
         Route::delete('/victors/{victor:slug}', [VictorController::class, 'destroy'])->name('victors.destroy');
         Route::post('/victors/{victor:slug}/claim', [VictorController::class, 'claim'])->name('victors.claim');
+        Route::post('/victors/{victor:slug}/assign-user', [VictorController::class, 'assignUser'])->name('victors.assign-user')->middleware('admin');
 
         // Apps — auth-gated
         Route::post('/apps', [VictoryGamesAppController::class, 'store'])->name('apps.store');

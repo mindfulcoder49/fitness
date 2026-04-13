@@ -30,7 +30,9 @@ const form = useForm({
     avatar:       null,
 });
 
-const claimForm = useForm({ external_user_id: '' });
+const claimForm      = useForm({ identity: '' });
+const userAssignForm = useForm({ user_identifier: '' });
+const userAssignOpen = ref(false);
 
 const appForm = useForm({
     name:        '',
@@ -51,6 +53,18 @@ function submitClaim() {
     claimForm.post(route('victory-games.victors.claim', props.victor.slug), {
         onSuccess: () => { claimOpen.value = false; },
     });
+}
+
+function submitAssignUser() {
+    userAssignForm.post(route('victory-games.victors.assign-user', props.victor.slug), {
+        onSuccess: () => { userAssignOpen.value = false; userAssignForm.reset(); },
+    });
+}
+
+function submitUnassignUser() {
+    if (!confirm('Unlink this Victor profile from its user? The user will lose edit access.')) return;
+    userAssignForm.user_identifier = '';
+    userAssignForm.post(route('victory-games.victors.assign-user', props.victor.slug));
 }
 
 function submitCreateApp() {
@@ -195,12 +209,12 @@ function formatDate(dateStr) {
             <div class="bg-theme-card border border-theme-border rounded-xl p-6 w-full max-w-sm mx-4">
                 <h2 class="text-lg font-bold text-theme-text-primary mb-2">Claim This Profile</h2>
                 <p class="text-sm text-theme-text-secondary mb-4">
-                    Enter your AIUXTester user ID to claim this profile and unlock editing.
+                    Enter the email address you used on AIUXTester (or your AIUXTester user ID) to verify ownership and unlock editing.
                 </p>
                 <form @submit.prevent="submitClaim" class="space-y-3">
-                    <input v-model="claimForm.external_user_id" type="text" placeholder="AIUXTester user ID" required
+                    <input v-model="claimForm.identity" type="text" placeholder="your@email.com or AIUXTester user ID" required
                         class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
-                    <p v-if="claimForm.errors.external_user_id" class="text-xs text-danger">{{ claimForm.errors.external_user_id }}</p>
+                    <p v-if="claimForm.errors.identity" class="text-xs text-danger">{{ claimForm.errors.identity }}</p>
                     <div class="flex gap-2">
                         <button type="submit" :disabled="claimForm.processing" class="flex-1 px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
                             Claim
@@ -211,6 +225,42 @@ function formatDate(dateStr) {
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Admin: assign profile to a user -->
+        <div v-if="$page.props.auth.user?.is_admin" class="mb-8 bg-theme-card border border-theme-border rounded-xl p-5">
+            <div class="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                    <h2 class="text-sm font-semibold text-theme-text-primary">Admin — User Assignment</h2>
+                    <p v-if="victor.claimed_user" class="text-xs text-theme-text-muted mt-0.5">
+                        Claimed by <span class="text-theme-text-secondary font-medium">{{ victor.claimed_user.name }}</span>
+                        <span class="text-theme-text-faint"> (@{{ victor.claimed_user.username }})</span>
+                    </p>
+                    <p v-else class="text-xs text-theme-text-muted mt-0.5">Not yet claimed by any user.</p>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button v-if="victor.claimed_user" @click="submitUnassignUser"
+                        class="text-xs px-3 py-1.5 rounded border border-theme-danger/40 text-theme-danger hover:bg-theme-danger/10 transition">
+                        Unlink User
+                    </button>
+                    <button @click="userAssignOpen = !userAssignOpen"
+                        class="text-xs px-3 py-1.5 rounded border border-theme-border text-theme-text-muted hover:text-theme-accent hover:border-theme-accent transition">
+                        {{ userAssignOpen ? 'Cancel' : 'Assign to User' }}
+                    </button>
+                </div>
+            </div>
+            <form v-if="userAssignOpen" @submit.prevent="submitAssignUser" class="mt-4 flex gap-2 items-start flex-wrap">
+                <div class="flex-1 min-w-48">
+                    <input v-model="userAssignForm.user_identifier" type="text"
+                        placeholder="Username or email address"
+                        class="w-full rounded-lg border border-theme-border bg-theme-input text-theme-text-primary px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent-ring" />
+                    <p v-if="userAssignForm.errors.user_identifier" class="mt-1 text-xs text-danger">{{ userAssignForm.errors.user_identifier }}</p>
+                </div>
+                <button type="submit" :disabled="!userAssignForm.user_identifier.trim() || userAssignForm.processing"
+                    class="px-4 py-2 rounded-lg bg-theme-btn-primary text-theme-btn-primary-text text-sm font-semibold hover:bg-theme-btn-primary-hover transition disabled:opacity-50">
+                    Assign
+                </button>
+            </form>
         </div>
 
         <!-- Apps -->

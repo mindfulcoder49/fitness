@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\VictoryGamesApp;
 use App\Models\VictoryGamesVictor;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -83,6 +84,11 @@ class VictorController extends Controller
             ? $victor->apps()->get()->map(fn ($a) => ['id' => $a->id, 'name' => $a->name])
             : collect();
 
+        $isAdmin = $authUser?->is_admin;
+        $claimedUser = ($isAdmin && $victor->user_id)
+            ? $victor->user()->select('id', 'name', 'username')->first()
+            : null;
+
         return Inertia::render('VictoryGames/Victor', [
             'victor' => [
                 'id'           => $victor->id,
@@ -94,6 +100,12 @@ class VictorController extends Controller
                 'github_url'   => $victor->github_url,
                 'website_url'  => $victor->website_url,
                 'twitter_url'  => $victor->twitter_url,
+                'is_claimed'   => $victor->user_id !== null,
+                'claimed_user' => $claimedUser ? [
+                    'id'       => $claimedUser->id,
+                    'name'     => $claimedUser->name,
+                    'username' => $claimedUser->username,
+                ] : null,
             ],
             'entries'         => $competitionEntries,
             'unassignedRuns'  => $unassignedRuns,
@@ -221,8 +233,8 @@ class VictorController extends Controller
     }
 
     /**
-     * Claim an unclaimed victor profile by matching external_user_id.
-     * The user submits their AIUXTester user ID; if it matches an unclaimed profile, it gets linked.
+     * Claim an unclaimed victor profile.
+     * Accepts the AIUXTester email address or external user ID — whichever the user has.
      */
     public function claim(Request $request, VictoryGamesVictor $victor)
     {
@@ -230,18 +242,61 @@ class VictorController extends Controller
         abort_if($victor->user_id !== null, 409, 'This profile is already claimed.');
 
         $data = $request->validate([
-            'external_user_id' => 'required|string|max:255',
+            'identity' => 'required|string|max:255',
         ]);
 
-        abort_unless(
-            $victor->external_user_id === $data['external_user_id'],
-            403,
-            'The provided ID does not match this profile.'
-        );
+        $matches = ($victor->email && strtolower($victor->email) === strtolower($data['identity']))
+            || ($victor->external_user_id && $victor->external_user_id === $data['identity']);
+
+        if (! $matches) {
+            throw ValidationException::withMessages([
+                'identity' => 'That email or ID does not match this profile.',
+            ]);
+        }
 
         $victor->update(['user_id' => auth()->id()]);
 
         return redirect()->route('victory-games.victors.show', $victor->slug)
             ->with('success', 'Profile claimed! You can now edit your profile.');
+    }
+
+    /**
+     * Admin-only: assign a victor profile to any user by username or email.
+     * Passing user_identifier = '' unlinks the profile.
+     */
+    public function assignUser(Request $request, VictoryGamesVictor $victor)
+    {
+        abort_unless($request->user()->is_admin, 403);
+
+        $data = $request->validate([
+            'user_identifier' => 'nullable|string|max:255',
+        ]);
+
+        $identifier = trim($data['user_identifier'] ?? '');
+
+        if ($identifier === '') {
+            $victor->update(['user_id' => null]);
+
+            return back()->with('success', 'Victor profile unlinked from user.');
+        }
+
+        $user = User::where('username', $identifier)->orWhere('email', $identifier)->first();
+
+        if (! $user) {
+            throw ValidationException::withMessages([
+                'user_identifier' => 'No user found with that username or email.',
+            ]);
+        }
+
+        $existing = $user->victoryGamesVictor;
+        if ($existing && $existing->id !== $victor->id) {
+            throw ValidationException::withMessages([
+                'user_identifier' => "That user already owns the Victor profile \"{$existing->display_name}\".",
+            ]);
+        }
+
+        $victor->update(['user_id' => $user->id]);
+
+        return back()->with('success', "Victor profile assigned to {$user->name} (@{$user->username}).");
     }
 }
