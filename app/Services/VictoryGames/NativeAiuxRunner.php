@@ -905,11 +905,18 @@ class NativeAiuxRunner
 
     private function runtimeSnapshot(?string $prompt = null, string $prefix = ''): array
     {
+        $processSnapshot = $this->processSnapshot();
+
         $details = [
             $prefix.'fd_count' => $this->openFileDescriptorCount(),
             $prefix.'memory_bytes' => memory_get_usage(true),
             $prefix.'memory_mb' => round(memory_get_usage(true) / 1048576, 2),
             $prefix.'peak_memory_mb' => round(memory_get_peak_usage(true) / 1048576, 2),
+            $prefix.'self_pid' => getmypid(),
+            $prefix.'self_descendant_process_count' => $processSnapshot['self_descendant_process_count'],
+            $prefix.'self_descendant_thread_total' => $processSnapshot['self_descendant_thread_total'],
+            $prefix.'user_process_count' => $processSnapshot['user_process_count'],
+            $prefix.'user_thread_total' => $processSnapshot['user_thread_total'],
         ];
 
         if ($prompt !== null) {
@@ -925,6 +932,108 @@ class NativeAiuxRunner
         $descriptors = glob('/proc/self/fd/*');
 
         return is_array($descriptors) ? count($descriptors) : null;
+    }
+
+    private function processSnapshot(): array
+    {
+        $currentPid = getmypid();
+        $currentUid = function_exists('posix_geteuid') ? posix_geteuid() : null;
+
+        if ($currentPid === false || $currentUid === false || $currentUid === null) {
+            return [
+                'self_descendant_process_count' => null,
+                'self_descendant_thread_total' => null,
+                'user_process_count' => null,
+                'user_thread_total' => null,
+            ];
+        }
+
+        $processes = [];
+
+        foreach (glob('/proc/[0-9]*/status') ?: [] as $statusPath) {
+            $status = @file_get_contents($statusPath);
+
+            if (!is_string($status) || $status === '') {
+                continue;
+            }
+
+            $pid = $this->extractStatusInteger($status, 'Pid');
+            $ppid = $this->extractStatusInteger($status, 'PPid');
+            $threads = $this->extractStatusInteger($status, 'Threads');
+            $realUid = $this->extractRealUid($status);
+
+            if ($pid === null || $ppid === null || $threads === null || $realUid === null) {
+                continue;
+            }
+
+            $processes[$pid] = [
+                'ppid' => $ppid,
+                'threads' => $threads,
+                'uid' => $realUid,
+            ];
+        }
+
+        $descendantProcessCount = 0;
+        $descendantThreadTotal = 0;
+        $queue = [$currentPid];
+        $visited = [];
+
+        while ($queue !== []) {
+            $parentPid = array_shift($queue);
+
+            if (isset($visited[$parentPid])) {
+                continue;
+            }
+
+            $visited[$parentPid] = true;
+
+            foreach ($processes as $pid => $process) {
+                if ($process['ppid'] !== $parentPid || $process['uid'] !== $currentUid) {
+                    continue;
+                }
+
+                $descendantProcessCount++;
+                $descendantThreadTotal += $process['threads'];
+                $queue[] = $pid;
+            }
+        }
+
+        $userProcessCount = 0;
+        $userThreadTotal = 0;
+
+        foreach ($processes as $process) {
+            if ($process['uid'] !== $currentUid) {
+                continue;
+            }
+
+            $userProcessCount++;
+            $userThreadTotal += $process['threads'];
+        }
+
+        return [
+            'self_descendant_process_count' => $descendantProcessCount,
+            'self_descendant_thread_total' => $descendantThreadTotal,
+            'user_process_count' => $userProcessCount,
+            'user_thread_total' => $userThreadTotal,
+        ];
+    }
+
+    private function extractStatusInteger(string $status, string $field): ?int
+    {
+        if (!preg_match('/^'.preg_quote($field, '/').':\s+(\d+)/m', $status, $matches)) {
+            return null;
+        }
+
+        return (int) $matches[1];
+    }
+
+    private function extractRealUid(string $status): ?int
+    {
+        if (!preg_match('/^Uid:\s+(\d+)/m', $status, $matches)) {
+            return null;
+        }
+
+        return (int) $matches[1];
     }
 
     private function phaseLabel(string $phase): string
