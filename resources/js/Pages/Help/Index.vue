@@ -1,9 +1,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineOptions({ layout: AuthenticatedLayout });
+defineOptions({ layout: AppLayout });
 
 const activeSection = ref('overview');
 

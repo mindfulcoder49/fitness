@@ -1,9 +1,9 @@
 <script setup>
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { computed, ref, watch } from 'vue';
 
-defineOptions({ layout: AuthenticatedLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     competitions: Array,

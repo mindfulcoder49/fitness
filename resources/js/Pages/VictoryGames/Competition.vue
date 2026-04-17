@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
-import MagazineLayout from '@/Layouts/MagazineLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineOptions({ layout: MagazineLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     competition: Object,

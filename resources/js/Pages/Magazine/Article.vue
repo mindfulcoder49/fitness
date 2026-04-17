@@ -1,13 +1,13 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
-import MagazineLayout from '@/Layouts/MagazineLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import SectionBadge from '@/Components/Magazine/SectionBadge.vue';
 import TagPill from '@/Components/Magazine/TagPill.vue';
 import ContributorCredit from '@/Components/Magazine/ContributorCredit.vue';
 import MembersOnlyGate from '@/Components/Magazine/MembersOnlyGate.vue';
 import EmbedRenderer from '@/Components/Magazine/EmbedRenderer.vue';
 
-defineOptions({ layout: MagazineLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     article: Object,

@@ -1,5 +1,5 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import GroupAdminPanel from '@/Components/Admin/GroupAdminPanel.vue';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';

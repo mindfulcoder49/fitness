@@ -1,9 +1,9 @@
 <script setup>
 import { ref } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import MagazineLayout from '@/Layouts/MagazineLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineOptions({ layout: MagazineLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     victors: Array,
@@ -161,20 +161,20 @@ function submitCreateProfile() {
                 v-for="victor in victors"
                 :key="victor.id"
                 :href="route('victory-games.victors.show', victor.slug)"
-                class="group bg-theme-card border border-theme-border rounded-xl p-5 flex flex-col gap-3 hover:border-theme-accent transition"
+                class="group bg-theme-card border border-theme-border rounded-xl p-5 flex flex-col gap-3 hover:border-theme-accent transition overflow-hidden"
             >
-                <!-- Avatar -->
-                <div class="flex items-center gap-3">
+                <!-- Avatar + name -->
+                <div class="flex items-center gap-3 min-w-0">
                     <img
                         v-if="victor.avatar_url"
                         :src="victor.avatar_url"
                         :alt="victor.display_name"
-                        class="w-12 h-12 rounded-full object-cover"
+                        class="w-12 h-12 rounded-full object-cover shrink-0"
                     />
-                    <div v-else class="w-12 h-12 rounded-full bg-theme-elevated flex items-center justify-center text-lg font-bold text-theme-text-muted">
+                    <div v-else class="w-12 h-12 rounded-full bg-theme-elevated flex items-center justify-center text-lg font-bold text-theme-text-muted shrink-0">
                         {{ victor.display_name.charAt(0).toUpperCase() }}
                     </div>
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                         <div class="font-bold text-theme-text-primary group-hover:text-theme-accent transition truncate">
                             {{ victor.display_name }}
                         </div>

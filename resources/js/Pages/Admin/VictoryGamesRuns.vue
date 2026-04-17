@@ -1,9 +1,9 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { Head, Link, useForm, router, usePage } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineOptions({ layout: AuthenticatedLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     entries: Array,

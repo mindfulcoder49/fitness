@@ -1,10 +1,10 @@
 <script setup>
 import { Head, useForm, Link } from '@inertiajs/vue3';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import TipTapEditor from '@/Components/Magazine/TipTapEditor.vue';
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
-defineOptions({ layout: AuthenticatedLayout });
+defineOptions({ layout: AppLayout });
 
 const props = defineProps({
     article: { type: Object, default: null },

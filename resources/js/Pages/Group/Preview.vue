@@ -1,9 +1,9 @@
 <script setup>
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import MagazineLayout from '@/Layouts/MagazineLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 import { computed } from 'vue';
 
-defineOptions({ layout: MagazineLayout });
+defineOptions({ layout: AppLayout });
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user);

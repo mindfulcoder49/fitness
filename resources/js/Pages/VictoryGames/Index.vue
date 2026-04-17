@@ -1,8 +1,8 @@
 <script setup>
 import { Head, Link } from '@inertiajs/vue3';
-import MagazineLayout from '@/Layouts/MagazineLayout.vue';
+import AppLayout from '@/Layouts/AppLayout.vue';
 
-defineOptions({ layout: MagazineLayout });
+defineOptions({ layout: AppLayout });
 
 defineProps({
     competitions: Array,
