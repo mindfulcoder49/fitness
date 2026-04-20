@@ -78,6 +78,10 @@ class AdminMagazineTest extends TestCase
 
     public function test_article_can_be_updated_with_method_spoofed_form_data_and_featured_image(): void
     {
+        if (! function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension not installed.');
+        }
+
         Storage::fake('public');
 
         $admin = User::factory()->create(['is_admin' => true]);
@@ -206,14 +210,16 @@ class AdminMagazineTest extends TestCase
         $admin = User::factory()->create(['is_admin' => true]);
 
         $first = $this->actingAs($admin)->from('/admin/magazine/sections')->post(route('admin.magazine.sections.store'), [
-            'name' => 'Data',
-            'slug' => '',
-            'is_active' => true,
+            'name'                    => 'Data',
+            'slug'                    => '',
+            'is_active'               => true,
+            'homepage_article_limit'  => 3,
         ]);
         $second = $this->actingAs($admin)->from('/admin/magazine/sections')->post(route('admin.magazine.sections.store'), [
-            'name' => 'Data',
-            'slug' => '',
-            'is_active' => true,
+            'name'                    => 'Data',
+            'slug'                    => '',
+            'is_active'               => true,
+            'homepage_article_limit'  => 3,
         ]);
 
         $first->assertRedirect('/admin/magazine/sections');

@@ -238,8 +238,10 @@ class VictorController extends Controller
      */
     public function claim(Request $request, VictoryGamesVictor $victor)
     {
-        abort_unless(auth()->check(), 401);
         abort_if($victor->user_id !== null, 409, 'This profile is already claimed.');
+
+        $existingProfile = auth()->user()->victoryGamesVictor;
+        abort_if($existingProfile !== null, 409, 'You already have a victor profile.');
 
         $data = $request->validate([
             'identity' => 'required|string|max:255',

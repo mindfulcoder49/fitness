@@ -28,12 +28,20 @@ class RunDetailController extends Controller
         $victorSlug = $entry->victor?->slug;
         $appSlug = $entry->app?->slug;
         $previousUrl = (string) url()->previous();
+        $runUrl = route('victory-games.runs.show', $entry->id);
 
         Storage::disk('public')->deleteDirectory("victory-games/screenshots/{$entry->id}");
 
         $entry->delete();
 
-        if ($previousUrl !== '' && !Str::endsWith($previousUrl, "/victory-games/runs/{$entry->id}")) {
+        // If the user was on a page other than the run detail page itself, go back there.
+        // Guard against the default fallback value ('/' or the app root) slipping through.
+        $isRealPreviousPage = $previousUrl !== ''
+            && $previousUrl !== url('/')
+            && $previousUrl !== route('victory-games.home')
+            && !Str::endsWith($previousUrl, "/victory-games/runs/{$entry->id}");
+
+        if ($isRealPreviousPage) {
             return back()->with('success', 'Run deleted.');
         }
 

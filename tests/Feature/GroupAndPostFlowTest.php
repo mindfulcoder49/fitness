@@ -130,7 +130,7 @@ class GroupAndPostFlowTest extends TestCase
                 'content' => 'Hello',
                 'group_id' => $group->id,
             ])
-            ->assertNotFound();
+            ->assertForbidden();
     }
 
     public function test_member_can_create_text_post(): void
@@ -160,6 +160,10 @@ class GroupAndPostFlowTest extends TestCase
 
     public function test_member_without_image_permission_cannot_upload_image_post(): void
     {
+        if (! function_exists('imagecreatetruecolor')) {
+            $this->markTestSkipped('GD extension not installed.');
+        }
+
         Storage::fake('public');
 
         $user = User::factory()->create(['can_post_images' => false]);

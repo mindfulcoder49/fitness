@@ -125,9 +125,11 @@ class AppController extends Controller
 
         $member = VictoryGamesVictor::where('slug', $data['victor_slug'])->firstOrFail();
 
-        if (!$app->isMember($member)) {
-            $app->victors()->attach($member->id, ['role' => 'member']);
+        if ($app->isMember($member)) {
+            return back()->with('info', "{$member->display_name} is already on the team.");
         }
+
+        $app->victors()->attach($member->id, ['role' => 'member']);
 
         return back()->with('success', "{$member->display_name} added to team.");
     }
@@ -186,7 +188,7 @@ class AppController extends Controller
         $user   = auth()->user();
         $victor = $user ? VictoryGamesVictor::where('user_id', $user->id)->first() : null;
         abort_unless(
-            ($victor && $app->isMember($victor)) || ($user && $user->is_admin),
+            ($victor && $app->isOwnedBy($victor)) || ($user && $user->is_admin),
             403
         );
     }

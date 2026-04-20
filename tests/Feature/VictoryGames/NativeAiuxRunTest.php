@@ -160,9 +160,13 @@ class NativeAiuxRunTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        $response = $this->actingAs($user)->delete(route('victory-games.runs.destroy', $entry));
+        $response = $this->actingAs($user)
+            ->from(route('victory-games.runs.show', $entry))
+            ->delete(route('victory-games.runs.destroy', $entry));
 
-        $response->assertRedirect(route('victory-games.victors.show', $victor));
+        // Entry has an app, so after deleting from the run detail page the
+        // controller redirects to the app page (not the victor page).
+        $response->assertRedirect(route('victory-games.apps.show', $app));
         $this->assertDatabaseMissing('victory_games_entries', ['id' => $entry->id]);
     }
 

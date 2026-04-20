@@ -27,9 +27,8 @@ class PostController extends Controller
         ]);
 
         $user = Auth::user();
-        $group = $user->groups()->findOrFail($validated['group_id']);
+        $group = $user->groups()->find($validated['group_id']);
 
-        // Check if user is a member of the group
         if (!$group) {
             abort(403, 'You are not a member of this group.');
         }

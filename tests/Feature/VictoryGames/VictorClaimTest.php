@@ -117,7 +117,7 @@ class VictorClaimTest extends TestCase
         $response->assertStatus(409);
     }
 
-    // ── Claim: guest is rejected ───────────────────────────────────────────────
+    // ── Claim: guest is redirected to login ───────────────────────────────────
 
     public function test_guest_cannot_claim_a_profile(): void
     {
@@ -132,7 +132,10 @@ class VictorClaimTest extends TestCase
             'identity' => 'target@example.com',
         ]);
 
-        $response->assertStatus(401);
+        // Auth middleware redirects guests to login (302), not a 401 — the
+        // controller-level abort_unless(auth()->check(), 401) was dead code and
+        // has been removed.
+        $response->assertRedirect(route('login'));
         $this->assertNull($victor->fresh()->user_id);
     }
 
