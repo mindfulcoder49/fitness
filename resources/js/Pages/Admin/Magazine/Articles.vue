@@ -14,13 +14,32 @@ const props = defineProps({
 const search = ref(props.filters?.search || '');
 const status = ref(props.filters?.status || '');
 const sectionId = ref(props.filters?.section_id || '');
+const sortBy = ref(props.filters?.sort_by || 'published_at');
+const sortDir = ref(props.filters?.sort_dir || 'desc');
 
 function applyFilters() {
     router.get(route('admin.magazine.articles.index'), {
         search: search.value || undefined,
         status: status.value || undefined,
         section_id: sectionId.value || undefined,
+        sort_by: sortBy.value,
+        sort_dir: sortDir.value,
     }, { preserveState: true });
+}
+
+function sortBy_(column) {
+    if (sortBy.value === column) {
+        sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortBy.value = column;
+        sortDir.value = 'asc';
+    }
+    applyFilters();
+}
+
+function sortIcon(column) {
+    if (sortBy.value !== column) return '↕';
+    return sortDir.value === 'asc' ? '↑' : '↓';
 }
 
 let debounceTimer;
@@ -38,6 +57,11 @@ function deleteArticle(article) {
 function formatDate(dateStr) {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function contributorNames(article) {
+    if (!article.contributors?.length) return '-';
+    return article.contributors.map(c => c.name).join(', ');
 }
 
 const statusColors = {
@@ -72,7 +96,7 @@ const statusColors = {
 
         <!-- Filters -->
         <div class="flex flex-wrap gap-3 mb-6">
-            <input v-model="search" placeholder="Search articles..." class="bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm w-64" />
+            <input v-model="search" placeholder="Search title, section, contributor…" class="bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm w-72" />
             <select v-model="status" @change="applyFilters" class="bg-theme-input border-theme-border text-theme-text-primary rounded-md text-sm">
                 <option value="">All statuses</option>
                 <option value="draft">Draft</option>
@@ -91,11 +115,36 @@ const statusColors = {
             <table class="w-full text-sm">
                 <thead>
                     <tr class="border-b border-theme-border">
-                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">Title</th>
-                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">Section</th>
-                        <th class="text-center px-4 py-3 text-theme-text-muted font-medium">Status</th>
-                        <th class="text-center px-4 py-3 text-theme-text-muted font-medium">Access</th>
-                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">Published</th>
+                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('title')" class="flex items-center gap-1 hover:text-theme-text-primary transition">
+                                Title <span class="text-xs opacity-60">{{ sortIcon('title') }}</span>
+                            </button>
+                        </th>
+                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('section')" class="flex items-center gap-1 hover:text-theme-text-primary transition">
+                                Section <span class="text-xs opacity-60">{{ sortIcon('section') }}</span>
+                            </button>
+                        </th>
+                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('contributor')" class="flex items-center gap-1 hover:text-theme-text-primary transition">
+                                Contributor <span class="text-xs opacity-60">{{ sortIcon('contributor') }}</span>
+                            </button>
+                        </th>
+                        <th class="text-center px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('status')" class="flex items-center gap-1 mx-auto hover:text-theme-text-primary transition">
+                                Status <span class="text-xs opacity-60">{{ sortIcon('status') }}</span>
+                            </button>
+                        </th>
+                        <th class="text-center px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('access')" class="flex items-center gap-1 mx-auto hover:text-theme-text-primary transition">
+                                Access <span class="text-xs opacity-60">{{ sortIcon('access') }}</span>
+                            </button>
+                        </th>
+                        <th class="text-left px-4 py-3 text-theme-text-muted font-medium">
+                            <button @click="sortBy_('published_at')" class="flex items-center gap-1 hover:text-theme-text-primary transition">
+                                Published <span class="text-xs opacity-60">{{ sortIcon('published_at') }}</span>
+                            </button>
+                        </th>
                         <th class="text-right px-4 py-3 text-theme-text-muted font-medium">Actions</th>
                     </tr>
                 </thead>
@@ -108,6 +157,7 @@ const statusColors = {
                             </div>
                         </td>
                         <td class="px-4 py-3 text-theme-text-muted">{{ article.section?.name }}</td>
+                        <td class="px-4 py-3 text-theme-text-muted">{{ contributorNames(article) }}</td>
                         <td class="px-4 py-3 text-center">
                             <span class="text-xs px-2 py-0.5 rounded" :class="statusColors[article.status]">{{ article.status }}</span>
                         </td>

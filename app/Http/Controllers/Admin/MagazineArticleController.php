@@ -17,11 +17,31 @@ class MagazineArticleController extends Controller
 {
     public function index(Request $request)
     {
+        $allowedSorts = ['title', 'section', 'status', 'access', 'published_at', 'contributor'];
+        $sortBy  = in_array($request->sort_by, $allowedSorts, true) ? $request->sort_by : 'published_at';
+        $sortDir = $request->sort_dir === 'asc' ? 'asc' : 'desc';
+
         $articles = Article::with(['section', 'contributors'])
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->when($request->section_id, fn ($q, $id) => $q->where('section_id', $id))
-            ->when($request->search, fn ($q, $search) => $q->where('title', 'like', "%{$search}%"))
-            ->latest()
+            ->when($request->search, function ($q, $search) {
+                $q->where(function ($inner) use ($search) {
+                    $inner->where('title', 'like', "%{$search}%")
+                          ->orWhere('slug', 'like', "%{$search}%")
+                          ->orWhere('status', 'like', "%{$search}%")
+                          ->orWhere('access', 'like', "%{$search}%")
+                          ->orWhereHas('section', fn ($sq) => $sq->where('name', 'like', "%{$search}%"))
+                          ->orWhereHas('contributors', fn ($cq) => $cq->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when($sortBy === 'section', fn ($q) => $q->leftJoin('sections', 'sections.id', '=', 'articles.section_id')
+                ->orderBy('sections.name', $sortDir)
+                ->select('articles.*'))
+            ->when($sortBy === 'contributor', fn ($q) => $q->leftJoin('article_contributor', 'article_contributor.article_id', '=', 'articles.id')
+                ->leftJoin('contributors', 'contributors.id', '=', 'article_contributor.contributor_id')
+                ->orderBy('contributors.name', $sortDir)
+                ->select('articles.*'))
+            ->when(! in_array($sortBy, ['section', 'contributor'], true), fn ($q) => $q->orderBy($sortBy, $sortDir))
             ->paginate(20)
             ->withQueryString();
 
@@ -30,7 +50,7 @@ class MagazineArticleController extends Controller
         return Inertia::render('Admin/Magazine/Articles', [
             'articles' => $articles,
             'sections' => $sections,
-            'filters' => $request->only(['status', 'section_id', 'search']),
+            'filters'  => $request->only(['status', 'section_id', 'search', 'sort_by', 'sort_dir']),
         ]);
     }
 
