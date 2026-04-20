@@ -79,7 +79,7 @@ const submitCreateUser = () => {
 <template>
     <Head title="Admin Dashboard" />
 
-    <AuthenticatedLayout>
+    <AppLayout>
         <template #header>
             <h2 class="text-xl font-semibold leading-tight text-theme-text-primary">
                 Site Administration
@@ -235,5 +235,5 @@ const submitCreateUser = () => {
                 </div>
             </div>
         </div>
-    </AuthenticatedLayout>
+    </AppLayout>
 </template>
