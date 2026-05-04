@@ -6,6 +6,7 @@ import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 defineProps({
     canResetPassword: {
@@ -14,7 +15,13 @@ defineProps({
     status: {
         type: String,
     },
+    magicLinkStatus: {
+        type: String,
+        default: null,
+    },
 });
+
+const showMagicLink = ref(false);
 
 const form = useForm({
     email: '',
@@ -22,9 +29,19 @@ const form = useForm({
     remember: false,
 });
 
+const magicForm = useForm({
+    email: '',
+});
+
 const submit = () => {
     form.post(route('login'), {
         onFinish: () => form.reset('password'),
+    });
+};
+
+const sendMagicLink = () => {
+    magicForm.post(route('magic-link.send'), {
+        onSuccess: () => magicForm.reset(),
     });
 };
 </script>
@@ -37,7 +54,12 @@ const submit = () => {
             {{ status }}
         </div>
 
-        <form @submit.prevent="submit">
+        <div v-if="magicLinkStatus" class="mb-4 text-sm font-medium text-green-600">
+            {{ magicLinkStatus }}
+        </div>
+
+        <!-- Password login form -->
+        <form v-if="!showMagicLink" @submit.prevent="submit">
             <div>
                 <InputLabel for="email" value="Email" />
 
@@ -72,9 +94,7 @@ const submit = () => {
             <div class="mt-4 block">
                 <label class="flex items-center">
                     <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-theme-text-muted"
-                        >Remember me</span
-                    >
+                    <span class="ms-2 text-sm text-theme-text-muted">Remember me</span>
                 </label>
             </div>
 
@@ -96,5 +116,50 @@ const submit = () => {
                 </PrimaryButton>
             </div>
         </form>
+
+        <!-- Magic link form -->
+        <form v-else @submit.prevent="sendMagicLink">
+            <div>
+                <InputLabel for="magic-email" value="Email" />
+
+                <TextInput
+                    id="magic-email"
+                    type="email"
+                    class="mt-1 block w-full"
+                    v-model="magicForm.email"
+                    required
+                    autofocus
+                    autocomplete="username"
+                />
+
+                <InputError class="mt-2" :message="magicForm.errors.email" />
+            </div>
+
+            <div class="mt-4 flex items-center justify-end">
+                <PrimaryButton
+                    :class="{ 'opacity-25': magicForm.processing }"
+                    :disabled="magicForm.processing"
+                >
+                    Send magic link
+                </PrimaryButton>
+            </div>
+        </form>
+
+        <!-- Toggle -->
+        <div class="mt-6 flex items-center gap-2">
+            <div class="flex-1 border-t border-theme-border" />
+            <span class="text-xs text-theme-text-muted uppercase tracking-wide">or</span>
+            <div class="flex-1 border-t border-theme-border" />
+        </div>
+
+        <div class="mt-4 text-center">
+            <button
+                type="button"
+                class="text-sm text-theme-text-muted underline hover:text-theme-text-primary focus:outline-none"
+                @click="showMagicLink = !showMagicLink"
+            >
+                {{ showMagicLink ? 'Log in with password instead' : 'Send me a magic link' }}
+            </button>
+        </div>
     </GuestLayout>
 </template>
