@@ -18,6 +18,11 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $user = Auth::user();
+
+        if (! $user->victoryGamesVictor && ! $request->session()->get('onboarding_dismissed')) {
+            return redirect()->route('onboarding.show');
+        }
+
         $weekAgo = now()->subWeek();
 
         // User's groups

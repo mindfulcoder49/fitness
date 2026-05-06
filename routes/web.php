@@ -10,6 +10,7 @@ use App\Http\Controllers\VictoryGames\HomeController as VictoryGamesHomeControll
 use App\Http\Controllers\VictoryGames\CompetitionController as VictoryGamesCompetitionController;
 use App\Http\Controllers\VictoryGames\AppController as VictoryGamesAppController;
 use App\Http\Controllers\VictoryGames\NativeRunController;
+use App\Http\Controllers\VictoryGames\OnboardingController;
 use App\Http\Controllers\VictoryGames\VictorController;
 use App\Http\Controllers\VictoryGames\RunDetailController;
 use App\Http\Controllers\VictoryGames\CertificateController;
@@ -64,6 +65,14 @@ Route::get('/article/{article:slug}', [ArticleController::class, 'show'])->name(
 Route::get('/contributor/{contributor:slug}', [ContributorController::class, 'show'])->name('magazine.contributor');
 
 Route::get('/dashboard', DashboardController::class)->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware(['auth', 'verified'])->prefix('onboarding')->name('onboarding.')->group(function () {
+    Route::get('/', [OnboardingController::class, 'show'])->name('show');
+    Route::post('/victor', [OnboardingController::class, 'storeVictor'])->name('victor');
+    Route::post('/app', [OnboardingController::class, 'storeApp'])->name('app');
+    Route::post('/run', [OnboardingController::class, 'storeRun'])->name('run');
+    Route::post('/skip', [OnboardingController::class, 'skip'])->name('skip');
+});
 Route::get('/help', HelpController::class)->middleware(['auth', 'verified'])->name('help');
 Route::get('/blog', [BlogController::class, 'index'])->middleware(['auth', 'verified'])->name('blog.index');
 Route::get('/changelog', [ChangelogController::class, 'index'])->middleware(['auth', 'verified'])->name('changelog.index');

@@ -81,6 +81,10 @@ class MagicLinkController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $destination = $user->victoryGamesVictor
+            ? route('dashboard', absolute: false)
+            : route('onboarding.show', absolute: false);
+
+        return redirect()->intended($destination);
     }
 }
